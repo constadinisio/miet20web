@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi ET20 - Noticias</title>
+    <link rel="icon" type="image/x-icon" href="images/et20png.png">
+
+    <!-- Configuración previa de Tailwind -->
+    <script>
+        window.tailwind = {
+            config: {
+                corePlugins: {
+                    preflight: false // Esto evita que el CDN te pise estilos como listas
+                }
+            }
+        };
+    </script>
+
+    <!-- CDN de Tailwind (lo cargás después de definir window.tailwind) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tu archivo local compilado con @tailwindcss/typography -->
+    <link rel="stylesheet" href="output.css">
+
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navbar (same as index.html) -->
+    <nav class="bg-white shadow-lg fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center">
+                        <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
+                        <h1><img src="./images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
+                        <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="index.html"
+                        class="text-gray-600 hover:text-azulInstitucional px-3 py-2 rounded-md font-medium transition duration-300">Página
+                        Principal</a>
+                    <a href="descargas.html"
+                        class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
+                    <a href="noticias.html"
+                        class="text-verdeEsperanza font-bold px-3 py-2 rounded-md font-medium">Noticias</a>
+                    <a href="contactos.html"
+                        class="text-gray-600 hover:text-amarilloEnergia px-3 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button class="mobile-menu-button outline-none">
+                        <i class="fas fa-bars text-2xl text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="mobile-menu hidden md:hidden pb-4">
+                <a href="index.html"
+                    class="block text-gray-600 hover:text-blue-600 px-4 py-2 rounded-md font-medium transition duration-300">Página
+                    Principal</a>
+                <a href="descargas.html"
+                    class="block text-gray-600 hover:text-blue-600 px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
+                <a href="noticias.html"
+                    class="block text-verdeEsperanza font-bold px-4 py-2 rounded-md font-medium">Noticias</a>
+                <a href="contactos.html"
+                    class="block text-gray-600 hover:text-blue-600 px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="pt-24 pb-12 bg-gradient-to-r from-blue-500 to-blue-700 text-white">
+        <div class="max-w-7xl mx-auto px-4">
+            <h1 class="text-4xl font-bold text-center">Noticias</h1>
+            <p class="text-center mt-4">Mantente informado sobre las últimas novedades del colegio</p>
+
+        </div>
+    </section>
+
+    <!-- News Section -->
+    <div class="max-w-4xl mx-auto">
+        <div id="contenedor-noticias" class="space-y-6"></div>
+        <div class="flex justify-center mt-6 space-x-2" id="paginacion"></div>
+    </div>
+
+    <script>
+        const noticiasPorPagina = 5;
+        let paginaActual = 1;
+        let noticias = [];
+
+        fetch('./panelNoticias/data/noticias.json')
+            .then(res => res.json())
+            .then(data => {
+                noticias = data.reverse();
+                mostrarPagina(paginaActual);
+                crearPaginacion();
+            });
+
+        function mostrarPagina(pagina) {
+            const contenedor = document.getElementById('contenedor-noticias');
+            contenedor.innerHTML = "";
+            const inicio = (pagina - 1) * noticiasPorPagina;
+            const fin = inicio + noticiasPorPagina;
+            const paginaNoticias = noticias.slice(inicio, fin);
+
+            paginaNoticias.forEach(noticia => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 m-4 shadow rounded";
+
+                const titulo = document.createElement('h2');
+                titulo.className = "text-xl font-bold mb-2";
+                titulo.innerText = noticia.titulo;
+
+                const contenido = document.createElement('div');
+                contenido.className = "contenido-noticia prose max-w-none";
+                console.log(noticia.contenido)
+                contenido.innerHTML = noticia.contenido;
+
+                let imagen = null;
+                if (noticia.hasOwnProperty('imagen') && noticia.imagen.trim() !== "") {
+                    imagen = document.createElement('img');
+                    imagen.src = `panelNoticias/images/${noticia.imagen}`;
+                    imagen.alt = "Imagen de la noticia";
+                    imagen.className = "mb-4 max-w-64 h-auto rounded";
+                }
+
+                div.appendChild(titulo);
+                div.appendChild(contenido);
+                if (imagen) div.appendChild(imagen);
+
+                contenedor.appendChild(div);
+            });
+        }
+
+        function crearPaginacion() {
+            const totalPaginas = Math.ceil(noticias.length / noticiasPorPagina);
+            const paginacion = document.getElementById('paginacion');
+            paginacion.innerHTML = "";
+            for (let i = 1; i <= totalPaginas; i++) {
+                const boton = document.createElement('button');
+                boton.innerText = i;
+                boton.className = "px-3 py-1 rounded m-4 " + (i === paginaActual ? "bg-blue-600 text-white" : "bg-gray-300");
+                boton.onclick = () => {
+                    paginaActual = i;
+                    mostrarPagina(i);
+                    crearPaginacion();
+                };
+                paginacion.appendChild(boton);
+            }
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Escuela Técnica 20 D.E. 20<br>"Carolina Muzilli"</h3>
+                    <p class="text-gray-400">
+                        Formando líderes del mañana con excelencia académica y valores.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Contacto</h3>
+                    <p class="text-gray-400">
+                        <i class="fas fa-map-marker-alt mr-2"></i> Murguiondo 2151, CABA
+                        <br>
+                        <i class="fas fa-phone mr-2"></i> (54) 113910-7733
+                        <br>
+                        <i class="fas fa-envelope mr-2"></i> det_20_de20@bue.edu.ar
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Síguenos</h3>
+                    <div class="flex space-x-4">
+                        <a href="https://www.youtube.com/@ETDEPoloMataderos-Verificacion/featured"
+                            rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-300">
+                            <i class="fa-brands fa-youtube text-2xl"></i>
+                        </a>
+                        <a href="https://www.instagram.com/et20polomataderos/" rel="noopener noreferrer"
+                            class="text-gray-400 hover:text-white transition duration-300">
+                            <i class="fab fa-instagram text-2xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Escuela Técnica 20 D.E. 20 "Carolina Muzilli". Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Mobile Menu -->
+    <script>
+        const mobileMenuButton = document.querySelector('.mobile-menu-button');
+        const mobileMenu = document.querySelector('.mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+
+</html>
