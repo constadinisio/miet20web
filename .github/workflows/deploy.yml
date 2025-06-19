@@ -13,16 +13,13 @@ jobs:
       - name: 📥 Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: 🗂 Ver archivos
-        run: ls -R
-
       - name: 🚀 Deploy por FTP solo archivos modificados
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./miet20web/
+          local-dir: ./
           server-dir: /htdocs/miet20/  # Ajustá esto según tu carpeta en el server
           exclude: |
             node_modules/**
