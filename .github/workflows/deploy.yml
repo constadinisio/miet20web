@@ -1,0 +1,31 @@
+name: Deploy MiET20 Web
+
+on:
+  push:
+    branches:
+      - main  # Cambiá si tu rama principal se llama diferente
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v3
+
+      - name: Comprimir todo el proyecto
+        run: |
+          zip -r proyecto_miet20web.zip miet20web
+
+      - name: Subir por FTP al servidor
+        uses: sebastianpopp/ftp-action@v2
+        with:
+          host: ${{ secrets.FTP_HOST }}
+          user: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          localDir: .
+          remoteDir: /htdocs/deploy-temp/
+
+      - name: Llamar al script PHP para descomprimir
+        run: |
+          curl https://${{ secrets.FTP_HOST }}/deploy-temp/descomprimir.php
