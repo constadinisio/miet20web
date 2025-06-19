@@ -13,6 +13,9 @@ jobs:
       - name: 📥 Clonar repositorio
         uses: actions/checkout@v4
 
+      - name: 🗂 Ver archivos
+        run: ls -R
+
       - name: 🚀 Deploy por FTP solo archivos modificados
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
