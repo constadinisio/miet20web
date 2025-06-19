@@ -19,7 +19,7 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./miet20web
+          local-dir: ./miet20web/
           server-dir: /htdocs/miet20/  # Ajustá esto según tu carpeta en el server
           exclude: |
             node_modules/**
