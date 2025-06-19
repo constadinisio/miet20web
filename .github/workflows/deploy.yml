@@ -15,7 +15,7 @@ jobs:
 
       - name: Comprimir proyecto en .zip
         run: |
-          zip -r proyecto_miet20web.zip miet20web
+          zip -r proyecto_miet20web.zip .
 
       - name: Subir el .zip al servidor
         uses: sebastianpopp/ftp-action@releases/v2
