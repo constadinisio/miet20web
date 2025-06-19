@@ -1,30 +1,50 @@
-name: Deploy MiET20 Web
+name: Deploy Proyecto Miet20Web
 
 on:
   push:
     branches:
-      - main  # Cambiá si tu rama principal se llama diferente
+      - main  # o la rama que uses para producción
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar el repositorio
+      # 1. Clonar repo
+      - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Comprimir todo el proyecto
-        run: zip -r miet20web.zip .
+      # 2. Comprimir carpeta del proyecto
+      - name: Comprimir proyecto
+        run: zip -r proyecto_miet20web.zip miet20web
 
+      # 3. Subir ZIP por FTP
       - name: Subir por FTP al servidor
-        uses: sebastianpopp/ftp-action@v1.1.0
+        uses: sebastianpopp/ftp-action@releases/v2
         with:
           host: ${{ secrets.FTP_HOST }}
           user: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           localDir: .
-          remoteDir: /htdocs/deploy-temp/
+          remoteDir: /xampp/htdocs  # ajustar si querés otra carpeta
 
-      - name: Llamar al script PHP para descomprimir
-        run: |
-          curl https://${{ secrets.FTP_HOST }}/deploy-temp/descomprimir.php
+      # 4. Conectarse por SSH para descomprimir y correr npm install
+      - name: Descomprimir y ejecutar npm install
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: 22
+          script: |
+            $zipPath = "C:/xampp/htdocs/proyecto_miet20web.zip"
+            $extractPath = "C:/xampp/htdocs/miet20web"
+
+            if (Test-Path $extractPath) {
+              Remove-Item -Recurse -Force $extractPath
+            }
+
+            Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+
+            cd $extractPath
+            npm install
