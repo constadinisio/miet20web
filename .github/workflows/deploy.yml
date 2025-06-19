@@ -1,36 +1,29 @@
-name: Deploy Web Automático
+name: 🚀 Deploy al servidor FTP
 
 on:
   push:
     branches:
-      - main  # o el branch que uses
+      - main  # Cambiá esto si usás otra rama principal
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar el repositorio
-        uses: actions/checkout@v3
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
 
-      - name: Comprimir proyecto en .zip
-        run: |
-          zip -r proyecto_miet20web.zip .
-
-      - name: Subir el .zip al servidor
-        uses: sebastianpopp/ftp-action@releases/v2
+      - name: 🚀 Deploy por FTP solo archivos modificados
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          host: ${{ secrets.FTP_HOST }}
-          user: ${{ secrets.FTP_USER }}
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          localDir: .
-          remoteDir: /htdocs/
-          onlyNewer: false
-          include: |
-            proyecto_miet20web.zip
-          exclude: |
-            *
-
-      - name: Ejecutar descompresión en el servidor
-        run: |
-          curl http://54.233.210.17/descomprimir.php
+          local-dir: ./miet20web
+          server-dir: /htdocs/miet20/  # Ajustá esto según tu carpeta en el server
+          exclude:
+            - node_modules/**
+            - .git/**
+            - .github/**
+            - '**/.DS_Store'
+            - '**/Thumbs.db'
