@@ -1,50 +1,36 @@
-name: Deploy Proyecto Miet20Web
+name: Deploy Web Automático
 
 on:
   push:
     branches:
-      - main  # o la rama que uses para producción
+      - main  # o el branch que uses
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Clonar repo
-      - name: Checkout código
+      - name: Clonar el repositorio
         uses: actions/checkout@v3
 
-      # 2. Comprimir carpeta del proyecto
-      - name: Comprimir proyecto
-        run: zip -r proyecto_miet20web.zip .
+      - name: Comprimir proyecto en .zip
+        run: |
+          zip -r proyecto_miet20web.zip miet20web
 
-      # 3. Subir ZIP por FTP
-      - name: Subir por FTP al servidor
+      - name: Subir el .zip al servidor
         uses: sebastianpopp/ftp-action@releases/v2
         with:
           host: ${{ secrets.FTP_HOST }}
           user: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
+          password: ${{ secrets.FTP_PASSWORD }}
           localDir: .
-          remoteDir: /xampp/htdocs  # ajustar si querés otra carpeta
+          remoteDir: /htdocs/
+          onlyNewer: false
+          include: |
+            proyecto_miet20web.zip
+          exclude: |
+            *
 
-      # 4. Conectarse por SSH para descomprimir y correr npm install
-      - name: Descomprimir y ejecutar npm install
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          port: 22
-          script: |
-            $zipPath = "C:/xampp/htdocs/miet20web.zip"
-            $extractPath = "C:/xampp/htdocs/miet20web"
-
-            if (Test-Path $extractPath) {
-              Remove-Item -Recurse -Force $extractPath
-            }
-
-            Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-
-            cd $extractPath
-            npm install
+      - name: Ejecutar descompresión en el servidor
+        run: |
+          curl http://54.233.210.17/descomprimir.php
