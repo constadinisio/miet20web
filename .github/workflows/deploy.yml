@@ -16,7 +16,7 @@ jobs:
 
       # 2. Comprimir carpeta del proyecto
       - name: Comprimir proyecto
-        run: zip -r proyecto_miet20web.zip miet20web
+        run: zip -r proyecto_miet20web.zip .
 
       # 3. Subir ZIP por FTP
       - name: Subir por FTP al servidor
