@@ -18,7 +18,7 @@ jobs:
           zip -r proyecto_miet20web.zip miet20web
 
       - name: Subir por FTP al servidor
-        uses: sebastianpopp/ftp-action@v2
+        uses: sebastianpopp/ftp-action@v1.1.0
         with:
           host: ${{ secrets.FTP_HOST }}
           user: ${{ secrets.FTP_USER }}
