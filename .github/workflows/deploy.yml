@@ -37,7 +37,7 @@ jobs:
           password: ${{ secrets.FTP_PASS }}
           port: 22
           script: |
-            $zipPath = "C:/xampp/htdocs/proyecto_miet20web.zip"
+            $zipPath = "C:/xampp/htdocs/miet20web.zip"
             $extractPath = "C:/xampp/htdocs/miet20web"
 
             if (Test-Path $extractPath) {
