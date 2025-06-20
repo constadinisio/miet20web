@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['permNoticia'])) 
     exit("Acceso no autorizado");
 }
 
-include '../includes/db.php';
+include "../../includes/db.php";
 
 $imagenNombre = "";
 

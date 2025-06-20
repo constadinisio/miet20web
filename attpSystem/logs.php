@@ -1,11 +1,11 @@
 <?php
-include "includes/conexion.php";
+include "../../includes/db.php";
 
 session_start();
 $fecha_desde = trim($_GET['fecha_desde'] ?? '');
 $fecha_hasta = trim($_GET['fecha_hasta'] ?? '');
 if (!isset($_SESSION['usuario'])) {
-  header("Location: login.php");
+  header("Location: ../login.php");
   exit;
 }
 $u = $_SESSION['usuario'];

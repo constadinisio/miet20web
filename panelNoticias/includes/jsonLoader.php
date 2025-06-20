@@ -1,16 +1,4 @@
 <?php
-
-$host = "localhost";
-$user = "root";
-$password = "";
-$database = "et20plataforma";
-
-$conexion = new mysqli($host, $user, $password, $database);
-
-if ($conexion->connect_error) {
-    die("Error de conexión: " . $conexion->connect_error);
-}
-
 define("JSON_PATH", __DIR__ . '../../data/noticias.json');
 
 function cargarNoticias() {

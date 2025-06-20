@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 5) {
 }
 
 // Incluye el archivo a la conexión a la base de datos.
-include '../includes/conexion.php';
+include "../../includes/db.php";
 
 /* Encargado de borrar una nota del pizarrón a partir de un id recibido por método POST. 
 Responde en formato JSON con un mensaje de éxito o error. */

@@ -1,5 +1,5 @@
 <?php
-include "includes/conexion.php";
+include "../../includes/db.php";
 
 $query = "SELECT id, carrito, numero, numero_serie, fecha_adquisicion, estado, observaciones FROM netbooks ORDER BY carrito, numero";
 $result = $conexion->query($query);
@@ -12,7 +12,7 @@ if (!$result) {
 
 session_start();
 if (!isset($_SESSION['usuario'])) {
-  header("Location: login.php");
+  header("Location: ../login.php");
   exit;
 }
 $u = $_SESSION['usuario'];

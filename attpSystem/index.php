@@ -9,7 +9,7 @@ if (
   (int)$_SESSION['usuario']['rol'] !== 5
 ) {
   // Si no cumple las condiciones, redirige al login con un error de rol
-  header("Location: login.php?error=rol");
+  header("Location: ../login.php?error=rol");
   exit;
 }
 
@@ -17,7 +17,7 @@ if (
 $u = $_SESSION['usuario'];
 
 // Incluye la conexión a la base de datos
-include './includes/conexion.php';
+include "../includes/db.php";
 
 /* ======================== BLOQUES DE CONSULTAS ======================== */
 

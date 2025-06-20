@@ -1,9 +1,9 @@
 <?php
-include "includes/conexion.php";
+include "../../includes/db.php";
 
 session_start();
 if (!isset($_SESSION['usuario'])) {
-  header("Location: login.php");
+  header("Location: ../login.php");
   exit;
 }
 $u = $_SESSION['usuario'];

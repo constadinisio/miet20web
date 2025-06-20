@@ -1,10 +1,3 @@
-<?php 
-// Inicia la sesión del usuario
-session_start();
-
-$error = trim($_GET['error'] ?? ''); 
-?>
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -12,8 +5,8 @@ $error = trim($_GET['error'] ?? '');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi ET20</title>
-    <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
-    <link rel="stylesheet" href="../output.css" />
+    <link rel="icon" type="image/x-icon" href="./images/et20png.png">
+    <link rel="stylesheet" href="./output.css" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
@@ -32,9 +25,9 @@ $error = trim($_GET['error'] ?? '');
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-center items-center h-16">
                 <div class="flex items-center">
-                    <a href="index.html" class="flex items-center">
+                    <a href="./index.html" class="flex items-center">
                         <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
-                        <h1><img src="../images/et20ico.ico" alt="Icono personalizado" class="w-10 h-10"></h1>
+                        <h1><img src="./images/et20ico.ico" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
                     </a>
                 </div>
@@ -53,13 +46,14 @@ $error = trim($_GET['error'] ?? '');
         <!-- Panel Login -->
         <div class="relative z-10 flex items-center justify-center h-full">
             <div class="bg-gray-800 text-white rounded-xl shadow-lg w-full max-w-md p-8 space-y-6">
-                <h2 class="text-2xl font-bold text-center">Inicio de Sesión - Sistema ATTP</h2>
+                <h2 class="text-2xl font-bold text-center">Inicio de Sesión <br>Sistema Unificado</h2>
+
                 <?php
                 $error = trim($_GET['error'] ?? '');
 
                 if ($error === 'perm'): ?>
                     <p class="text-red-600 bg-red-100 p-2 rounded mb-4 text-center">
-                        No tenés permiso para acceder al panel de noticias.
+                        No tenés permisos para acceder a ningún panel.
                     </p>
                 <?php elseif ($error == 1): ?>
                     <p class="text-red-600 bg-red-100 p-2 rounded mb-4 text-center">
@@ -67,11 +61,11 @@ $error = trim($_GET['error'] ?? '');
                     </p>
                 <?php endif; ?>
 
-                <form action="./actions/validar_login.php" method="POST" class="space-y-4">
+                <form action="./includes/validar_login.php" method="POST" class="space-y-4">
                     <div>
-                        <label for="email" class="block text-sm font-medium">Tu Email</label>
-                        <input type="email" name="mail" placeholder="Email"
-                            class="mt-1 w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label for="email" class="block text-sm font-medium">Email</label>
+                        <input type="email" name="mail" id="usuario"
+                            class="mt-1 w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     </div>
 
                     <div>

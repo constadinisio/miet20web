@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 5) {
 }
 
 // Incluye el archivo a la conexión a la base de datos.
-include '../includes/conexion.php';
+include "../../includes/db.php";
 
 // Guarda un nuevo mensaje en la tabla pizarron cuando se recibe una solicitud POST con el contenido del mensaje y lo asocia al usuario actual de la sesión. 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

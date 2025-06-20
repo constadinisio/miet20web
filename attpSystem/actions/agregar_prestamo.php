@@ -17,7 +17,7 @@ if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] != 5) {
 }
 
 // Incluye el archivo a la conexión a la base de datos.
-include "../includes/conexion.php";
+include "../../includes/db.php";
 
 // Crea una variable con una consulta SQL para ingresar los datos capturados en el formulario.
 $sql = "INSERT INTO prestamos (Netbook_ID, Fecha_Prestamo, Hora_Prestamo, Curso, Alumno, Tutor)

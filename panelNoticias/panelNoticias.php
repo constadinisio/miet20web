@@ -8,7 +8,8 @@ if (!isset($_SESSION['usuario'])) {
 
 $usuario = $_SESSION['usuario'];
 
-include './includes/db.php';
+include "../includes/db.php";
+include "./includes/jsonLoader.php";
 
 $noticias = cargarNoticias();
 $noticias = array_reverse($noticias);
@@ -38,7 +39,7 @@ $noticias = array_reverse($noticias);
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-center items-center h-16">
                 <div class="flex items-center">
-                    <a href="index.html" class="flex items-center">
+                    <a href="../index.html" class="flex items-center">
                         <h1><img src="../images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
                     </a>

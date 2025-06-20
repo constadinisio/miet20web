@@ -7,7 +7,7 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['permNoticia'])) 
 }
 
 $id = trim($_GET['id'] ?? '');
-include '../includes/db.php';
+include "../../includes/db.php";
 
 $noticias = cargarNoticias();
 $noticia = null;
