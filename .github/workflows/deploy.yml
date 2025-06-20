@@ -19,11 +19,13 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./miet20web
-          server-dir: /htdocs/miet20/  # Ajustá esto según tu carpeta en el server
-          exclude:
-            - node_modules/**
-            - .git/**
-            - .github/**
-            - '**/.DS_Store'
-            - '**/Thumbs.db'
+          local-dir: ./
+          server-dir: /xampp/htdocs/miet20/  # Ajustá esto según tu carpeta en el server
+          forceSsl: true
+          exclude: |
+            node_modules/**
+            .git/**
+            .github/**
+            **/.DS_Store
+            **/Thumbs.db
+
