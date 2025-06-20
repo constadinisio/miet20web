@@ -107,7 +107,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <!-- Botón hamburguesa -->
       <div class="mb-4">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
-          ☰ Menú
+          ☰
         </button>
       </div>
       <h1 class="text-3xl font-bold mb-6">Panel Principal</h1>

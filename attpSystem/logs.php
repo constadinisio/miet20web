@@ -1,5 +1,5 @@
 <?php
-include "../../includes/db.php";
+include "../includes/db.php";
 
 session_start();
 $fecha_desde = trim($_GET['fecha_desde'] ?? '');
@@ -63,7 +63,7 @@ $u = $_SESSION['usuario'];
       <!-- Botón hamburguesa -->
       <div class="mb-4">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
-          ☰ Menú
+          ☰
         </button>
       </div>
 

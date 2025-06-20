@@ -1,5 +1,5 @@
 <?php
-include "../../includes/db.php";
+include "../includes/db.php";
 
 $query = "SELECT id, carrito, numero, numero_serie, fecha_adquisicion, estado, observaciones FROM netbooks ORDER BY carrito, numero";
 $result = $conexion->query($query);
@@ -101,7 +101,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <!-- Botón hamburguesa -->
       <div class="mb-4">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
-          ☰ Menú
+          ☰
         </button>
       </div>
 
