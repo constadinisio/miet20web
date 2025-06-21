@@ -60,6 +60,11 @@
                         Usuario o contraseña incorrectos.
                     </p>
                 <?php endif; ?>
+                <?php if (isset($_GET['error']) && $_GET['error'] === 'correo'): ?>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
+                        Este correo no está autorizado para ingresar.
+                    </div>
+                <?php endif; ?>
 
                 <form action="./includes/validar_login.php" method="POST" class="space-y-4">
                     <div>
@@ -77,6 +82,11 @@
                     <button type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition">
                         Iniciar Sesión
+                    </button>
+                    <button type="button" onclick="window.location.href='./login_google.php'"
+                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 rounded-md transition flex items-center justify-center gap-2">
+                        <img src="./images/google_icon.svg" alt="Google" class="w-4 h-4" />
+                        Iniciar Sesión con Google
                     </button>
                 </form>
             </div>
