@@ -55,7 +55,7 @@ $noticias = array_reverse($noticias);
         <div class="max-w-3xl mx-auto relative bg-white p-6 rounded shadow-md m-8">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold">Panel de Noticias</h2>
-                <a href="./actions/logout.php" class="bg-red-600 text-white px-4 py-2 rounded transition-colors hover:bg-red-700">Cerrar sesión</a>
+                <a href="../includes/logout.php" class="bg-red-600 text-white px-4 py-2 rounded transition-colors hover:bg-red-700">Cerrar sesión</a>
             </div>
 
             <!-- Formulario -->

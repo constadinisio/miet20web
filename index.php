@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi ET20 - Página Principal</title>
     <link rel="icon" type="image/x-icon" href="images/et20png.png">
-    <link rel="stylesheet" href="output.css" />
+    <link href="output.css?v=<?= time() ?>" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
@@ -22,7 +22,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
-                    <a href="index.html" class="flex items-center">
+                    <a href="index.php" class="flex items-center">
                         <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
                             <h1><img src="./images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
@@ -31,10 +31,11 @@
                 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="index.html" class="text-azulInstitucional px-3 py-2 rounded-md font-medium">Página Principal</a>
-                    <a href="descargas.html" class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                    <a href="noticias.html" class="text-gray-600 hover:text-verdeEsperanza px-3 py-2 rounded-md font-medium transition duration-300">Noticias</a>
-                    <a href="contactos.html" class="text-gray-600 hover:text-amarilloEnergia px-3 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+                    <a href="index.php" class="text-azulInstitucional px-3 py-2 rounded-md font-medium">Página Principal</a>
+                    <a href="descargas.php" class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
+                    <a href="noticias.php" class="text-gray-600 hover:text-verdeEsperanza px-3 py-2 rounded-md font-medium transition duration-300">Noticias</a>
+                    <a href="galeria_home.php" class="text-gray-600 hover:text-amarilloEnergia px-3 py-2 rounded-md font-medium transition duration-300">Galeria</a>
+                    <a href="contactos.php" class="text-gray-600 hover:text-rosaMagico px-3 py-2 rounded-md font-medium transition duration-300">Contactos</a>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -47,10 +48,11 @@
 
             <!-- Mobile Menu -->
             <div class="mobile-menu hidden md:hidden pb-4">
-                <a href="index.html" class="block text-azulInstitucional px-4 py-2 rounded-md font-medium">Página Principal</a>
-                <a href="descargas.html" class="block text-gray-600 hover:text-rojoDestacado px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                <a href="noticias.html" class="block text-gray-600 hover:text-verdeEsperanza px-4 py-2 rounded-md font-medium transition duration-300">Noticias</a>
-                <a href="contactos.html" class="block text-gray-600 hover:text-amarilloEnergia px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+                <a href="index.php" class="block text-azulInstitucional px-4 py-2 rounded-md font-medium">Página Principal</a>
+                <a href="descargas.php" class="block text-gray-600 hover:text-rojoDestacado px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
+                <a href="noticias.php" class="block text-gray-600 hover:text-verdeEsperanza px-4 py-2 rounded-md font-medium transition duration-300">Noticias</a>
+                <a href="galeria_home.php" class="text-gray-600 hover:text-amarilloEnergia px-4 py-2 rounded-md font-medium transition duration-300">Galeria</a>
+                <a href="contactos.php" class="text-gray-600 hover:text-rosaMagico px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
             </div>
         </div>
     </nav>
