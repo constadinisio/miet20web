@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: /xampp/htdocs/miet20/  # Ajustá esto según tu carpeta en el server
+          server-dir: /xampp/htdocs/miet20web/  # Ajustá esto según tu carpeta en el server
           forceSsl: true
           exclude: |
             node_modules/**
