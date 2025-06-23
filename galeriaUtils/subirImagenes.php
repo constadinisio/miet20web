@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Subir Imagen</title>
-    
+    <link rel="stylesheet" href="../output.css">
 </head>
 
 <body class="bg-gray-100 text-black">

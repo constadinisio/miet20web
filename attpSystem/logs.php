@@ -17,7 +17,7 @@ $u = $_SESSION['usuario'];
 <head>
   <meta charset="UTF-8" />
   <title>Logs de Préstamos</title>
-  
+  <link rel="stylesheet" href="../output.css">
   <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
 </head>
 

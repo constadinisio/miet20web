@@ -1,5 +1,10 @@
 module.exports = {
-  content: ["./*.php", "./**/*.php", "./*.html", "./**/*.html"],
+  content: [
+    "./*.php",
+    "./**/*.php",
+    "./*.html",
+    "./**/*.html",
+  ],
   theme: {
     extend: {
       backgroundImage: {
