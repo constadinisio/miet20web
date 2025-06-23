@@ -6,7 +6,6 @@
     <title>Mi ET20 - Contacto</title>
     <link rel="icon" type="image/x-icon" href="images/et20png.png">
     <link href="output.css?v=<?= time() ?>" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->

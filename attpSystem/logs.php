@@ -17,7 +17,7 @@ $u = $_SESSION['usuario'];
 <head>
   <meta charset="UTF-8" />
   <title>Logs de Préstamos</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  
   <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
 </head>
 

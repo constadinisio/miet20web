@@ -21,7 +21,7 @@ $noticias = array_reverse($noticias);
     <meta charset="UTF-8">
     <title>Panel Noticias</title>
     <link rel="stylesheet" href="../output.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <!-- Google Fonts -->

@@ -26,7 +26,7 @@ $total_paginas = ceil($total / $por_pagina);
 <head>
     <meta charset="UTF-8">
     <title>Galería - <?= htmlspecialchars($categoria) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="stylesheet" href="output.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
     <style>

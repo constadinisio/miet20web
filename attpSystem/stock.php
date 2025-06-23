@@ -55,7 +55,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 <head>
   <meta charset="UTF-8">
   <title>Gestión de Netbooks</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  
   <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
 </head>
 

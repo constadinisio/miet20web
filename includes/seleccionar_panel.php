@@ -43,7 +43,7 @@ $apellido = htmlspecialchars($usuario['apellido'] ?? '');
     <meta charset="UTF-8">
     <title>Seleccionar Panel</title>
     <link rel="stylesheet" href="../output.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">

@@ -19,7 +19,7 @@
     </script>
 
     <!-- CDN de Tailwind (lo cargás después de definir window.tailwind) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    
 
     <!-- Tu archivo local compilado con @tailwindcss/typography -->
     <link href="output.css?v=<?= time() ?>" rel="stylesheet">
