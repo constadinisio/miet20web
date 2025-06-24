@@ -13,6 +13,7 @@ $u = $_SESSION['usuario'];
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Préstamos</title>
   <link rel="stylesheet" href="../output.css">
   <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
@@ -20,17 +21,15 @@ $u = $_SESSION['usuario'];
 
 <body class="bg-gray-100 font-sans">
 
-  <div class="flex min-h-screen">
+  <div class="flex flex-col md:flex-row min-h-screen">
     <!-- Sidebar -->
-    <div id="sidebar" class="absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full transition-transform duration-300">
+    <div id="sidebar" class="md:relative absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
         <div class="text-lg font-bold">Menú</div>
-        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400">
+        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400 md:hidden">
           &times;
         </button>
       </div>
-
-      <!-- Resto del contenido del sidebar acá -->
 
       <!-- Perfil del usuario -->
       <div class="p-6 text-center border-b border-blue-700">
@@ -57,9 +56,9 @@ $u = $_SESSION['usuario'];
     </div>
 
     <!-- Contenido -->
-    <main id="mainContent" class="w-full p-8 transition-all duration-300">
+    <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
       <!-- Botón hamburguesa -->
-      <div class="mb-4">
+      <div class="mb-4 md:hidden">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
           ☰
         </button>
@@ -68,7 +67,7 @@ $u = $_SESSION['usuario'];
       <h1 class="text-3xl font-bold mb-6">Gestión de Préstamos</h1>
 
       <!-- Formulario para agregar préstamo -->
-      <form action="actions/agregar_prestamo.php" method="POST" class="bg-white p-4 rounded shadow mb-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+      <form action="actions/agregar_prestamo.php" method="POST" class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <input name="Netbook_ID" required placeholder="Netbook ID (ej: A1)" class="border p-2 rounded">
         <input name="Alumno" required placeholder="Alumno" class="border p-2 rounded">
         <input name="Curso" required placeholder="Curso (ej: 3°4°)" class="border p-2 rounded">
@@ -80,7 +79,7 @@ $u = $_SESSION['usuario'];
 
       <!-- Tabla de préstamos -->
       <div class="overflow-x-auto">
-        <table class="min-w-full bg-white shadow rounded-lg">
+        <table class="min-w-full bg-white shadow rounded-lg text-sm">
           <thead class="bg-blue-800 text-white">
             <tr>
               <th class="py-2 px-4 text-left">ID</th>
@@ -99,14 +98,14 @@ $u = $_SESSION['usuario'];
             while ($row = $result->fetch_assoc()):
             ?>
               <tr>
-                <td class="py-2 px-4"><?= $row['Prestamo_ID'] ?></td>
-                <td class="py-2 px-4"><?= $row['Netbook_ID'] ?></td>
-                <td class="py-2 px-4"><?= $row['Alumno'] ?></td>
-                <td class="py-2 px-4"><?= $row['Curso'] ?></td>
-                <td class="py-2 px-4"><?= $row['Fecha_Prestamo'] ?></td>
-                <td class="py-2 px-4"><?= $row['Hora_Prestamo'] ?></td>
-                <td class="py-2 px-4"><?= $row['Tutor'] ?></td>
-                <td class="py-2 px-4 space-x-2">
+                <td class="py-2 px-4 text-center"><?= $row['Prestamo_ID'] ?></td>
+                <td class="py-2 px-4 text-center"><?= $row['Netbook_ID'] ?></td>
+                <td class="py-2 px-4 text-center"><?= $row['Alumno'] ?></td>
+                <td class="py-2 px-4 text-center"><?= $row['Curso'] ?></td>
+                <td class="py-2 px-4 text-center"><?= $row['Fecha_Prestamo'] ?></td>
+                <td class="py-2 px-4 text-center"><?= $row['Hora_Prestamo'] ?></td>
+                <td class="py-2 px-4 text-center"><?= $row['Tutor'] ?></td>
+                <td class="py-2 px-4 text-center space-y-1 md:space-x-2 md:space-y-0 flex flex-col md:flex-row justify-center">
                   <a href="actions/devolver_prestamo.php?id=<?= $row['Prestamo_ID'] ?>" class="bg-green-600 text-white px-2 py-1 rounded text-sm">Devolver</a>
                   <a href="actions/eliminar_prestamo.php?id=<?= $row['Prestamo_ID'] ?>" onclick="return confirm('¿Eliminar préstamo?')" class="bg-red-600 text-white px-2 py-1 rounded text-sm">Eliminar</a>
                 </td>

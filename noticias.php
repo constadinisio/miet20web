@@ -38,7 +38,7 @@
 </head>
 
 <body class="bg-gray-50">
-    <!-- Navbar (same as index.html) -->
+    <!-- Navbar -->
     <nav class="bg-white shadow-lg fixed w-full z-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
@@ -52,13 +52,9 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="index.php"
-                        class="text-gray-600 hover:text-azulInstitucional px-3 py-2 rounded-md font-medium transition duration-300">Página
-                        Principal</a>
-                    <a href="descargas.php"
-                        class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                    <a href="noticias.php"
-                        class="text-verdeEsperanza px-3 py-2 rounded-md font-medium">Noticias</a>
+                    <a href="index.php" class="text-gray-600 hover:text-azulInstitucional px-3 py-2 rounded-md font-medium">Página Principal</a>
+                    <a href="descargas.php" class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
+                    <a href="noticias.php" class="text-verdeEsperanza px-3 py-2 rounded-md font-medium transition duration-300">Noticias</a>
                     <a href="galeria_home.php" class="text-gray-600 hover:text-amarilloEnergia px-3 py-2 rounded-md font-medium transition duration-300">Galeria</a>
                     <a href="contactos.php" class="text-gray-600 hover:text-rosaMagico px-3 py-2 rounded-md font-medium transition duration-300">Contactos</a>
                 </div>
@@ -72,16 +68,12 @@
             </div>
 
             <!-- Mobile Menu -->
-            <div class="mobile-menu hidden md:hidden pb-4">
-                <a href="index.php"
-                    class="block text-gray-600 hover:text-blue-600 px-4 py-2 rounded-md font-medium transition duration-300">Página
-                    Principal</a>
-                <a href="descargas.php"
-                    class="block text-gray-600 hover:text-blue-600 px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                <a href="noticias.php"
-                    class="block text-verdeEsperanza font-bold px-4 py-2 rounded-md font-medium">Noticias</a>
-                <a href="contactos.php"
-                    class="block text-gray-600 hover:text-blue-600 px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+            <div id="mobile-menu" class="mobile-menu hidden md:hidden pb-4 flex flex-col space-y-1 transition-all duration-300 transform opacity-0 scale-95">
+                <a href="index.php" class="block text-gray-600 hover:text-azulInstitucional px-4 py-2 rounded-md font-medium">Página Principal</a>
+                <a href="descargas.php" class="block text-gray-600 hover:text-rojoDestacado px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
+                <a href="noticias.php" class="block text-verdeEsperanza px-4 py-2 rounded-md font-medium transition duration-300">Noticias</a>
+                <a href="galeria_home.php" class="block text-gray-600 hover:text-amarilloEnergia px-4 py-2 rounded-md font-medium transition duration-300">Galeria</a>
+                <a href="contactos.php" class="block text-gray-600 hover:text-rosaMagico px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
             </div>
         </div>
     </nav>

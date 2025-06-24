@@ -17,7 +17,6 @@ if (!isset($_SESSION['usuario'])) {
 }
 $u = $_SESSION['usuario'];
 
-// 1. Computadoras disponibles (estado 'En uso' y no prestadas ahora)
 $sql_disponibles = "
   SELECT COUNT(*) AS cantidad
   FROM netbooks n
@@ -31,7 +30,6 @@ $sql_disponibles = "
 $res_disponibles = $conexion->query($sql_disponibles);
 $disponibles = $res_disponibles->fetch_assoc()['cantidad'] ?? 0;
 
-// 2. Computadoras no disponibles (estado 'Hurto' o 'Obsoleta')
 $sql_no_disponibles = "
   SELECT COUNT(*) AS cantidad 
   FROM netbooks
@@ -40,7 +38,6 @@ $sql_no_disponibles = "
 $res_no_disp = $conexion->query($sql_no_disponibles);
 $no_disponibles = $res_no_disp->fetch_assoc()['cantidad'] ?? 0;
 
-// 3. Préstamos en curso (sin devolución registrada)
 $sql_prestamos_curso = "
   SELECT COUNT(*) AS cantidad
   FROM prestamos
@@ -54,32 +51,26 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Netbooks</title>
   <link rel="stylesheet" href="../output.css">
   <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
 </head>
 
 <body class="bg-gray-100 font-sans">
-  <div class="relative min-h-screen flex">
-    <!-- Sidebar -->
-    <div id="sidebar" class="absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full transition-transform duration-300">
+  <div class="relative min-h-screen flex flex-col md:flex-row">
+    <div id="sidebar" class="md:relative absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
         <div class="text-lg font-bold">Menú</div>
-        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400">
+        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400 md:hidden">
           &times;
         </button>
       </div>
-
-      <!-- Resto del contenido del sidebar acá -->
-
-      <!-- Perfil del usuario -->
       <div class="p-6 text-center border-b border-blue-700">
         <img src="../images/blank-profile.png" alt="Foto" class="w-20 h-20 no-repeat rounded-full mx-auto mb-2 object-cover border-2 border-white">
         <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
         <p class="text-sm text-blue-200">ATTP</p>
       </div>
-
-      <!-- Menú -->
       <div class="p-6 text-2xl font-bold text-center">ET20 Netbooks</div>
       <nav class="p-4 space-y-2">
         <a href="index.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Página Principal</a>
@@ -96,10 +87,8 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       </div>
     </div>
 
-    <!-- Contenido -->
-    <main id="mainContent" class="w-full p-8 transition-all duration-300">
-      <!-- Botón hamburguesa -->
-      <div class="mb-4">
+    <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
+      <div class="mb-4 md:hidden">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
           ☰
         </button>
@@ -107,28 +96,21 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
       <h1 class="text-3xl font-bold mb-6">Gestión de Netbooks</h1>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-
-        <!-- Computadoras disponibles -->
         <div class="bg-white rounded shadow p-6">
           <h2 class="text-xl font-semibold mb-2">Computadoras disponibles</h2>
           <p class="text-5xl font-bold text-green-600"><?= $disponibles ?></p>
         </div>
-
-        <!-- Computadoras no disponibles -->
         <div class="bg-white rounded shadow p-6">
           <h2 class="text-xl font-semibold mb-2">Computadoras no disponibles</h2>
           <p class="text-5xl font-bold text-red-600"><?= $no_disponibles ?></p>
         </div>
-
-        <!-- Préstamos en curso -->
         <div class="bg-white rounded shadow p-6">
           <h2 class="text-xl font-semibold mb-2">Préstamos en curso</h2>
           <p class="text-5xl font-bold text-yellow-600"><?= $prestamos_curso ?></p>
         </div>
       </div>
 
-      <!-- Formulario para agregar -->
-      <form action="actions/agregar_netbook.php" method="POST" class="bg-white p-4 rounded shadow mb-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+      <form action="actions/agregar_netbook.php" method="POST" class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <input name="carrito" required placeholder="Carrito (A-Z)" class="border p-2 rounded">
         <input name="numero" required placeholder="Número (01-30)" class="border p-2 rounded">
         <input name="numero_serie" required placeholder="Número de Serie" class="border p-2 rounded">
@@ -143,28 +125,21 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Añadir Netbook</button>
       </form>
 
-      <!-- Tabla -->
-      <!-- Buscador -->
       <div class="mb-4">
-        <input
-          id="searchInput"
-          type="text"
-          placeholder="Buscar netbook por carrito, número, serie, estado..."
-          class="w-full p-2 border rounded"
-          onkeyup="filtrarTabla()" />
+        <input id="searchInput" type="text" placeholder="Buscar netbook por carrito, número, serie, estado..." class="w-full p-2 border rounded" onkeyup="filtrarTabla()" />
       </div>
 
-      <!-- Contenedor con scroll -->
-      <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-radius: 0.375rem;">
-        <table class="min-w-full bg-white shadow rounded table-fixed">
+      <div class="overflow-x-auto w-full">
+        <table class="min-w-full bg-white shadow rounded text-sm">
           <thead class="sticky top-0 bg-gray-50 z-10">
             <tr>
-              <th class="py-2 px-4 border-b w-1/12">Carrito</th>
-              <th class="py-2 px-4 border-b w-1/12">Número</th>
-              <th class="py-2 px-4 border-b w-3/12">Número de Serie</th>
-              <th class="py-2 px-4 border-b w-2/12">Fecha Adquisición</th>
-              <th class="py-2 px-4 border-b w-2/12">Estado</th>
-              <th class="py-2 px-4 border-b w-3/12">Observaciones</th>
+              <th class="py-2 px-4 border-b">Carrito</th>
+              <th class="py-2 px-4 border-b">Número</th>
+              <th class="py-2 px-4 border-b">Número de Serie</th>
+              <th class="py-2 px-4 border-b">Fecha Adquisición</th>
+              <th class="py-2 px-4 border-b">Estado</th>
+              <th class="py-2 px-4 border-b">Observaciones</th>
+              <th class="py-2 px-4 border-b">Acción</th>
             </tr>
           </thead>
           <tbody id="tablaNetbooks">
@@ -184,15 +159,15 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
                   </select>
                 </td>
                 <td class="py-2 px-4">
-                <form action="actions/editar_observacion.php" method="POST" class="flex">
-                  <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                  <input name="observaciones" value="<?= htmlspecialchars($row['observaciones']) ?>" class="border p-1 rounded w-full text-sm">
-                  <button class="ml-2 px-2 bg-yellow-500 text-white text-sm rounded">💾</button>
-                </form>
-              </td>
-              <td class="py-2 px-4">
-                <a href="actions/eliminar_netbook.php?id=<?= $row['id'] ?>" onclick="return confirm('¿Eliminar esta netbook?')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm">Eliminar</a>
-              </td>
+                  <form action="actions/editar_observacion.php" method="POST" class="flex">
+                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                    <input name="observaciones" value="<?= htmlspecialchars($row['observaciones']) ?>" class="border p-1 rounded w-full text-sm">
+                    <button class="ml-2 px-2 bg-yellow-500 text-white text-sm rounded">💾</button>
+                  </form>
+                </td>
+                <td class="py-2 px-4">
+                  <a href="actions/eliminar_netbook.php?id=<?= $row['id'] ?>" onclick="return confirm('¿Eliminar esta netbook?')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm">Eliminar</a>
+                </td>
               </tr>
             <?php endwhile; ?>
           </tbody>
@@ -215,19 +190,12 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
               textoFila += celdas[j].textContent.toLowerCase() + " ";
             }
 
-            if (textoFila.indexOf(filter) > -1) {
-              fila.style.display = "";
-            } else {
-              fila.style.display = "none";
-            }
+            fila.style.display = textoFila.indexOf(filter) > -1 ? "" : "none";
           }
         }
-      </script>
 
-      <script>
         function actualizarEstado(selectElement, id) {
           const nuevoEstado = selectElement.value;
-
           fetch('./actions/update_estado.php', {
               method: 'POST',
               headers: {
@@ -246,29 +214,27 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
             });
         }
       </script>
-
-      
     </main>
   </div>
   <script>
-  const sidebar = document.getElementById("sidebar");
-  const toggleSidebar = document.getElementById("toggleSidebar");
-  const closeSidebar = document.getElementById("closeSidebar");
-  const mainContent = document.getElementById("mainContent");
+    const sidebar = document.getElementById("sidebar");
+    const toggleSidebar = document.getElementById("toggleSidebar");
+    const closeSidebar = document.getElementById("closeSidebar");
+    const mainContent = document.getElementById("mainContent");
 
-  function toggleSidebarVisible() {
-    const visible = !sidebar.classList.contains("-translate-x-full");
-    if (visible) {
-      sidebar.classList.add("-translate-x-full");
-      mainContent.classList.remove("ml-64");
-    } else {
-      sidebar.classList.remove("-translate-x-full");
-      mainContent.classList.add("ml-64");
+    function toggleSidebarVisible() {
+      const visible = !sidebar.classList.contains("-translate-x-full");
+      if (visible) {
+        sidebar.classList.add("-translate-x-full");
+        mainContent.classList.remove("ml-64");
+      } else {
+        sidebar.classList.remove("-translate-x-full");
+        mainContent.classList.add("ml-64");
+      }
     }
-  }
 
-  toggleSidebar.addEventListener("click", toggleSidebarVisible);
-  closeSidebar.addEventListener("click", toggleSidebarVisible);
+    toggleSidebar.addEventListener("click", toggleSidebarVisible);
+    closeSidebar.addEventListener("click", toggleSidebarVisible);
   </script>
 </body>
 

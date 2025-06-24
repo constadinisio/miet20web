@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <!-- Navbar -->
     <nav class="bg-white shadow-lg fixed w-full z-50">
@@ -24,11 +26,11 @@
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center">
                         <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
-                            <h1><img src="./images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
+                        <h1><img src="./images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
                     </a>
                 </div>
-                
+
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-4">
                     <a href="index.php" class="text-azulInstitucional px-3 py-2 rounded-md font-medium">Página Principal</a>
@@ -47,7 +49,7 @@
             </div>
 
             <!-- Mobile Menu -->
-            <div class="mobile-menu hidden md:hidden pb-4">
+            <div id="mobile-menu" class="mobile-menu hidden md:hidden pb-4 flex flex-col space-y-1 transition-all duration-300 transform opacity-0 scale-95">
                 <a href="index.php" class="block text-azulInstitucional px-4 py-2 rounded-md font-medium">Página Principal</a>
                 <a href="descargas.php" class="block text-gray-600 hover:text-rojoDestacado px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
                 <a href="noticias.php" class="block text-gray-600 hover:text-verdeEsperanza px-4 py-2 rounded-md font-medium transition duration-300">Noticias</a>
@@ -61,24 +63,24 @@
     <section class="relative h-screen w-full pt-16 text-white overflow-hidden">
         <!-- Imagen con blur -->
         <div class="absolute inset-0 bg-front-et20 bg-no-repeat bg-cover bg-center filter blur-sm scale-105"></div>
-      
+
         <!-- Overlay opcional (oscurece un poco para mejorar legibilidad) -->
         <div class="absolute inset-0 bg-black/30"></div>
-      
+
         <!-- Contenido -->
         <div class="relative z-10 max-w-7xl mx-auto px-4 py-20 md:py-32">
-          <div class="text-center">
-            <h2 class="text-4xl md:text-6xl font-bold mb-6">
-              Bienvenidos a la <br />
-              Escuela Técnica 20 D.E. 20<br />
-              "Carolina Muzilli"
-            </h2>
-            <p class="text-xl md:text-2xl mb-8">
-              Formando líderes del mañana con excelencia académica y valores
-            </p>
-          </div>
+            <div class="text-center">
+                <h2 class="text-4xl md:text-6xl font-bold mb-6">
+                    Bienvenidos a la <br />
+                    Escuela Técnica 20 D.E. 20<br />
+                    "Carolina Muzilli"
+                </h2>
+                <p class="text-xl md:text-2xl mb-8">
+                    Formando líderes del mañana con excelencia académica y valores
+                </p>
+            </div>
         </div>
-      </section>      
+    </section>
 
     <!-- Presentación del Colegio -->
     <section class="py-16 bg-white">
@@ -91,8 +93,8 @@
                 <div>
                     <h3 class="text-2xl font-semibold mb-4">Excelencia Educativa</h3>
                     <p class="text-gray-600 mb-6">
-                        Con más de 25 años de experiencia, nuestro colegio se ha destacado por brindar una educación integral, 
-                        combinando excelencia académica con formación en valores. Nuestro compromiso es preparar a los estudiantes 
+                        Con más de 25 años de experiencia, nuestro colegio se ha destacado por brindar una educación integral,
+                        combinando excelencia académica con formación en valores. Nuestro compromiso es preparar a los estudiantes
                         para los desafíos del futuro, fomentando el pensamiento crítico y la innovación.
                     </p>
                     <div class="grid grid-cols-2 gap-4">
@@ -200,12 +202,33 @@
 
     <!-- JavaScript for Mobile Menu -->
     <script>
-        const mobileMenuButton = document.querySelector('.mobile-menu-button');
-        const mobileMenu = document.querySelector('.mobile-menu');
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.querySelector('.mobile-menu-button');
+            const menu = document.getElementById('mobile-menu');
 
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
+            btn.addEventListener('click', () => {
+                const isHidden = menu.classList.contains('hidden');
+
+                if (isHidden) {
+                    // Mostrar con animación
+                    menu.classList.remove('hidden');
+                    // Necesario para que transition corra después del reflow
+                    requestAnimationFrame(() => {
+                        menu.classList.remove('opacity-0', 'scale-95');
+                        menu.classList.add('opacity-100', 'scale-100');
+                    });
+                } else {
+                    // Ocultar con animación
+                    menu.classList.remove('opacity-100', 'scale-100');
+                    menu.classList.add('opacity-0', 'scale-95');
+                    // Después del tiempo de transición, ocultar completamente
+                    setTimeout(() => {
+                        menu.classList.add('hidden');
+                    }, 300);
+                }
+            });
         });
     </script>
 </body>
+
 </html>

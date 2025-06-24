@@ -8,6 +8,7 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['permNoticia'])) 
 
 $id = trim($_GET['id'] ?? '');
 include "../../includes/db.php";
+include "../includes/jsonLoader.php";
 
 $noticias = cargarNoticias();
 $noticia = null;
@@ -30,7 +31,7 @@ if (!$noticia) {
     <title>Editar Noticia</title>
     <link rel="stylesheet" href='../../output.css'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
 
     <!-- Quill -->
@@ -46,7 +47,7 @@ if (!$noticia) {
 <body class="bg-gray-100 min-h-screen p-8 bg-front-et20 bg-no-repeat bg-cover">
     <div class="max-w-xl mx-auto bg-white p-6 rounded shadow-md">
         <h2 class="text-xl font-bold mb-4">Editar Noticia</h2>
-        <form action="../actions/guardarEdicion.php" method="POST" class="space-y-4">
+        <form action="guardarEdicion.php" method="POST" class="space-y-4">
             <input type="hidden" name="id" value="<?= $id ?>">
 
             <label class="block font-semibold">Título:</label>
@@ -57,7 +58,9 @@ if (!$noticia) {
             <div id="editor" class="bg-white border px-3 py-2 rounded" style="min-height: 200px;"></div>
             <input type="hidden" name="contenido" id="contenido">
 
+            <div class="text-center">
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Guardar cambios</button>
+            </div>
         </form>
     </div>
 

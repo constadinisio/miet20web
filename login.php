@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi ET20</title>
+    <title>Mi ET20 - Sistema Login</title>
     <link rel="icon" type="image/x-icon" href="./images/et20png.png">
     <link rel="stylesheet" href="./output.css" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -44,7 +44,7 @@
         <div class="absolute inset-0 bg-black/30"></div>
 
         <!-- Panel Login -->
-        <div class="relative z-10 flex items-center justify-center h-full">
+        <div class="relative z-10 flex items-center justify-center h-full py-4 px-4">
             <div class="bg-gray-800 text-white rounded-xl shadow-lg w-full max-w-md p-8 space-y-6">
                 <h2 class="text-2xl font-bold text-center">Inicio de Sesión <br>Sistema Unificado</h2>
 
@@ -101,16 +101,6 @@
             </div>
         </div>
     </footer>
-
-    <!-- JavaScript for Mobile Menu -->
-    <script>
-        const mobileMenuButton = document.querySelector('.mobile-menu-button');
-        const mobileMenu = document.querySelector('.mobile-menu');
-
-        mobileMenuButton?.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-    </script>
 </body>
 
 </html>

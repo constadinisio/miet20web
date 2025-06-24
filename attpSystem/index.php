@@ -60,22 +60,21 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 <head>
   <meta charset="UTF-8" />
   <title>Panel Principal - Plataforma Netbooks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="../output.css">
   <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
 </head>
 
 <body class="bg-gray-100 font-sans">
-  <div class="relative min-h-screen flex">
+  <div class="relative min-h-screen flex flex-col md:flex-row">
     <!-- Sidebar -->
-    <div id="sidebar" class="absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full transition-transform duration-300">
+    <div id="sidebar" class="md:relative absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
         <div class="text-lg font-bold">Menú</div>
-        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400">
+        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400 md:hidden">
           &times;
         </button>
       </div>
-
-      <!-- Resto del contenido del sidebar acá -->
 
       <!-- Perfil del usuario -->
       <div class="p-6 text-center border-b border-blue-700">
@@ -101,11 +100,10 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       </div>
     </div>
 
-
     <!-- Contenido principal -->
-    <main id="mainContent" class="w-full p-8 transition-all duration-300">
+    <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
       <!-- Botón hamburguesa -->
-      <div class="mb-4">
+      <div class="mb-4 md:hidden">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
           ☰
         </button>
@@ -133,6 +131,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       </section>
     </main>
   </div>
+
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const lista = document.getElementById("listaNotas");
@@ -147,16 +146,16 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
               const card = document.createElement("div");
               card.className = "p-4 border rounded bg-gray-50 shadow";
               card.innerHTML = `
-            <div class="flex justify-between items-start">
-            <p class="text-gray-800 mr-2">${nota.mensaje}</p>
-            <button data-id="${nota.id}" class="text-red-500 hover:text-red-700 text-xl leading-none" title="Borrar nota">
-              &times;
-            </button>
-          </div>
-          <div class="text-sm text-gray-500 mt-2">
-            ${nota.autor || "Anónimo"} – ${new Date(nota.fecha).toLocaleString()}
-          </div>
-          `;
+                <div class="flex justify-between items-start">
+                  <p class="text-gray-800 mr-2">${nota.mensaje}</p>
+                  <button data-id="${nota.id}" class="text-red-500 hover:text-red-700 text-xl leading-none" title="Borrar nota">
+                    &times;
+                  </button>
+                </div>
+                <div class="text-sm text-gray-500 mt-2">
+                  ${nota.autor || "Anónimo"} – ${new Date(nota.fecha).toLocaleString()}
+                </div>
+              `;
               lista.appendChild(card);
             });
           });
@@ -184,7 +183,6 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
           }
         }
       });
-
 
       form.addEventListener("submit", function(e) {
         e.preventDefault();
@@ -228,7 +226,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
     toggleSidebar.addEventListener("click", toggleSidebarVisible);
     closeSidebar.addEventListener("click", toggleSidebarVisible);
-    </script>
+  </script>
 </body>
 
 </html>

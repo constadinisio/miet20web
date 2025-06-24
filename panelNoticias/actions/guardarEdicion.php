@@ -11,6 +11,7 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['permNoticia'])) 
 }
 
 include "../../includes/db.php";
+include "../includes/jsonLoader.php";
 
 $noticias = cargarNoticias();
 $noticias[$id] = [
