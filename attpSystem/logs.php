@@ -52,13 +52,15 @@ $u = $_SESSION['usuario'];
           </button>
         </form>
       </div>
+      <div class="p-6 mt-10 text-center text-gray-400"><a href="#">Créditos</a></div>
     </div>
 
     <!-- Contenido -->
     <main id="mainContent" class="w-full px-4 py-8 transition-all duration-300 container mx-auto">
       <!-- Botón hamburguesa -->
       <div class="mb-4">
-        <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">☰</button>
+        <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
+          ☰</button>
       </div>
 
       <h1 class="text-3xl font-bold mb-6">Logs de Préstamos</h1>

@@ -77,6 +77,14 @@ $noticias = array_reverse($noticias);
             </ul>
         </div>
     </section>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 Escuela Técnica 20 D.E. 20 "Carolina Muzilli". Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Script Quill -->
     <script>

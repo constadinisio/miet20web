@@ -53,12 +53,13 @@ $u = $_SESSION['usuario'];
           </button>
         </form>
       </div>
+      <div class="p-6 mt-10 text-center text-gray-400"><a href="#">Créditos</a></div>
     </div>
 
     <!-- Contenido -->
     <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
       <!-- Botón hamburguesa -->
-      <div class="mb-4 md:hidden">
+      <div class="mb-4 md">
         <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
           ☰
         </button>
