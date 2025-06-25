@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-center items-center h-16">
                 <div class="flex items-center">
-                    <a href="./index.html" class="flex items-center">
+                    <a href="./index.php" class="flex items-center">
                         <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
                         <h1><img src="../images/et20ico.ico" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
