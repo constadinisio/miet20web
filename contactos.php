@@ -77,7 +77,7 @@
                         <i class="fa-brands fa-whatsapp text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">WhatsApp</h3>
                         <a href="" class="text-blue-600 hover:text-blue-800">
-                            +549 11 39107733
+                            +54 9 11 39107733
                         </a>
                     </div>
                 </div>
@@ -164,7 +164,7 @@
                     <div class="text-center">
                         <i class="fa-solid fa-book text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">Biblioteca</h3>
-                        <a href="" class="text-blue-600 hover:text-blue-800">
+                        <a href="https://sites.google.com/view/biblioteca-et20-de20/" target="_blank" class="text-blue-600 hover:text-blue-800">
                             sites.google.com/view/biblioteca-et20-de20/
                         </a>
                     </div>

@@ -88,14 +88,14 @@
             <h2 class="text-3xl font-bold text-center mb-12">Nuestra Institución</h2>
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div>
-                    <img src="https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg" alt="Fachada del colegio" class="rounded-lg shadow-lg">
+                    <img src="./images/front_et20.webp" alt="Fachada del colegio" class="rounded-lg shadow-lg">
                 </div>
                 <div>
                     <h3 class="text-2xl font-semibold mb-4">Excelencia Educativa</h3>
                     <p class="text-gray-600 mb-6">
-                        Con más de 25 años de experiencia, nuestro colegio se ha destacado por brindar una educación integral,
-                        combinando excelencia académica con formación en valores. Nuestro compromiso es preparar a los estudiantes
-                        para los desafíos del futuro, fomentando el pensamiento crítico y la innovación.
+                        La Escuela Técnica N.º 20 D.E. 20 “Carolina Muzzilli” se destaca por ofrecer una educación integral que combina excelencia académica con una sólida formación de profesionales. 
+                        Nuestro compromiso es preparar a los y las estudiantes para los desafíos del futuro, fomentando el pensamiento crítico, la responsabilidad social y la innovación tecnológica. 
+                        Formamos técnicos con conciencia ciudadana, preparados para contribuir activamente en la sociedad y el mundo laboral.
                     </p>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-blue-50 p-4 rounded-lg">
@@ -121,7 +121,7 @@
             <div class="grid md:grid-cols-2 gap-8">
                 <!-- Producción Multimedial -->
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
-                    <img src="./images/set_mult.jpg" alt="Laboratorio de ciencias" class="w-full h-48 object-cover">
+                    <img src="./images/set_mult.webp" alt="Laboratorio de ciencias" class="w-full h-48 object-cover">
                     <div class="p-6">
                         <h3 class="text-xl font-semibold mb-2">Producción Multimedial</h3>
                         <p class="text-gray-600">
@@ -149,10 +149,10 @@
         <div class="max-w-7xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-center mb-6">Galería de Imágenes</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <img src="./images/test7.jpeg" alt="Actividades escolares" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/test3.jpeg" alt="Estudiantes en clase" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/test5.jpeg" alt="Laboratorio" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/test1.jpeg" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/test7.webp" alt="Actividades escolares" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/test3.webp" alt="Estudiantes en clase" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/test5.webp" alt="Laboratorio" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/test1.webp" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
             </div>
             <div class="flex justify-center my-10">
                 <a href="#ver-mas" class="bg-blue-600 text-white px-4 py-1 rounded text-lg shadow-lg hover:bg-blue-900 transition">

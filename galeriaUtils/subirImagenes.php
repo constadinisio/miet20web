@@ -111,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div>
                     <label class="block font-semibold">Subir una imagen</label>
-                    <input type="file" name="imagen" accept=".jpg,.jpeg,.png" required class="bg-yellow-500 text-white px-2 py-2 rounded transition-colors hover:bg-yellow-600">
+                    <input type="file" name="imagen" accept=".webp,.webp,.png" required class="bg-yellow-500 text-white px-2 py-2 rounded transition-colors hover:bg-yellow-600">
                 </div>
 
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
