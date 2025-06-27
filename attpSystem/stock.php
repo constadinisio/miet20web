@@ -52,9 +52,9 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Netbooks</title>
+  <title>ATTP - Stock</title>
   <link rel="stylesheet" href="../output.css">
-  <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
+  <link rel="icon" type="image/x-icon" href="../images/et20png.png">
 </head>
 
 <body class="bg-gray-100 font-sans">
@@ -67,7 +67,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
         </button>
       </div>
       <div class="p-6 text-center border-b border-blue-700">
-        <img src="../images/blank-profile.png" alt="Foto" class="w-20 h-20 no-repeat rounded-full mx-auto mb-2 object-cover border-2 border-white">
+        <img src="../images/blank-profile.webp" alt="Foto" class="w-20 h-20 no-repeat rounded-full mx-auto mb-2 object-cover border-2 border-white">
         <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
         <p class="text-sm text-blue-200">ATTP</p>
       </div>

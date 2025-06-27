@@ -48,8 +48,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <head>
     <meta charset="UTF-8">
-    <title>Subir Imagen</title>
+    <title>Panel - Galeria de Imagenes</title>
     <link rel="stylesheet" href="../output.css">
+    <link rel="icon" type="image/x-icon" href="../images/et20png.png">
 </head>
 
 <body class="bg-gray-50">

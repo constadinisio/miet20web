@@ -44,6 +44,8 @@ $apellido = htmlspecialchars($usuario['apellido'] ?? '');
     <title>Mi ET20 - Seleccionar Panel</title>
     <link rel="stylesheet" href="../output.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="../images/et20png.png">
+
 </head>
 
 <body class="bg-gray-50">

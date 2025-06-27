@@ -155,7 +155,7 @@
                 <img src="./images/test1.webp" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
             </div>
             <div class="flex justify-center my-10">
-                <a href="#ver-mas" class="bg-blue-600 text-white px-4 py-1 rounded text-lg shadow-lg hover:bg-blue-900 transition">
+                <a href="galeria_home.php" class="bg-blue-600 text-white px-4 py-1 rounded-full text-lg shadow-lg hover:bg-blue-900 transition">
                     Ver Más de la Galeria
                 </a>
             </div>

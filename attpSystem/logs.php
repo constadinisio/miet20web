@@ -15,9 +15,9 @@ $u = $_SESSION['usuario'];
 
 <head>
   <meta charset="UTF-8" />
-  <title>Logs de Préstamos</title>
+  <title>ATTP - Logs</title>
   <link rel="stylesheet" href="../output.css">
-  <link rel="icon" type="image/x-icon" href="../../images/et20png.png">
+  <link rel="icon" type="image/x-icon" href="../images/et20png.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
@@ -32,7 +32,7 @@ $u = $_SESSION['usuario'];
 
       <!-- Perfil del usuario -->
       <div class="p-6 text-center border-b border-blue-700">
-        <img src="../images/blank-profile.png" alt="Foto" class="w-20 h-20 no-repeat rounded-full mx-auto mb-2 object-cover border-2 border-white">
+        <img src="../images/blank-profile.webp" alt="Foto" class="w-20 h-20 no-repeat rounded-full mx-auto mb-2 object-cover border-2 border-white">
         <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
         <p class="text-sm text-blue-200">ATTP</p>
       </div>

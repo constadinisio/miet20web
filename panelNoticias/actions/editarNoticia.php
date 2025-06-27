@@ -28,7 +28,7 @@ if (!$noticia) {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Noticia</title>
+    <title>Panel Noticias - Editar</title>
     <link rel="stylesheet" href='../../output.css'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
