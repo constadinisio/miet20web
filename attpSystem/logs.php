@@ -19,15 +19,29 @@ $u = $_SESSION['usuario'];
   <link rel="stylesheet" href="../output.css">
   <link rel="icon" type="image/x-icon" href="../images/et20png.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    img {
+      width: 50px;
+      height: 50px;
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100">
   <div class="relative min-h-screen flex">
     <!-- Sidebar -->
     <div id="sidebar" class="absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full transition-transform duration-300">
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
-        <div class="text-lg font-bold">Menú</div>
-        <button id="closeSidebar" class="text-2xl leading-none hover:text-red-400">&times;</button>
+        <a href="#" class="flex items-center text-xl font-bold">
+          <img src="../images/et20ico.ico" class="mr-2">
+          Sistema ATTP
+        </a>
       </div>
 
       <!-- Perfil del usuario -->
