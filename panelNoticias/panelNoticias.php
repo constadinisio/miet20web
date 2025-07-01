@@ -64,6 +64,7 @@ $noticias = array_reverse($noticias);
 
             <!-- Noticias -->
             <h3 class="text-xl font-semibold mb-4">Noticias publicadas</h3>
+            <input type="text" id="busqueda" placeholder="Buscar noticias..." class="w-full border px-3 py-2 rounded mb-4">
             <ul class="space-y-4">
                 <?php foreach ($noticias as $noticia): ?>
                     <li class="border rounded p-4 bg-gray-50">
@@ -99,6 +100,26 @@ $noticias = array_reverse($noticias);
             this.submit();
         });
     </script>
+
+    <!-- Script para filtrar noticias -->
+    <script>
+        document.getElementById('busqueda').addEventListener('input', function() {
+            const texto = this.value.toLowerCase();
+            const noticias = document.querySelectorAll('ul li');
+
+            noticias.forEach(noticia => {
+                const titulo = noticia.querySelector('h4').textContent.toLowerCase();
+                const contenido = noticia.querySelector('.contenido-noticia').textContent.toLowerCase();
+
+                if (titulo.includes(texto) || contenido.includes(texto)) {
+                    noticia.style.display = '';
+                } else {
+                    noticia.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
 </body>
 
 </html>
