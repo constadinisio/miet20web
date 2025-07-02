@@ -71,7 +71,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
 <body class="bg-gray-100">
   <div class="relative min-h-screen flex flex-col md:flex-row">
-    <div id="sidebar" class="md:relative absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+    <div id="sidebar" class="absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full transition-transform duration-300">
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
         <a href="#" class="flex items-center text-xl font-bold">
           <img src="../images/et20ico.ico" class="mr-2">
@@ -83,7 +83,6 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
         <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
         <p class="text-sm text-blue-200">ATTP</p>
       </div>
-      <div class="p-6 text-2xl font-bold text-center">ET20 Netbooks</div>
       <nav class="p-4 space-y-2">
         <a href="index.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Página Principal</a>
         <a href="stock.php" class="block py-2 px-4 bg-blue-700 rounded">Stock</a>
@@ -97,7 +96,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
           </button>
         </form>
       </div>
-      <div class="p-6 mt-10 text-center text-gray-400"><a href="#">Créditos</a></div>
+      <div class="p-6 mt-10 text-center text-gray-400"><button onclick="mostrarCreditos()">Créditos</button></div>
     </div>
 
     <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
@@ -229,7 +228,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       </script>
     </main>
   </div>
-  <script>
+    <script>
     const sidebar = document.getElementById("sidebar");
     const toggleSidebar = document.getElementById("toggleSidebar");
     const closeSidebar = document.getElementById("closeSidebar");
@@ -248,6 +247,41 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
     toggleSidebar.addEventListener("click", toggleSidebarVisible);
     closeSidebar.addEventListener("click", toggleSidebarVisible);
+  </script>
+
+  <!-- Modal Créditos -->
+  <div id="popupCreditos" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden transition-shadow 0.3s">
+    <div class="bg-white rounded-lg shadow-lg p-6 max-w-md text-center relative">
+      <h2 class="text-2xl font-bold mb-4">Créditos</h2>
+      <p class="text-gray-700 mb-4">
+        Panel de Noticias desarrollado por el equipo de ATTP:<br>
+        👨‍💻 Desarrolladores:
+        <br>- Liz Vera
+        - Uma Perez
+        - Michael Martinez
+        - Jaco Alfaro
+        - Kevin Mamani
+        - Brenda Huanca
+        <br>🤗 Colaboradores:
+        <br>- Fabricio Toscano
+        <br>👨‍🏫 Profesores:
+        <br>- Nicolas Bogarin
+      </p>
+      <button onclick="cerrarCreditos()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <!-- Función de Mostrar/Ocultar el Popup de Créditos -->
+  <script>
+    function mostrarCreditos() {
+      document.getElementById('popupCreditos').classList.remove('hidden');
+    }
+
+    function cerrarCreditos() {
+      document.getElementById('popupCreditos').classList.add('hidden');
+    }
   </script>
 </body>
 

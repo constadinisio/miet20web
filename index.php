@@ -15,6 +15,49 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            font-weight: 500;
+            font-size: 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            background-color: #f3f4f6;
+            /* bg-gray-100 */
+        }
+
+        .menu-icon {
+            font-size: 1.5rem;
+        }
+
+        .menu-text {
+            margin-left: 0.5rem;
+            display: none;
+            white-space: nowrap;
+            animation: fadeSlide 0.5s ease forwards;
+        }
+
+        .menu-item:hover .menu-text {
+            display: inline;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 
@@ -31,13 +74,31 @@
                     </a>
                 </div>
 
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="index.php" class="text-azulInstitucional px-3 py-2 rounded-md font-medium">Página Principal</a>
-                    <a href="descargas.php" class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                    <a href="noticias.php" class="text-gray-600 hover:text-verdeEsperanza px-3 py-2 rounded-md font-medium transition duration-300">Noticias</a>
-                    <a href="galeria_home.php" class="text-gray-600 hover:text-amarilloEnergia px-3 py-2 rounded-md font-medium transition duration-300">Galeria</a>
-                    <a href="contactos.php" class="text-gray-600 hover:text-rosaMagico px-3 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+                <div class="hidden md:flex items-center gap-4">
+
+                    <a href="index.php" class="menu-item text-azulInstitucional text-xl">
+                        <span class="text-lg">🏠‎ ‎ Página Principal</span>
+                    </a>
+
+                    <a href="descargas.php" class="menu-item hover:text-gray-600 text-xl ">
+                        <span class="menu-icon">📁</span>
+                        <span class="menu-text">Descargas</span>
+                    </a>
+
+                    <a href="noticias.php" class="menu-item hover:text-gray-600 text-xl">
+                        <span class="menu-icon">📰</span>
+                        <span class="menu-text">Noticias</span>
+                    </a>
+
+                    <a href="galeria_home.php" class="menu-item hover:text-gray-600 text-xl">
+                        <span class="menu-icon">📷</span>
+                        <span class="menu-text">Galería</span>
+                    </a>
+
+                    <a href="contactos.php" class="menu-item hover:text-gray-600 text-xl">
+                        <span class="menu-icon">📩</span>
+                        <span class="menu-text">Contactos</span>
+                    </a>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -93,8 +154,8 @@
                 <div>
                     <h3 class="text-2xl font-semibold mb-4">Excelencia Educativa</h3>
                     <p class="text-gray-600 mb-6">
-                        La Escuela Técnica N.º 20 D.E. 20 “Carolina Muzzilli” se destaca por ofrecer una educación integral que combina excelencia académica con una sólida formación de profesionales. 
-                        Nuestro compromiso es preparar a los y las estudiantes para los desafíos del futuro, fomentando el pensamiento crítico, la responsabilidad social y la innovación tecnológica. 
+                        La Escuela Técnica N.º 20 D.E. 20 “Carolina Muzzilli” se destaca por ofrecer una educación integral que combina excelencia académica con una sólida formación de profesionales.
+                        Nuestro compromiso es preparar a los y las estudiantes para los desafíos del futuro, fomentando el pensamiento crítico, la responsabilidad social y la innovación tecnológica.
                         Formamos técnicos con conciencia ciudadana, preparados para contribuir activamente en la sociedad y el mundo laboral.
                     </p>
                     <div class="grid grid-cols-2 gap-4">
@@ -120,26 +181,31 @@
             <h2 class="text-3xl font-bold text-center mb-12">Nuestras Especialidades</h2>
             <div class="grid md:grid-cols-2 gap-8">
                 <!-- Producción Multimedial -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
-                    <img src="./images/set_mult.webp" alt="Laboratorio de ciencias" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold mb-2">Producción Multimedial</h3>
-                        <p class="text-gray-600">
-                            Especialidad centrada en diseño multimedial, animación, audio, video y producción digital.
-                        </p>
+
+                <a href="#">
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
+                        <img src="./images/set_mult.webp" alt="Laboratorio de ciencias" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-xl font-semibold mb-2">Producción Multimedial</h3>
+                            <p class="text-gray-600">
+                                Especialidad centrada en diseño multimedial, animación, audio, video y producción digital.
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- Tecnologías de la Información y la Comunicación -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
-                    <img src="./images/ing_tics.webp" alt="Biblioteca" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold mb-2">Tecnologías de la Información y la Comunicación</h3>
-                        <p class="text-gray-600">
-                            Especialidad enfocada en informática, redes, programación, soporte técnico y comunicación digital.
-                        </p>
+                <a href="#">
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
+                        <img src="./images/ing_tics.webp" alt="Biblioteca" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-xl font-semibold mb-2">Tecnologías de la Información y la Comunicación</h3>
+                            <p class="text-gray-600">
+                                Especialidad enfocada en informática, redes, programación, soporte técnico y comunicación digital.
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
     </section>

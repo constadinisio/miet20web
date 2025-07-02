@@ -19,7 +19,7 @@
     </script>
 
     <!-- CDN de Tailwind (lo cargás después de definir window.tailwind) -->
-    
+
 
     <!-- Tu archivo local compilado con @tailwindcss/typography -->
     <link href="output.css?v=<?= time() ?>" rel="stylesheet">
@@ -33,6 +33,49 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            font-weight: 500;
+            font-size: 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            background-color: #f3f4f6;
+            /* bg-gray-100 */
+        }
+
+        .menu-icon {
+            font-size: 1.5rem;
+        }
+
+        .menu-text {
+            margin-left: 0.5rem;
+            display: none;
+            white-space: nowrap;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .menu-item:hover .menu-text {
+            display: inline;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
     </style>
 </head>
@@ -50,13 +93,31 @@
                     </a>
                 </div>
 
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="index.php" class="text-gray-600 hover:text-azulInstitucional px-3 py-2 rounded-md font-medium">Página Principal</a>
-                    <a href="descargas.php" class="text-gray-600 hover:text-rojoDestacado px-3 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                    <a href="noticias.php" class="text-verdeEsperanza px-3 py-2 rounded-md font-medium transition duration-300">Noticias</a>
-                    <a href="galeria_home.php" class="text-gray-600 hover:text-amarilloEnergia px-3 py-2 rounded-md font-medium transition duration-300">Galeria</a>
-                    <a href="contactos.php" class="text-gray-600 hover:text-rosaMagico px-3 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+                <div class="hidden md:flex items-center gap-4">
+
+                    <a href="index.php" class="menu-item hover:text-gray-600 text-xl">
+                        <span class="menu-icon">🏠</span>
+                        <span class="menu-text">Página Principal</span>
+                    </a>
+
+                    <a href="descargas.php" class="menu-item hover:text-gray-600 text-xl ">
+                        <span class="menu-icon">📁</span>
+                        <span class="menu-text">Descargas</span>
+                    </a>
+
+                    <a href="noticias.php" class="menu-item text-verdeEsperanza text-xl">
+                        <span class="text-lg">📰‎ ‎ Noticias</span>
+                    </a>
+
+                    <a href="galeria_home.php" class="menu-item hover:text-gray-600 text-xl">
+                        <span class="menu-icon">📷</span>
+                        <span class="menu-text">Galería</span>
+                    </a>
+
+                    <a href="contactos.php" class="menu-item hover:text-gray-600 text-xl">
+                        <span class="menu-icon">📩</span>
+                        <span class="menu-text">Contactos</span>
+                    </a>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -69,11 +130,11 @@
 
             <!-- Mobile Menu -->
             <div id="mobile-menu" class="mobile-menu hidden md:hidden pb-4 flex flex-col space-y-1 transition-all duration-300 transform opacity-0 scale-95">
-                <a href="index.php" class="block text-gray-600 hover:text-azulInstitucional px-4 py-2 rounded-md font-medium">Página Principal</a>
+                <a href="index.php" class="block text-azulInstitucional px-4 py-2 rounded-md font-medium">Página Principal</a>
                 <a href="descargas.php" class="block text-gray-600 hover:text-rojoDestacado px-4 py-2 rounded-md font-medium transition duration-300">Descargas</a>
-                <a href="noticias.php" class="block text-verdeEsperanza px-4 py-2 rounded-md font-medium transition duration-300">Noticias</a>
-                <a href="galeria_home.php" class="block text-gray-600 hover:text-amarilloEnergia px-4 py-2 rounded-md font-medium transition duration-300">Galeria</a>
-                <a href="contactos.php" class="block text-gray-600 hover:text-rosaMagico px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
+                <a href="noticias.php" class="block text-gray-600 hover:text-verdeEsperanza px-4 py-2 rounded-md font-medium transition duration-300">Noticias</a>
+                <a href="galeria_home.php" class="text-gray-600 hover:text-amarilloEnergia px-4 py-2 rounded-md font-medium transition duration-300">Galeria</a>
+                <a href="contactos.php" class="text-gray-600 hover:text-rosaMagico px-4 py-2 rounded-md font-medium transition duration-300">Contactos</a>
             </div>
         </div>
     </nav>

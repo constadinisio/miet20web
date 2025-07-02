@@ -52,7 +52,6 @@ $u = $_SESSION['usuario'];
       </div>
 
       <!-- Menú -->
-      <div class="p-6 text-2xl font-bold text-center">ET20 Netbooks</div>
       <nav class="p-4 space-y-2">
         <a href="index.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Página Principal</a>
         <a href="stock.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Stock</a>
@@ -66,7 +65,7 @@ $u = $_SESSION['usuario'];
           </button>
         </form>
       </div>
-      <div class="p-6 mt-10 text-center text-gray-400"><a href="#">Créditos</a></div>
+      <div class="p-6 mt-10 text-center text-gray-400"><button onclick="mostrarCreditos()">Créditos</button></div>
     </div>
 
     <!-- Contenido -->
@@ -113,7 +112,8 @@ $u = $_SESSION['usuario'];
           </thead>
           <tbody class="text-gray-700 divide-y text-sm">
             <?php
-            function convertDateToSQL($fecha) {
+            function convertDateToSQL($fecha)
+            {
               $parts = explode('/', $fecha);
               return count($parts) === 3 ? "$parts[2]-$parts[1]-$parts[0]" : null;
             }
@@ -173,5 +173,40 @@ $u = $_SESSION['usuario'];
     toggleSidebar.addEventListener("click", toggleSidebarVisible);
     closeSidebar.addEventListener("click", toggleSidebarVisible);
   </script>
+
+  <!-- Modal Créditos -->
+  <div id="popupCreditos" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden transition-shadow 0.3s">
+    <div class="bg-white rounded-lg shadow-lg p-6 max-w-md text-center relative">
+      <h2 class="text-2xl font-bold mb-4">Créditos</h2>
+      <p class="text-gray-700 mb-4">
+        Panel de Noticias desarrollado por el equipo de ATTP:<br>
+        👨‍💻 Desarrolladores:
+        <br>- Liz Vera
+        - Uma Perez
+        - Michael Martinez
+        - Jaco Alfaro
+        - Kevin Mamani
+        - Brenda Huanca
+        <br>🤗 Colaboradores:
+        <br>- Fabricio Toscano
+        <br>👨‍🏫 Profesores:
+        <br>- Nicolas Bogarin
+      </p>
+      <button onclick="cerrarCreditos()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+        Cerrar
+      </button>
+    </div>
+  </div>
+  <!-- Función de Mostrar/Ocultar el Popup de Créditos -->
+  <script>
+    function mostrarCreditos() {
+      document.getElementById('popupCreditos').classList.remove('hidden');
+    }
+
+    function cerrarCreditos() {
+      document.getElementById('popupCreditos').classList.add('hidden');
+    }
+  </script>
 </body>
+
 </html>
