@@ -182,7 +182,7 @@
             <div class="grid md:grid-cols-2 gap-8">
                 <!-- Producción Multimedial -->
 
-                <a href="#">
+                <a href="./especialidad_mult.html">
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
                         <img src="./images/set_mult.webp" alt="Laboratorio de ciencias" class="w-full h-48 object-cover">
                         <div class="p-6">
@@ -195,7 +195,7 @@
                 </a>
 
                 <!-- Tecnologías de la Información y la Comunicación -->
-                <a href="#">
+                <a href="./especialidad_tics.html">
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
                         <img src="./images/ing_tics.webp" alt="Biblioteca" class="w-full h-48 object-cover">
                         <div class="p-6">
