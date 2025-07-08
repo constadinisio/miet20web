@@ -62,7 +62,7 @@
 </head>
 
 <body class="bg-gray-50">
-     <!-- Navbar -->
+    <!-- Navbar -->
     <nav class="bg-white shadow-lg fixed w-full z-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">

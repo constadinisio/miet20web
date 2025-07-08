@@ -215,10 +215,10 @@
         <div class="max-w-7xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-center mb-6">Galería de Imágenes</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <img src="./images/test7.webp" alt="Actividades escolares" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/test3.webp" alt="Estudiantes en clase" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/test5.webp" alt="Laboratorio" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/test1.webp" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/5.JPG" alt="Actividades escolares" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/16.JPG" alt="Estudiantes en clase" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/24.JPG" alt="Laboratorio" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="./images/DSC_2365.jpg" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
             </div>
             <div class="flex justify-center my-10">
                 <a href="galeria_home.php" class="bg-blue-600 text-white px-4 py-1 rounded-full text-lg shadow-lg hover:bg-blue-900 transition">
