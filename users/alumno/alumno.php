@@ -6,7 +6,7 @@ if (
     (int)$_SESSION['usuario']['rol'] !== 4
 ) {
     // Si no cumple las condiciones, redirige al login con un error de rol
-    header("Location: ../login.php?error=rol");
+    header("Location: ../../login.php?error=rol");
     exit;
 }
 $usuario = $_SESSION['usuario'];
@@ -30,8 +30,11 @@ $usuario = $_SESSION['usuario'];
 
 <body class="bg-gray-100 min-h-screen flex">
     <!-- Navbar lateral -->
-    <nav class="w-60 bg-white shadow-lg px-6 py-8 flex flex-col gap-2">
-        <div class="flex items-center mb-10 gap-4">
+    <nav class="w-60 bg-white shadow-lg px-6 py-4 flex flex-col gap-2">
+        <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400">
+            <img src="../../images/et20ico.ico" class="block items-center h-28 w-28">
+        </div>
+        <div class="flex items-center mb-10 gap-2">
             <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-14 h-14">
             <div class="flex flex-col pl-3">
                 <div class="font-bold text-lg leading-tight"><?php echo $usuario['nombre']; ?></div>
@@ -39,7 +42,6 @@ $usuario = $_SESSION['usuario'];
                 <div class="mt-2 text-xs text-gray-500">Alumno/a</div>
             </div>
         </div>
-
         <a href="alumno.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition">🏠 Inicio</a>
         <a href="asistencias.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📆 Asistencias</a>
         <a href="notas.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📝 Notas</a>

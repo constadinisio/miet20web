@@ -111,11 +111,15 @@ if ($curso_id && $materia_id) {
 <body class="bg-gray-100 min-h-screen flex">
      <!-- Navbar lateral -->
     <nav class="w-60 bg-white shadow-lg px-6 py-8 flex flex-col gap-2">
-        <div class="flex items-center gap-3 mb-10">
-            <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name='.$usuario['nombre']; ?>" class="rounded-full w-14 h-14">
-            <div>
-                <div class="font-bold text-lg"><?php echo $usuario['nombre'] . ' ' . $usuario['apellido']; ?></div>
-                <div class="text-xs text-gray-500">Profesor</div>
+        <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400">
+            <img src="../../images/et20ico.ico" class="block items-center h-28 w-28">
+        </div>
+        <div class="flex items-center mb-10 gap-2">
+            <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-14 h-14">
+            <div class="flex flex-col pl-3">
+                <div class="font-bold text-lg leading-tight"><?php echo $usuario['nombre']; ?></div>
+                <div class="font-bold text-lg leading-tight"><?php echo $usuario['apellido']; ?></div>
+                <div class="mt-2 text-xs text-gray-500">Profesor/a</div>
             </div>
         </div>
         <a href="profesor.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition">🏠 Inicio</a>
