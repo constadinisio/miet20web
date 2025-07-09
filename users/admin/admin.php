@@ -58,7 +58,7 @@ require_once '../../includes/db.php';
                 <div class="text-5xl mb-2">🏫</div>
                 <h2 class="text-xl font-bold mb-2">Cursos</h2>
                 <p class="text-gray-500 text-center mb-4">Agregá o quitá alumnos de los cursos.</p>
-                <a href="admin_cursos.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+                <a href="cursos.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">👤</div>

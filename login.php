@@ -46,7 +46,7 @@
         <!-- Panel Login -->
         <div class="relative z-10 flex items-center justify-center h-full py-4 px-4">
             <div class="bg-gray-800 text-white rounded-xl shadow-lg w-full max-w-md p-8 space-y-6">
-                <h2 class="text-2xl font-bold text-center">Inicio de Sesión <br>Sistema Unificado</h2>
+                <h2 class="text-2xl font-bold text-center">Inicio de Sesión</h2>
 
                 <?php
                 $error = trim($_GET['error'] ?? '');

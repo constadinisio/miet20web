@@ -69,10 +69,10 @@ if ($alumno_id) {
                 <div class="mt-2 text-xs text-gray-500">Alumno/a</div>
             </div>
         </div>
-        <a href="admin.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition">🏠 Inicio</a>
-        <a href="usuarios.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👥 Usuarios</a>
-        <a href="cursos.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">🏫 Cursos</a>
-        <a href="alumnos.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100">👤 Alumnos</a>
+        <a href="../admin.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition">🏠 Inicio</a>
+        <a href="../usuarios.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👥 Usuarios</a>
+        <a href="../cursos.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">🏫 Cursos</a>
+        <a href="../alumnos.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100">👤 Alumnos</a>
         <button onclick="window.location='../../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
     <main class="flex-1 p-10">
@@ -106,7 +106,7 @@ if ($alumno_id) {
                 </div>
                 <div>
                     <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 font-bold">Guardar cambios</button>
-                    <a href="admin_alumnos.php" class="ml-4 text-gray-600 hover:underline">Cancelar</a>
+                    <a href="alumnos.php" class="ml-4 text-gray-600 hover:underline">Cancelar</a>
                 </div>
             </form>
         <?php else: ?>
