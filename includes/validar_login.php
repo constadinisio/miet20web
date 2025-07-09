@@ -27,6 +27,10 @@ if ($usuario = $result->fetch_assoc()) {
         ];
 
         // Verificamos los permisos
+        $esAdmin = ((int)$usuario['rol'] === 1);
+        $esPreceptor = ((int)$usuario['rol'] === 2);
+        $esProfesor = ((int)$usuario['rol'] === 3);
+        $esAlumno = ((int)$usuario['rol'] === 4);
         $tieneATTP = ((int)$usuario['rol'] === 5);
         $tieneNoticias = (!empty($usuario['permNoticia']) && $usuario['permNoticia']);
         $tieneSubida = (!empty($usuario['permSubidaArch']) && $usuario['permSubidaArch']);
@@ -51,6 +55,18 @@ if ($usuario = $result->fetch_assoc()) {
             exit;
         } elseif ($tieneSubida) {
             header("Location: ../galeriaUtils/subirImagenes.php");
+            exit;
+        } elseif ($esAlumno) {
+            header("Location: ../users/alumno/alumno.php");
+            exit;
+        } elseif ($esProfesor) {
+            header("Location: ../users/profesor/profesor.php");
+            exit;
+        } elseif ($esPreceptor) {
+            header("Location: ../users/preceptor/preceptor.php");
+            exit;
+        } elseif ($esAdmin) {
+            header("Location: ../users/admin/admin.php");
             exit;
         } else {
             // No tiene permisos

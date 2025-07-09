@@ -45,8 +45,7 @@ $u = $_SESSION['usuario'];
 
       <!-- Perfil del usuario -->
       <div class="p-6 text-center border-b border-blue-700">
-        <img src="../images/blank-profile.webp" alt="Foto" class="w-20 h-20 no-repeat rounded-full mx-auto mb-2 object-cover border-2 border-white">
-        <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
+        <img src="<?php echo $u['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $u['nombre']; ?>" class="block mx-auto rounded-full w-14 h-14">        <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
         <p class="text-sm text-blue-200">ATTP</p>
       </div>
 
