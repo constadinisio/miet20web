@@ -143,6 +143,10 @@ $total_paginas = ceil($total / $por_pagina);
                     </a>
                 </div>
 
+                <a href="login.php" class="ml-8 px-5 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 font-semibold shadow">
+                    Iniciar Sesión
+                </a>
+
                 <!-- Mobile Menu Button -->
                 <div class="md:hidden flex items-center">
                     <button class="mobile-menu-button outline-none">
