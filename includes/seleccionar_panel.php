@@ -8,9 +8,14 @@ if (!isset($_SESSION['usuario'])) {
 
 $usuario = $_SESSION['usuario'];
 
+// Verificamos los permisos
+$esAdmin = ((int)$usuario['rol'] === 1);
+$esPreceptor = ((int)$usuario['rol'] === 2);
+$esProfesor = ((int)$usuario['rol'] === 3);
+$esAlumno = ((int)$usuario['rol'] === 4);
 $tieneATTP = ((int)$usuario['rol'] === 5);
-$tieneNoticias = !empty($usuario['permNoticia']);
-$tieneSubida = !empty($usuario['permSubidaArch']);
+$tieneNoticias = (!empty($usuario['permNoticia']) && $usuario['permNoticia']);
+$tieneSubida = (!empty($usuario['permSubidaArch']) && $usuario['permSubidaArch']);
 
 $totalPermisos = ($tieneATTP ? 1 : 0) + ($tieneNoticias ? 1 : 0) + ($tieneSubida ? 1 : 0);
 
@@ -24,6 +29,18 @@ if ($totalPermisos === 1) {
         exit;
     } elseif ($tieneSubida) {
         header("Location: ../galeriaUtils/subirImagenes.php");
+        exit;
+    } elseif ($esAlumno) {
+        header("Location: ../users/alumno/alumno.php");
+        exit;
+    } elseif ($esProfesor) {
+        header("Location: ../users/profesor/profesor.php");
+        exit;
+    } elseif ($esPreceptor) {
+        header("Location: ../users/preceptor/preceptor.php");
+        exit;
+    } elseif ($esAdmin) {
+        header("Location: ../users/admin/admin.php");
         exit;
     }
 } elseif ($totalPermisos === 0) {
@@ -85,6 +102,26 @@ $apellido = htmlspecialchars($usuario['apellido'] ?? '');
                 <?php if ($tieneSubida): ?>
                     <a href="../galeriaUtils/subirImagenes.php" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-md font-semibold transition">
                         Galería de Imágenes
+                    </a>
+                <?php endif; ?>
+                <?php if ($esAdmin): ?>
+                    <a href="../users/admin/admin.php" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-md font-semibold transition">
+                        Entrar como Administrador
+                    </a>
+                <?php endif; ?>
+                <?php if ($esPreceptor): ?>
+                    <a href="../users/preceptor/preceptor.php" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-md font-semibold transition">
+                        Entrar como Preceptor
+                    </a>
+                <?php endif; ?>
+                <?php if ($esProfesor): ?>
+                    <a href="../users/profesor/profesor.php" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-md font-semibold transition">
+                        Entrar como Profesor
+                    </a>
+                <?php endif; ?>
+                <?php if ($esAlumno): ?>
+                    <a href="../users/alumno/alumno.php" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-md font-semibold transition">
+                        Entrar como Alumno
                     </a>
                 <?php endif; ?>
             </div>

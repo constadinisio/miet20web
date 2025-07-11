@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 2) { // Suponiendo rol 2 = Preceptor
-    header("Location: ../login.php?error=rol");
+    header("Location: ../../login.php?error=rol");
     exit;
 }
 $usuario = $_SESSION['usuario'];

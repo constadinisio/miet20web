@@ -7,14 +7,29 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 $usuario = $_SESSION['usuario'];
 require_once '../../includes/db.php';
 
-// Listado de alumnos
+$busqueda = $_GET['busqueda'] ?? '';
 $alumnos = [];
-$sql = "SELECT id, nombre, apellido, dni, mail, anio, division FROM usuarios WHERE rol = 4 ORDER BY apellido, nombre";
-$result = $conexion->query($sql);
+$sql = "SELECT id, nombre, apellido, dni, mail, anio, division FROM usuarios WHERE rol = 4";
+
+if ($busqueda !== '') {
+    $sql .= " AND (nombre LIKE ? OR apellido LIKE ?)";
+    $stmt = $conexion->prepare($sql . " ORDER BY apellido, nombre");
+    $like = "%$busqueda%";
+    $stmt->bind_param("ss", $like, $like);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $sql .= " ORDER BY apellido, nombre";
+    $result = $conexion->query($sql);
+}
+
 while ($row = $result->fetch_assoc()) {
     $alumnos[] = $row;
 }
+if (isset($stmt)) $stmt->close();
+
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -53,39 +68,45 @@ while ($row = $result->fetch_assoc()) {
     <main class="flex-1 p-10">
         <h1 class="text-2xl font-bold mb-6">👤 Gestión de Alumnos</h1>
         <div class="overflow-x-auto">
-            <table class="min-w-full bg-white rounded-xl shadow">
-                <thead>
-                    <tr>
-                        <th class="py-2 px-4 text-left">Nombre</th>
-                        <th class="py-2 px-4 text-left">Apellido</th>
-                        <th class="py-2 px-4 text-left">DNI</th>
-                        <th class="py-2 px-4 text-left">Mail</th>
-                        <th class="py-2 px-4 text-left">Año</th>
-                        <th class="py-2 px-4 text-left">División</th>
-                        <th class="py-2 px-4 text-left">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($alumnos as $a): ?>
+            <form method="get" class="mb-4 flex gap-3">
+                <input type="text" name="busqueda" placeholder="Buscar por nombre o apellido" value="<?php echo htmlspecialchars($_GET['busqueda'] ?? ''); ?>" class="px-4 py-2 rounded-xl border w-64">
+                <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Buscar</button>
+            </form>
+            <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 500px;">
+                <table class="min-w-full bg-white rounded-xl shadow">
+                    <thead>
                         <tr>
-                            <td class="py-2 px-4"><?php echo $a['nombre']; ?></td>
-                            <td class="py-2 px-4"><?php echo $a['apellido']; ?></td>
-                            <td class="py-2 px-4"><?php echo $a['dni']; ?></td>
-                            <td class="py-2 px-4"><?php echo $a['mail']; ?></td>
-                            <td class="py-2 px-4"><?php echo $a['anio']; ?></td>
-                            <td class="py-2 px-4"><?php echo $a['division']; ?></td>
-                            <td class="py-2 px-4">
-                                <a href="./utils/admin_alumno_editar.php?id=<?php echo $a['id']; ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Editar</a>
-                            </td>
+                            <th class="py-2 px-4 text-left">Nombre</th>
+                            <th class="py-2 px-4 text-left">Apellido</th>
+                            <th class="py-2 px-4 text-left">DNI</th>
+                            <th class="py-2 px-4 text-left">Mail</th>
+                            <th class="py-2 px-4 text-left">Año</th>
+                            <th class="py-2 px-4 text-left">División</th>
+                            <th class="py-2 px-4 text-left">Acciones</th>
                         </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($alumnos)): ?>
-                        <tr>
-                            <td colspan="7" class="py-4 text-center text-gray-500">No hay alumnos registrados.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($alumnos as $a): ?>
+                            <tr>
+                                <td class="py-2 px-4"><?php echo $a['nombre']; ?></td>
+                                <td class="py-2 px-4"><?php echo $a['apellido']; ?></td>
+                                <td class="py-2 px-4"><?php echo $a['dni']; ?></td>
+                                <td class="py-2 px-4"><?php echo $a['mail']; ?></td>
+                                <td class="py-2 px-4"><?php echo $a['anio']; ?></td>
+                                <td class="py-2 px-4"><?php echo $a['division']; ?></td>
+                                <td class="py-2 px-4">
+                                    <a href="./utils/admin_alumno_editar.php?id=<?php echo $a['id']; ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Editar</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($alumnos)): ?>
+                            <tr>
+                                <td colspan="7" class="py-4 text-center text-gray-500">No hay alumnos registrados.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 </body>

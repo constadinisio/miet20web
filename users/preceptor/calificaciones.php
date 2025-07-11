@@ -1,28 +1,19 @@
 <?php
 session_start();
 if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 2) {
-    header("Location: ../login.php?error=rol");
+    header("Location: ../../login.php?error=rol");
     exit;
 }
 $usuario = $_SESSION['usuario'];
 require_once '../../includes/db.php';
 
-// Cursos asignados
-$preceptor_id = $usuario['id'];
+// Todos los cursos del sistema
 $cursos = [];
-$sql = "SELECT c.id, c.anio, c.division
-        FROM preceptor_curso pc
-        JOIN cursos c ON pc.curso_id = c.id
-        WHERE pc.preceptor_id = ? AND pc.estado = 'activo'
-        ORDER BY c.anio, c.division";
-$stmt = $conexion->prepare($sql);
-$stmt->bind_param("i", $preceptor_id);
-$stmt->execute();
-$result = $stmt->get_result();
+$sql = "SELECT id, anio, division FROM cursos ORDER BY anio, division";
+$result = $conexion->query($sql);
 while ($row = $result->fetch_assoc()) {
     $cursos[] = $row;
 }
-$stmt->close();
 
 $curso_id = $_GET['curso_id'] ?? null;
 
