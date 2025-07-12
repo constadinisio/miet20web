@@ -81,35 +81,37 @@ if ($curso_id) {
         <?php if ($curso_id): ?>
             <div class="mb-6">
                 <h2 class="font-bold mb-2">Alumnos en el curso:</h2>
-                <table class="min-w-full bg-white rounded-xl shadow">
-                    <thead>
-                        <tr>
-                            <th class="py-2 px-4 text-left">Nombre</th>
-                            <th class="py-2 px-4 text-left">Apellido</th>
-                            <th class="py-2 px-4 text-left">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($alumnos as $a): ?>
+                <div class="max-h-[400px] overflow-y-auto rounded-xl shadow">
+                    <table class="min-w-full bg-white rounded-xl shadow">
+                        <thead>
                             <tr>
-                                <td class="py-2 px-4"><?php echo $a['nombre']; ?></td>
-                                <td class="py-2 px-4"><?php echo $a['apellido']; ?></td>
-                                <td class="py-2 px-4">
-                                    <form method="post" action="./utils/admin_curso_eliminar_alumno.php" style="display:inline;" onsubmit="return confirm('¿Eliminar este alumno del curso?');">
-                                        <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                                        <input type="hidden" name="alumno_id" value="<?php echo $a['id']; ?>">
-                                        <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Eliminar</button>
-                                    </form>
-                                </td>
+                                <th class="py-2 px-4 text-left">Nombre</th>
+                                <th class="py-2 px-4 text-left">Apellido</th>
+                                <th class="py-2 px-4 text-left">Acciones</th>
                             </tr>
-                        <?php endforeach; ?>
-                        <?php if (empty($alumnos)): ?>
-                            <tr>
-                                <td colspan="3" class="py-4 text-center text-gray-500">No hay alumnos en este curso.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($alumnos as $a): ?>
+                                <tr>
+                                    <td class="py-2 px-4"><?php echo $a['nombre']; ?></td>
+                                    <td class="py-2 px-4"><?php echo $a['apellido']; ?></td>
+                                    <td class="py-2 px-4">
+                                        <form method="post" action="./utils/admin_curso_eliminar_alumno.php" style="display:inline;" onsubmit="return confirm('¿Eliminar este alumno del curso?');">
+                                            <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
+                                            <input type="hidden" name="alumno_id" value="<?php echo $a['id']; ?>">
+                                            <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($alumnos)): ?>
+                                <tr>
+                                    <td colspan="3" class="py-4 text-center text-gray-500">No hay alumnos en este curso.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div>
                 <form method="post" action="./utils/admin_curso_agregar_alumno.php" class="flex gap-2 items-end">

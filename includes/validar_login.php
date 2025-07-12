@@ -1,81 +1,92 @@
 <?php
 session_start();
-session_regenerate_id(true);
+require_once 'db.php'; // Cambiá si tu path es distinto
 
-include './db.php';
-
+// Validar usuario y contraseña
 $mail = trim($_POST['mail'] ?? '');
 $contrasena = trim($_POST['contrasena'] ?? '');
 
-$stmt = $conexion->prepare("SELECT * FROM usuarios WHERE mail = ? AND status = 1 LIMIT 1");
+if (!$mail || !$contrasena) {
+    header("Location: ../login.php?error=campos");
+    exit;
+}
+
+$sql = "SELECT * FROM usuarios WHERE mail = ?";
+$stmt = $conexion->prepare($sql);
 $stmt->bind_param("s", $mail);
 $stmt->execute();
 $result = $stmt->get_result();
+$usuario = $result->fetch_assoc();
+$stmt->close();
 
-if ($usuario = $result->fetch_assoc()) {
-    if ($contrasena === $usuario['contrasena']) {
-
-        // Guardar usuario en sesión
-        $_SESSION['usuario'] = [
-            'id' => $usuario['id'],
-            'nombre' => $usuario['nombre'],
-            'apellido' => $usuario['apellido'],
-            'rol' => $usuario['rol'],
-            'permNoticia' => $usuario['permNoticia'] ?? 0,
-            'permSubidaArch' => $usuario['permSubidaArch'] ?? 0,
-            'foto_url' => $usuario['foto_url'] ?? null
-        ];
-
-        // Verificamos los permisos
-        $esAdmin = ((int)$usuario['rol'] === 1);
-        $esPreceptor = ((int)$usuario['rol'] === 2);
-        $esProfesor = ((int)$usuario['rol'] === 3);
-        $esAlumno = ((int)$usuario['rol'] === 4);
-        $tieneATTP = ((int)$usuario['rol'] === 5);
-        $tieneNoticias = (!empty($usuario['permNoticia']) && $usuario['permNoticia']);
-        $tieneSubida = (!empty($usuario['permSubidaArch']) && $usuario['permSubidaArch']);
-
-        $totalPermisos = 0;
-        $totalPermisos += $tieneATTP ? 1 : 0;
-        $totalPermisos += $tieneNoticias ? 1 : 0;
-        $totalPermisos += $tieneSubida ? 1 : 0;
-
-        // Más de un permiso → seleccionar panel
-        if ($totalPermisos > 1) {
-            header("Location: ../includes/seleccionar_panel.php");
-            exit;
-        }
-
-        // Casos individuales
-        if ($tieneATTP) {
-            header("Location: ../attpSystem/index.php");
-            exit;
-        } elseif ($tieneNoticias) {
-            header("Location: ../panelNoticias/panelNoticias.php");
-            exit;
-        } elseif ($tieneSubida) {
-            header("Location: ../galeriaUtils/subirImagenes.php");
-            exit;
-        } elseif ($esAlumno) {
-            header("Location: ../users/alumno/alumno.php");
-            exit;
-        } elseif ($esProfesor) {
-            header("Location: ../users/profesor/profesor.php");
-            exit;
-        } elseif ($esPreceptor) {
-            header("Location: ../users/preceptor/preceptor.php");
-            exit;
-        } elseif ($esAdmin) {
-            header("Location: ../users/admin/admin.php");
-            exit;
-        } else {
-            // No tiene permisos
-            header("Location: ../login.php?error=perm");
-            exit;
-        }
-    }
+if (!$usuario || $contrasena !== $usuario['contrasena']) {
+    header("Location: ../login.php?error=login");
+    exit;
 }
 
-// Credenciales incorrectas
-header("Location: ../login.php?error=1");
-exit;
+
+// ---------- CAMBIO ACÁ: roles principal + secundarios ----------
+
+// 1. Primero agrego el rol principal del usuario (si tiene)
+$roles = [];
+if (!empty($usuario['rol'])) {
+    $sql_rol = "SELECT id, nombre FROM roles WHERE id = ?";
+    $stmt_rol = $conexion->prepare($sql_rol);
+    $stmt_rol->bind_param("i", $usuario['rol']);
+    $stmt_rol->execute();
+    $res_rol = $stmt_rol->get_result();
+    if ($rol_row = $res_rol->fetch_assoc()) {
+        $roles[] = $rol_row;
+    }
+    $stmt_rol->close();
+}
+
+// 2. Ahora agrego los adicionales de usuario_roles, evitando duplicados
+$sql = "SELECT r.id, r.nombre FROM usuario_roles ur JOIN roles r ON ur.rol_id = r.id WHERE ur.usuario_id = ?";
+$stmt = $conexion->prepare($sql);
+$stmt->bind_param("i", $usuario['id']);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $duplicado = false;
+    foreach ($roles as $r) {
+        if ($r['id'] == $row['id']) {
+            $duplicado = true;
+            break;
+        }
+    }
+    if (!$duplicado) $roles[] = $row;
+}
+$stmt->close();
+
+// ---------------------------------------------------------------
+
+$tienePermisoEspecial = (!empty($usuario['permNoticia']) || !empty($usuario['permSubidaArch']));
+
+if (count($roles) === 0) {
+    header("Location: ../login.php?error=sin_rol");
+    exit;
+} elseif (count($roles) === 1 && !$tienePermisoEspecial) {
+    // Un solo rol Y NO tiene permisos especiales, mandá directo
+    $_SESSION['usuario'] = $usuario;
+    $_SESSION['usuario']['rol'] = $roles[0]['id'];
+    $_SESSION['usuario']['rol_nombre'] = $roles[0]['nombre'];
+    $_SESSION['usuario']['permNoticia'] = isset($usuario['permNoticia']) ? (int)$usuario['permNoticia'] : 0;
+    $_SESSION['usuario']['permSubidaArch'] = isset($usuario['permSubidaArch']) ? (int)$usuario['permSubidaArch'] : 0;
+    switch ($roles[0]['id']) {
+        case 1: header("Location: ../users/admin/admin.php"); exit;
+        case 2: header("Location: ../users/preceptor/preceptor.php"); exit;
+        case 3: header("Location: ../users/profesor/profesor.php"); exit;
+        case 4: header("Location: ../users/alumno/alumno.php"); exit;
+        case 5: header("Location: ../attpSystem/index.php"); exit;
+        default: header("Location: seleccionar_panel.php"); exit;
+    }
+} else {
+    // Tiene más de un rol O permisos especiales, mostrar selección
+    $_SESSION['usuario'] = $usuario;
+    $_SESSION['usuario_pending_roles'] = $roles;
+    $_SESSION['usuario']['permNoticia'] = isset($usuario['permNoticia']) ? (int)$usuario['permNoticia'] : 0;
+    $_SESSION['usuario']['permSubidaArch'] = isset($usuario['permSubidaArch']) ? (int)$usuario['permSubidaArch'] : 0;
+    header("Location: seleccionar_panel.php");
+    exit;
+}

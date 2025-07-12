@@ -55,12 +55,11 @@
                     <p class="text-red-600 bg-red-100 p-2 rounded mb-4 text-center">
                         No tenés permisos para acceder a ningún panel.
                     </p>
-                <?php elseif ($error == 1): ?>
+                <?php elseif ($error === 'login'): ?>
                     <p class="text-red-600 bg-red-100 p-2 rounded mb-4 text-center">
                         Usuario o contraseña incorrectos.
                     </p>
-                <?php endif; ?>
-                <?php if (isset($_GET['error']) && $_GET['error'] === 'correo'): ?>
+                <?php elseif (isset($_GET['error']) && $_GET['error'] === 'correo'): ?>
                     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
                         Este correo no está autorizado para ingresar.
                     </div>

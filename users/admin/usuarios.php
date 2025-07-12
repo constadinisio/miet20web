@@ -14,6 +14,16 @@ $result = $conexion->query($sql);
 while ($row = $result->fetch_assoc()) {
     $usuarios_pendientes[] = $row;
 }
+
+// Usuarios activos (no alumnos, solo rol 1-3 y 5)
+$usuarios_activos = [];
+$sql = "SELECT id, nombre, apellido, mail, rol FROM usuarios 
+        WHERE status = 1 AND rol IN (1,2,3,5)";
+$result = $conexion->query($sql);
+while ($row = $result->fetch_assoc()) {
+    $usuarios_activos[] = $row;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -53,49 +63,114 @@ while ($row = $result->fetch_assoc()) {
     <main class="flex-1 p-10">
         <h1 class="text-2xl font-bold mb-6">👥 Gestión de Usuarios Pendientes</h1>
         <div class="overflow-x-auto">
-            <table class="min-w-full bg-white rounded-xl shadow">
-                <thead>
-                    <tr>
-                        <th class="py-2 px-4 text-left">Nombre</th>
-                        <th class="py-2 px-4 text-left">Apellido</th>
-                        <th class="py-2 px-4 text-left">Mail</th>
-                        <th class="py-2 px-4 text-left">Rol</th>
-                        <th class="py-2 px-4 text-left">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($usuarios_pendientes as $u): ?>
+            <div class="max-h-[400px] overflow-y-auto rounded-xl shadow">
+                <table class="min-w-full bg-white rounded-xl shadow">
+                    <thead>
                         <tr>
-                            <td class="py-2 px-4"><?php echo $u['nombre']; ?></td>
-                            <td class="py-2 px-4"><?php echo $u['apellido']; ?></td>
-                            <td class="py-2 px-4"><?php echo $u['mail']; ?></td>
-                            <td class="py-2 px-4">
-                                <form method="post" action="./utils/admin_usuario_aprobar.php" class="flex items-center gap-2">
-                                    <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
-                                    <select name="rol" class="border rounded px-2 py-1">
-                                        <option value="1">Administrador</option>
-                                        <option value="2">Preceptor</option>
-                                        <option value="3">Profesor</option>
-                                        <option value="4">Alumno</option>
-                                    </select>
-                                    <button type="submit" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">Aprobar</button>
-                                </form>
-                            </td>
-                            <td class="py-2 px-4">
-                                <form method="post" action="./utils/admin_usuario_rechazar.php" onsubmit="return confirm('¿Estás seguro de rechazar este usuario?');">
-                                    <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
-                                    <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Rechazar</button>
-                                </form>
-                            </td>
+                            <th class="py-2 px-4 text-left">Nombre</th>
+                            <th class="py-2 px-4 text-left">Apellido</th>
+                            <th class="py-2 px-4 text-left">Mail</th>
+                            <th class="py-2 px-4 text-left">Rol</th>
+                            <th class="py-2 px-4 text-left">Acciones</th>
                         </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($usuarios_pendientes)): ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($usuarios_pendientes as $u): ?>
+                            <tr>
+                                <td class="py-2 px-4"><?php echo $u['nombre']; ?></td>
+                                <td class="py-2 px-4"><?php echo $u['apellido']; ?></td>
+                                <td class="py-2 px-4"><?php echo $u['mail']; ?></td>
+                                <td class="py-2 px-4">
+                                    <form method="post" action="./utils/admin_usuario_aprobar.php" class="flex items-center gap-2">
+                                        <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
+                                        <select name="rol" class="border rounded px-2 py-1">
+                                            <option value="1">Administrador</option>
+                                            <option value="2">Preceptor</option>
+                                            <option value="3">Profesor</option>
+                                            <option value="4">Alumno</option>
+                                        </select>
+                                        <button type="submit" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">Aprobar</button>
+                                    </form>
+                                </td>
+                                <td class="py-2 px-4">
+                                    <form method="post" action="./utils/admin_usuario_rechazar.php" onsubmit="return confirm('¿Estás seguro de rechazar este usuario?');">
+                                        <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
+                                        <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Rechazar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($usuarios_pendientes)): ?>
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-gray-500">No hay usuarios pendientes de aprobación.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <h2 class="text-xl font-bold mt-10 mb-4">👤 Usuarios Activos (No alumnos)</h2>
+        <div class="overflow-x-auto">
+            <div class="max-h-[400px] overflow-y-auto rounded-xl shadow">
+                <table class="min-w-full bg-white rounded-xl shadow">
+                    <thead>
                         <tr>
-                            <td colspan="5" class="py-4 text-center text-gray-500">No hay usuarios pendientes de aprobación.</td>
+                            <th class="py-2 px-4 text-left">Nombre</th>
+                            <th class="py-2 px-4 text-left">Apellido</th>
+                            <th class="py-2 px-4 text-left">Mail</th>
+                            <th class="py-2 px-4 text-left">Rol</th>
+                            <th class="py-2 px-4 text-left">Editar</th>
+                            <!-- Si querés, sumar Borrar/Desactivar -->
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($usuarios_activos as $u): ?>
+                            <tr>
+                                <td class="py-2 px-4"><?= htmlspecialchars($u['nombre']) ?></td>
+                                <td class="py-2 px-4"><?= htmlspecialchars($u['apellido']) ?></td>
+                                <td class="py-2 px-4"><?= htmlspecialchars($u['mail']) ?></td>
+                                <td class="py-2 px-4">
+                                    <?php
+                                    switch ($u['rol']) {
+                                        case 1:
+                                            echo "Administrador";
+                                            break;
+                                        case 2:
+                                            echo "Preceptor";
+                                            break;
+                                        case 3:
+                                            echo "Profesor";
+                                            break;
+                                        case 5:
+                                            echo "ATTP";
+                                            break;
+                                        default:
+                                            echo "Desconocido";
+                                            break;
+                                    }
+                                    ?>
+                                </td>
+                                <td class="py-2 px-4">
+                                    <a href="./utils/admin_editar_usuario.php?id=<?= $u['id'] ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Editar</a>
+                                </td>
+                                <!--
+                                <td class="py-2 px-4">
+                                    <form method="post" action="usuario_borrar.php" onsubmit="return confirm('¿Seguro que querés borrar este usuario?');">
+                                        <input type="hidden" name="usuario_id" value="<?= $u['id'] ?>">
+                                        <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Borrar</button>
+                                    </form>
+                                </td>
+                                -->
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($usuarios_activos)): ?>
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-gray-500">No hay usuarios activos (Admin, Preceptor, Profesor, ATTP).</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 </body>
