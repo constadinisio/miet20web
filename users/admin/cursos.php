@@ -18,6 +18,7 @@ $curso_id = $_GET['curso_id'] ?? null;
 
 // Listado de alumnos en un curso
 $alumnos = [];
+$total = 0;
 if ($curso_id) {
     $sql2 = "SELECT u.id, u.nombre, u.apellido FROM alumno_curso ac JOIN usuarios u ON ac.alumno_id = u.id WHERE ac.curso_id = ?";
     $stmt2 = $conexion->prepare($sql2);
@@ -28,6 +29,14 @@ if ($curso_id) {
         $alumnos[] = $row2;
     }
     $stmt2->close();
+
+    $sql = "SELECT COUNT(*) AS total FROM alumno_curso WHERE curso_id = ? AND estado = 'activo'";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("i", $curso_id);
+    $stmt->execute();
+    $stmt->bind_result($total);
+    $stmt->fetch();
+    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
@@ -36,8 +45,7 @@ if ($curso_id) {
 <head>
     <meta charset="UTF-8">
     <title>Gestión de Cursos</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -63,65 +71,137 @@ if ($curso_id) {
         <a href="usuarios.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👥 Usuarios</a>
         <a href="cursos.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100">🏫 Cursos</a>
         <a href="alumnos.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👤 Alumnos</a>
+        <a href="materias.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📚 Materias</a>
         <button onclick="window.location='../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
+
     <main class="flex-1 p-10">
-        <h1 class="text-2xl font-bold mb-6">🏫 Gestión de Cursos</h1>
-        <form class="mb-8 flex gap-4" method="get">
-            <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
-                <option value="">Seleccionar curso</option>
-                <?php foreach ($cursos as $c): ?>
-                    <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
-                        <?php echo $c['anio'] . "°" . $c['division'] . " (" . $c['turno'] . ")"; ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
-        </form>
-        <?php if ($curso_id): ?>
-            <div class="mb-6">
-                <h2 class="font-bold mb-2">Alumnos en el curso:</h2>
-                <div class="max-h-[400px] overflow-y-auto rounded-xl shadow">
-                    <table class="min-w-full bg-white rounded-xl shadow">
-                        <thead>
-                            <tr>
-                                <th class="py-2 px-4 text-left">Nombre</th>
-                                <th class="py-2 px-4 text-left">Apellido</th>
-                                <th class="py-2 px-4 text-left">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($alumnos as $a): ?>
-                                <tr>
-                                    <td class="py-2 px-4"><?php echo $a['nombre']; ?></td>
-                                    <td class="py-2 px-4"><?php echo $a['apellido']; ?></td>
-                                    <td class="py-2 px-4">
-                                        <form method="post" action="./utils/admin_curso_eliminar_alumno.php" style="display:inline;" onsubmit="return confirm('¿Eliminar este alumno del curso?');">
-                                            <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                                            <input type="hidden" name="alumno_id" value="<?php echo $a['id']; ?>">
-                                            <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Eliminar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            <?php if (empty($alumnos)): ?>
-                                <tr>
-                                    <td colspan="3" class="py-4 text-center text-gray-500">No hay alumnos en este curso.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+        <?php if (isset($_GET['ok'])): ?>
+            <div class="mb-4 px-4 py-3 rounded-xl bg-green-100 border border-green-400 text-green-800">
+                <?php
+                switch ($_GET['ok']) {
+                    case 'nuevo':
+                        echo '✅ Curso creado correctamente.';
+                        break;
+                    case 'estado_cambiado':
+                        echo '🔁 Estado del curso actualizado.';
+                        break;
+                }
+                ?>
             </div>
-            <div>
-                <form method="post" action="./utils/admin_curso_agregar_alumno.php" class="flex gap-2 items-end">
-                    <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                    <input type="text" name="dni" placeholder="DNI del alumno" class="px-4 py-2 border rounded-xl" required>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700">Agregar alumno</button>
-                </form>
-                <div class="text-xs text-gray-500 mt-2">Ingresá el DNI del alumno para sumarlo a este curso.</div>
+        <?php elseif (isset($_GET['error'])): ?>
+            <div class="mb-4 px-4 py-3 rounded-xl bg-red-100 border border-red-400 text-red-800">
+                <?php
+                switch ($_GET['error']) {
+                    case 'duplicado':
+                        echo '⚠️ Ya existe un curso con ese año, división y turno.';
+                        break;
+                    case 'estado_invalido':
+                        echo '❌ Estado no válido para cambiar.';
+                        break;
+                    case 'faltan_campos':
+                        echo '❗ Por favor completá todos los campos.';
+                        break;
+                }
+                ?>
             </div>
         <?php endif; ?>
+        <h1 class="text-2xl font-bold mb-6">🏫 Gestión de Cursos</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Card: Ver alumnos -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">🔍 Ver alumnos por curso</h2>
+                <form class="mb-4 flex gap-4" method="get">
+                    <select name="curso_id" class="px-4 py-2 rounded-xl border flex-1" required>
+                        <option value="">Seleccionar curso</option>
+                        <?php foreach ($cursos as $c): ?>
+                            <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
+                                <?php echo $c['anio'] . "°" . $c['division'] . " (" . $c['turno'] . ")"; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+                </form>
+
+                <?php if ($curso_id): ?>
+                    <div class="text-sm mb-3 text-gray-700">👥 Total de alumnos: <span class="text-indigo-600 font-semibold"><?php echo $total; ?></span></div>
+                    <div class="max-h-[300px] overflow-y-auto border rounded-xl">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="text-left px-4 py-2">Nombre</th>
+                                    <th class="text-left px-4 py-2">Apellido</th>
+                                    <th class="text-left px-4 py-2">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($alumnos as $a): ?>
+                                    <tr class="border-b">
+                                        <td class="px-4 py-2"><?php echo $a['nombre']; ?></td>
+                                        <td class="px-4 py-2"><?php echo $a['apellido']; ?></td>
+                                        <td class="px-4 py-2">
+                                            <form method="post" action="./utils/admin_curso_eliminar_alumno.php" onsubmit="return confirm('¿Eliminar este alumno del curso?');">
+                                                <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
+                                                <input type="hidden" name="alumno_id" value="<?php echo $a['id']; ?>">
+                                                <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($alumnos)): ?>
+                                    <tr>
+                                        <td colspan="3" class="text-center text-gray-500 py-3">No hay alumnos en este curso.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post" action="./utils/admin_curso_agregar_alumno.php" class="flex gap-2 items-end mt-4">
+                        <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
+                        <input type="text" name="dni" placeholder="DNI del alumno" class="px-4 py-2 border rounded-xl flex-1" required>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700">Agregar</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
+            <!-- Card: Crear y gestionar cursos -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">⚙️ Crear o modificar cursos</h2>
+                <form action="./utils/admin_crear_curso.php" method="post" class="flex flex-col gap-3 mb-6">
+                    <div class="flex gap-3">
+                        <input type="number" name="anio" placeholder="Año" class="px-4 py-2 border rounded-xl w-1/3" required>
+                        <input type="text" name="division" placeholder="División" class="px-4 py-2 border rounded-xl w-1/3" required>
+                        <select name="turno" class="px-4 py-2 border rounded-xl w-1/3" required>
+                            <option value="">Turno</option>
+                            <option value="M">M</option>
+                            <option value="T">T</option>
+                            <option value="N">N</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">➕ Crear nuevo curso</button>
+                </form>
+
+                <h3 class="text-lg font-semibold mb-2">Cambiar estado de cursos</h3>
+                <ul class="text-sm max-h-[200px] overflow-y-auto">
+                    <?php foreach ($cursos as $c): ?>
+                        <li class="flex justify-between items-center border-b py-2">
+                            <span><?php echo $c['anio'] . "°" . $c['division'] . " (" . $c['turno'] . ")"; ?></span>
+                            <form action="./utils/admin_curso_toggle_estado.php" method="post">
+                                <input type="hidden" name="curso_id" value="<?php echo $c['id']; ?>">
+                                <input type="hidden" name="estado" value="<?php echo $c['estado']; ?>">
+                                <button type="submit" class="text-sm px-3 py-1 rounded-xl <?php echo $c['estado'] === 'activo' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'; ?> text-white">
+                                    <?php echo $c['estado'] === 'activo' ? 'Desactivar' : 'Activar'; ?>
+                                </button>
+                            </form>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+
+        </div>
     </main>
 </body>
 
