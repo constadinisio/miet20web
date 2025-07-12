@@ -72,6 +72,7 @@ if ($curso_id) {
         <a href="cursos.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100">🏫 Cursos</a>
         <a href="alumnos.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👤 Alumnos</a>
         <a href="materias.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📚 Materias</a>
+        <a href="horarios.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">⏰ Horarios</a>
         <button onclick="window.location='../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
 
