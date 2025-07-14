@@ -75,10 +75,21 @@ if ($asignacion_id) {
         <a href="alumnos.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👤 Alumnos</a>
         <a href="materias.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📚 Materias</a>
         <a href="horarios.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100">⏰ Horarios</a>
+        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+            <form method="post" action="../../includes/cambiar_rol.php" class="mt-auto mb-3">
+                <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
+                    <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                        <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                            Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        <?php endif; ?>
         <button onclick="window.location='../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
     <main class="flex-1 p-10">
-        <h1 class="text-2xl font-bold mb-6">🕒 Asignación de Horarios</h1>
+        <h1 class="text-2xl font-bold mb-6">⏰ Asignación de Horarios</h1>
         <?php if (isset($_GET['ok'])): ?>
             <div class="mb-6 px-4 py-3 rounded-xl bg-green-100 border border-green-400 text-green-800">
                 <?php

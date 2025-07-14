@@ -42,6 +42,17 @@ require_once '../../includes/db.php';
         <a href="alumnos.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">👤 Alumnos</a>
         <a href="materias.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📚 Materias</a>
         <a href="horarios.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">⏰ Horarios</a>
+        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+            <form method="post" action="../../includes/cambiar_rol.php" class="mt-auto mb-3">
+                <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
+                    <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                        <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                            Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        <?php endif; ?>
         <button onclick="window.location='../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
     <main class="flex-1 p-10">
@@ -54,7 +65,7 @@ require_once '../../includes/db.php';
                 <div class="text-5xl mb-2">👥</div>
                 <h2 class="text-xl font-bold mb-2">Usuarios pendientes</h2>
                 <p class="text-gray-500 text-center mb-4">Aprobá nuevos usuarios y definí sus roles.</p>
-                <a href="./utils/usuarios.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+                <a href="usuarios.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">🏫</div>
@@ -66,13 +77,19 @@ require_once '../../includes/db.php';
                 <div class="text-5xl mb-2">👤</div>
                 <h2 class="text-xl font-bold mb-2">Alumnos</h2>
                 <p class="text-gray-500 text-center mb-4">Modificá la información de los alumnos.</p>
-                <a href="./alumnos.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+                <a href="alumnos.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">📚</div>
                 <h2 class="text-xl font-bold mb-2">Materias</h2>
                 <p class="text-gray-500 text-center mb-4">Agregá o quitá alumnos de materias de la institución.</p>
                 <a href="cursos.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">⏰</div>
+                <h2 class="text-xl font-bold mb-2">Horarios</h2>
+                <p class="text-gray-500 text-center mb-4">Gestiona los horarios de los profesores.</p>
+                <a href="horarios.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
             </div>
         </div>
     </main>

@@ -1,13 +1,13 @@
 <?php
 session_start();
 if (
-  !isset($_SESSION['usuario']) ||
-  !is_array($_SESSION['usuario']) ||
-  (int)$_SESSION['usuario']['rol'] !== 3
+    !isset($_SESSION['usuario']) ||
+    !is_array($_SESSION['usuario']) ||
+    (int)$_SESSION['usuario']['rol'] !== 3
 ) {
-  // Si no cumple las condiciones, redirige al login con un error de rol
-  header("Location: ../login.php?error=rol");
-  exit;
+    // Si no cumple las condiciones, redirige al login con un error de rol
+    header("Location: ../login.php?error=rol");
+    exit;
 }
 $usuario = $_SESSION['usuario'];
 require_once '../../includes/db.php';
@@ -73,6 +73,7 @@ if ($curso_id && $materia_id) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Cargar Calificaciones</title>
@@ -85,8 +86,9 @@ if ($curso_id && $materia_id) {
         }
     </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen flex">
-     <!-- Navbar lateral -->
+    <!-- Navbar lateral -->
     <nav class="w-60 bg-white shadow-lg px-6 py-8 flex flex-col gap-2">
         <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400">
             <img src="../../images/et20ico.ico" class="block items-center h-28 w-28">
@@ -102,6 +104,17 @@ if ($curso_id && $materia_id) {
         <a href="profesor.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition">🏠 Inicio</a>
         <a href="libro_temas.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📚 Libro de Temas</a>
         <a href="calificaciones.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100">📝 Calificaciones</a>
+        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+            <form method="post" action="../../includes/cambiar_rol.php" class="mt-auto mb-3">
+                <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
+                    <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                        <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                            Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        <?php endif; ?>
         <button onclick="window.location='../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
     <main class="flex-1 p-10">
@@ -109,17 +122,17 @@ if ($curso_id && $materia_id) {
         <form class="mb-8 flex gap-4" method="get">
             <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
                 <option value="">Seleccionar curso</option>
-                <?php foreach($cursos as $c): ?>
-                    <option value="<?php echo $c['curso_id']; ?>" <?php if($curso_id==$c['curso_id']) echo "selected"; ?>>
-                        <?php echo $c['anio']."°".$c['division']; ?>
+                <?php foreach ($cursos as $c): ?>
+                    <option value="<?php echo $c['curso_id']; ?>" <?php if ($curso_id == $c['curso_id']) echo "selected"; ?>>
+                        <?php echo $c['anio'] . "°" . $c['division']; ?>
                     </option>
                 <?php endforeach; ?>
             </select>
             <select name="materia_id" class="px-4 py-2 rounded-xl border" required>
                 <option value="">Seleccionar materia</option>
-                <?php foreach($cursos as $c): ?>
-                    <?php if($curso_id==$c['curso_id']): ?>
-                        <option value="<?php echo $c['materia_id']; ?>" <?php if($materia_id==$c['materia_id']) echo "selected"; ?>>
+                <?php foreach ($cursos as $c): ?>
+                    <?php if ($curso_id == $c['curso_id']): ?>
+                        <option value="<?php echo $c['materia_id']; ?>" <?php if ($materia_id == $c['materia_id']) echo "selected"; ?>>
                             <?php echo $c['materia']; ?>
                         </option>
                     <?php endif; ?>
@@ -142,22 +155,25 @@ if ($curso_id && $materia_id) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach($notas as $n): ?>
-                        <tr>
-                            <td class="py-2 px-4"><?php echo $n['apellido']." ".$n['nombre']; ?></td>
-                            <td class="py-2 px-4 font-semibold"><?php echo $n['nota']; ?></td>
-                            <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($n['fecha_carga'])); ?></td>
-                        </tr>
+                        <?php foreach ($notas as $n): ?>
+                            <tr>
+                                <td class="py-2 px-4"><?php echo $n['apellido'] . " " . $n['nombre']; ?></td>
+                                <td class="py-2 px-4 font-semibold"><?php echo $n['nota']; ?></td>
+                                <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($n['fecha_carga'])); ?></td>
+                            </tr>
                         <?php endforeach; ?>
                         <?php if (empty($notas)): ?>
-                        <tr><td colspan="3" class="py-4 text-center text-gray-500">No hay notas cargadas aún.</td></tr>
+                            <tr>
+                                <td colspan="3" class="py-4 text-center text-gray-500">No hay notas cargadas aún.</td>
+                            </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         <?php else: ?>
-        <div class="text-gray-500">Seleccioná un curso y una materia para ver y cargar calificaciones.</div>
+            <div class="text-gray-500">Seleccioná un curso y una materia para ver y cargar calificaciones.</div>
         <?php endif; ?>
     </main>
 </body>
+
 </html>

@@ -63,6 +63,17 @@ $stmt->close();
         <a href="profesor.php" class="py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition">🏠 Inicio</a>
         <a href="libro_temas.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📚 Libro de Temas</a>
         <a href="calificaciones.php" class="py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100">📝 Calificaciones</a>
+        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+            <form method="post" action="../../includes/cambiar_rol.php" class="mt-auto mb-3">
+                <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
+                    <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                        <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                            Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        <?php endif; ?>
         <button onclick="window.location='../../includes/logout.php'" class="mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">Salir</button>
     </nav>
 
