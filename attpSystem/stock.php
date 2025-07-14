@@ -95,8 +95,19 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
         <a href="logs.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Logs</a>
       </nav>
       <div class="p-4 border-t border-blue-700">
+        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+          <form method="post" action="../../includes/cambiar_rol.php" class="mt-auto mb-3">
+            <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
+              <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                  Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+        <?php endif; ?>
         <form action="./actions/logout.php" method="POST">
-          <button type="submit" class="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
+          <button type="submit" class="w-full py-2 px-4 mt-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
             Cerrar sesión
           </button>
         </form>
@@ -233,7 +244,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       </script>
     </main>
   </div>
-    <script>
+  <script>
     const sidebar = document.getElementById("sidebar");
     const toggleSidebar = document.getElementById("toggleSidebar");
     const closeSidebar = document.getElementById("closeSidebar");
