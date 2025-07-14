@@ -59,7 +59,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
 <head>
   <meta charset="UTF-8" />
-  <title>ATTP - Página Principal</title>
+  <title>SPEI - Página Principal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="../output.css">
   <link rel="icon" type="image/x-icon" href="../images/et20png.png">
@@ -84,7 +84,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
         <a href="#" class="flex items-center text-xl font-bold">
           <img src="../images/et20ico.ico" class="mr-2">
-          Sistema ATTP
+          Panel SPEI
         </a>
       </div>
 
@@ -92,7 +92,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <div class="p-6 text-center border-b border-blue-700">
         <img src="<?php echo $u['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $u['nombre']; ?>" class="block mx-auto rounded-full w-14 h-14">
         <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
-        <p class="text-sm text-blue-200">ATTP</p>
+        <p class="text-sm text-blue-200">SPEI</p>
       </div>
 
       <!-- Menú -->
@@ -123,7 +123,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <h1 class="text-3xl font-bold mb-6">Panel Principal</h1>
       <section class="p-4">
         <div class="bg-white shadow rounded-xl p-6 max-w-3xl mx-auto">
-          <h2 class="text-xl font-bold mb-4">📝 Pizarrón de ATTP</h2>
+          <h2 class="text-xl font-bold mb-4">📝 Pizarrón de SPEI</h2>
 
           <!-- Formulario para nueva nota -->
           <form id="formNota" class="mb-4">
@@ -247,7 +247,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
     <div class="bg-white rounded-lg shadow-lg p-6 max-w-md text-center relative">
       <h2 class="text-2xl font-bold mb-4">Créditos</h2>
       <p class="text-gray-700 mb-4">
-        Panel de Noticias desarrollado por el equipo de ATTP:<br>
+        Panel de Noticias desarrollado por el equipo de SPEI:<br>
         👨‍💻 Desarrolladores:
         <br>- Liz Vera
         - Uma Perez

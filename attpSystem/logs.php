@@ -40,14 +40,15 @@ $u = $_SESSION['usuario'];
       <div class="flex justify-between items-center p-4 border-b border-blue-700">
         <a href="#" class="flex items-center text-xl font-bold">
           <img src="../images/et20ico.ico" class="mr-2">
-          Sistema ATTP
+          Panel SPEI
         </a>
       </div>
 
       <!-- Perfil del usuario -->
       <div class="p-6 text-center border-b border-blue-700">
-        <img src="<?php echo $u['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $u['nombre']; ?>" class="block mx-auto rounded-full w-14 h-14">        <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
-        <p class="text-sm text-blue-200">ATTP</p>
+        <img src="<?php echo $u['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $u['nombre']; ?>" class="block mx-auto rounded-full w-14 h-14">
+        <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
+        <p class="text-sm text-blue-200">SPEI</p>
       </div>
 
       <!-- Menú -->
