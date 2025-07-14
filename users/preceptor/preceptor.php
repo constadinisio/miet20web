@@ -81,19 +81,19 @@ $stmt->close();
                 <div class="text-5xl mb-2">📆</div>
                 <h2 class="text-xl font-bold mb-2">Asistencias</h2>
                 <p class="text-gray-500 text-center mb-4">Modificá y gestioná las asistencias de los alumnos.</p>
-                <a href="preceptor_asistencias.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Asistencias</a>
+                <a href="asistencias.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Asistencias</a>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">📝</div>
                 <h2 class="text-xl font-bold mb-2">Calificaciones</h2>
                 <p class="text-gray-500 text-center mb-4">Visualizá las calificaciones de cada alumno.</p>
-                <a href="preceptor_calificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Calificaciones</a>
+                <a href="calificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Calificaciones</a>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">📑</div>
                 <h2 class="text-xl font-bold mb-2">Boletines</h2>
                 <p class="text-gray-500 text-center mb-4">Generá y exportá boletines en PDF.</p>
-                <a href="preceptor_boletines.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Boletines</a>
+                <a href="boletines.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Boletines</a>
             </div>
         </div>
         <div class="mt-10">
