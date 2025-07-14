@@ -18,9 +18,9 @@ $stmt = $conexion->prepare($sql);
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $res = $stmt->get_result();
-$usuario = $res->fetch_assoc();
+$usuario_editado = $res->fetch_assoc();
 $stmt->close();
-if (!$usuario) die("Usuario no encontrado.");
+if (!$usuario_editado) die("Usuario no encontrado.");
 
 // ROLES POSIBLES
 $roles = [];
@@ -106,10 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <img src="../../../images/et20ico.ico" class="block items-center h-28 w-28">
         </div>
         <div class="flex items-center mb-10 gap-2">
-            <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-14 h-14">
+            <img src="<?php echo $_SESSION['usuario']['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $_SESSION['usuario']['nombre']; ?>" class="rounded-full w-14 h-14">
             <div class="flex flex-col pl-3">
-                <div class="font-bold text-lg leading-tight"><?php echo $usuario['nombre']; ?></div>
-                <div class="font-bold text-lg leading-tight"><?php echo $usuario['apellido']; ?></div>
+                <div class="font-bold text-lg leading-tight"><?php echo $_SESSION['usuario']['nombre']; ?></div>
+                <div class="font-bold text-lg leading-tight"><?php echo $_SESSION['usuario']['apellido']; ?></div>
                 <div class="mt-2 text-xs text-gray-500">Administrador/a</div>
             </div>
         </div>
@@ -137,22 +137,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" class="max-w-xl bg-white rounded-xl shadow p-6 space-y-4">
             <div>
                 <label class="font-bold">Nombre:</label>
-                <input type="text" value="<?= htmlspecialchars($usuario['nombre']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>
+                <input type="text" value="<?= htmlspecialchars($usuario_editado['nombre']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>
             </div>
             <div>
                 <label class="font-bold">Apellido:</label>
-                <input type="text" value="<?= htmlspecialchars($usuario['apellido']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>
+                <input type="text" value="<?= htmlspecialchars($usuario_editado['apellido']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>
             </div>
             <div>
                 <label class="font-bold">Email:</label>
-                <input type="text" value="<?= htmlspecialchars($usuario['mail']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>
+                <input type="text" value="<?= htmlspecialchars($usuario_editado['mail']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>
             </div>
             <div>
                 <label class="font-bold">Rol principal:</label>
                 <select name="rol_principal" required class="border rounded px-3 py-2 w-full">
                     <?php foreach ($roles as $rol): ?>
                         <option value="<?= $rol['id'] ?>"
-                            <?= ($usuario['rol'] == $rol['id']) ? 'selected' : '' ?>>
+                            <?= ($usuario_editado['rol'] == $rol['id']) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($rol['nombre']) ?>
                         </option>
                     <?php endforeach; ?>
@@ -161,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div>
                 <label class="font-bold">Roles adicionales:</label><br>
                 <?php foreach ($roles as $rol): ?>
-                    <?php if ($rol['id'] != $usuario['rol']): ?>
+                    <?php if ($rol['id'] != $usuario_editado['rol']): ?>
                         <label class="inline-flex items-center mr-4">
                             <input type="checkbox" name="roles_adicionales[]" value="<?= $rol['id'] ?>"
                                 <?= in_array($rol['id'], $roles_adicionales) ? 'checked' : '' ?>>
@@ -173,11 +173,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div>
                 <label class="font-bold">Permisos Especiales:</label><br>
                 <label class="inline-flex items-center mr-4">
-                    <input type="checkbox" name="permNoticia" value="1" <?= !empty($usuario['permNoticia']) ? 'checked' : '' ?>>
+                    <input type="checkbox" name="permNoticia" value="1" <?= !empty($usuario_editado['permNoticia']) ? 'checked' : '' ?>>
                     <span class="ml-2">Acceso a Panel de Noticias</span>
                 </label>
                 <label class="inline-flex items-center mr-4">
-                    <input type="checkbox" name="permSubidaArch" value="1" <?= !empty($usuario['permSubidaArch']) ? 'checked' : '' ?>>
+                    <input type="checkbox" name="permSubidaArch" value="1" <?= !empty($usuario_editado['permSubidaArch']) ? 'checked' : '' ?>>
                     <span class="ml-2">Acceso a Subida de Imágenes</span>
                 </label>
             </div>
