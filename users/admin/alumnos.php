@@ -108,7 +108,8 @@ if (isset($stmt)) $stmt->close();
                                 <td class="py-2 px-4"><?php echo $a['anio']; ?></td>
                                 <td class="py-2 px-4"><?php echo $a['division']; ?></td>
                                 <td class="py-2 px-4">
-                                    <a href="./utils/admin_alumno_editar.php?id=<?php echo $a['id']; ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Editar</a>
+                                    <a href="./utils/admin_alumno_editar.php?id=<?php echo $a['id']; ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">🩹 Editar</a>
+                                    <a href="eliminar_alumno.php?id=<?= $alumno['id'] ?>" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm" onclick="return confirm('¿Estás seguro de que querés eliminar este alumno?')">🗑️ Eliminar</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
