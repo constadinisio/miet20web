@@ -8,10 +8,16 @@ $usuario = $_SESSION['usuario'];
 require_once '../../includes/db.php';
 
 // Materias
-$materias = [];
-$res = $conexion->query("SELECT id, nombre, codigo, categoria, es_contraturno, estado FROM materias ORDER BY nombre");
+$materiasPorCategoria = [];
+$res = $conexion->query("
+    SELECT m.id, m.nombre, m.codigo, m.categoria_id, m.es_contraturno, m.estado, c.nombre AS categoria_nombre
+    FROM materias m
+    LEFT JOIN categorias c ON m.categoria_id = c.id
+    ORDER BY c.nombre, m.nombre
+");
 while ($m = $res->fetch_assoc()) {
-    $materias[] = $m;
+    $categoria = $m['categoria_nombre'] ?: 'Sin categoría';
+    $materiasPorCategoria[$categoria][] = $m;
 }
 
 // Profesores
@@ -140,7 +146,12 @@ if ($profesor_id) {
                 <form action="./utils/admin_crear_materia.php" method="post" class="flex flex-col gap-4">
                     <input type="text" name="nombre" placeholder="Nombre de la materia" class="px-4 py-2 border rounded-xl" required>
                     <input type="text" name="codigo" placeholder="Código interno (opcional)" class="px-4 py-2 border rounded-xl">
-                    <input type="text" name="categoria" placeholder="Categoría (ej: Ciencias, Talleres...)" class="px-4 py-2 border rounded-xl">
+                    <select name="categoria_id" required class="px-4 py-2 border rounded-xl">
+                        <option value="">Seleccionar categoría</option>
+                        <?php foreach ($categorias as $cat): ?>
+                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['nombre']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                     <label class="inline-flex items-center gap-2">
                         <input type="checkbox" name="es_contraturno" value="1" class="accent-indigo-600">
                         Es contraturno
@@ -149,27 +160,40 @@ if ($profesor_id) {
                 </form>
             </div>
 
-            <!-- Card 2: Lista de materias -->
+            <!-- Card 2: Lista de materias agrupadas por categoría -->
             <div class="bg-white rounded-xl shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">📋 Materias registradas</h2>
-                <ul class="max-h-[400px] overflow-y-auto text-sm">
-                    <?php foreach ($materias as $m): ?>
-                        <li class="flex justify-between items-center border-b py-2">
-                            <div>
-                                <div class="font-medium"><?php echo $m['nombre']; ?> <?php echo $m['codigo'] ? "({$m['codigo']})" : ""; ?></div>
-                                <div class="text-xs text-gray-500"><?php echo $m['categoria'] ?: 'Sin categoría'; ?> <?php echo $m['es_contraturno'] ? '• Contraturno' : ''; ?></div>
-                            </div>
-                            <form action="./utils/admin_toggle_estado_materia.php" method="post">
-                                <input type="hidden" name="materia_id" value="<?php echo $m['id']; ?>">
-                                <input type="hidden" name="estado" value="<?php echo $m['estado']; ?>">
-                                <button type="submit" class="text-xs px-3 py-1 rounded-xl text-white <?php echo $m['estado'] === 'activo' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'; ?>">
-                                    <?php echo $m['estado'] === 'activo' ? 'Desactivar' : 'Activar'; ?>
-                                </button>
-                            </form>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+                <h2 class="text-xl font-semibold mb-4">📋 Materias registradas por categoría</h2>
+
+                <?php foreach ($materiasPorCategoria as $categoria => $materias): ?>
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">📁 <?= htmlspecialchars($categoria) ?></h3>
+                        <ul class="border rounded-xl divide-y max-h-[300px] overflow-y-auto text-sm">
+                            <?php foreach ($materias as $m): ?>
+                                <li class="flex justify-between items-center px-4 py-2">
+                                    <div>
+                                        <div class="font-medium">
+                                            <?= htmlspecialchars($m['nombre']) ?>
+                                            <?= $m['codigo'] ? " ({$m['codigo']})" : "" ?>
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            <?= $m['es_contraturno'] ? 'Contraturno' : '' ?>
+                                        </div>
+                                    </div>
+                                    <form action="./utils/admin_toggle_estado_materia.php" method="post">
+                                        <input type="hidden" name="materia_id" value="<?= $m['id'] ?>">
+                                        <input type="hidden" name="estado" value="<?= $m['estado'] ?>">
+                                        <button type="submit"
+                                            class="text-xs px-3 py-1 rounded-xl text-white <?= $m['estado'] === 'activo' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700' ?>">
+                                            <?= $m['estado'] === 'activo' ? 'Desactivar' : 'Activar' ?>
+                                        </button>
+                                    </form>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endforeach; ?>
             </div>
+
             <!-- Card 3: Asignar materias a profesores -->
             <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">👨‍🏫 Asignar materias a profesores</h2>
@@ -200,9 +224,13 @@ if ($profesor_id) {
                             <?php endforeach; ?>
                         </select>
                         <select name="materia_id" class="border rounded-xl px-4 py-2 flex-1" required>
-                            <option value="">Materia</option>
-                            <?php foreach ($materias as $m): ?>
-                                <option value="<?php echo $m['id']; ?>"><?php echo $m['nombre']; ?></option>
+                            <option value="" disabled hidden selected>Seleccionar materia</option>
+                            <?php foreach ($materiasPorCategoria as $categoria => $lista): ?>
+                                <optgroup label="📂 <?= htmlspecialchars($categoria) ?>">
+                                    <?php foreach ($lista as $m): ?>
+                                        <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['nombre']) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
                             <?php endforeach; ?>
                         </select>
                         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700">Asignar</button>
@@ -240,8 +268,7 @@ if ($profesor_id) {
                     </table>
                 <?php endif; ?>
             </div>
-
-        </div> <!-- cierre grid -->
+        </div>
     </main>
 </body>
 
