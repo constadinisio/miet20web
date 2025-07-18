@@ -7,6 +7,13 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 $usuario = $_SESSION['usuario'];
 require_once '../../includes/db.php';
 
+// Categorías
+$categorias = [];
+$res = $conexion->query("SELECT id, nombre FROM categorias ORDER BY nombre");
+while ($row = $res->fetch_assoc()) {
+    $categorias[] = $row;
+}
+
 // Materias
 $materiasPorCategoria = [];
 $res = $conexion->query("
