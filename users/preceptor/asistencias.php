@@ -182,29 +182,32 @@ $msg = $_GET['msg'] ?? '';
                         <table class="min-w-full bg-white rounded-xl shadow">
                             <thead>
                                 <tr>
+                                    <th class="py-2 px-4 text-left">#</th>
                                     <th class="py-2 px-4 text-left">Alumno</th>
                                     <th class="py-2 px-4 text-left">Turno</th>
                                     <th class="py-2 px-4 text-left">Contraturno</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php $contador = 1; ?>
                                 <?php foreach ($alumnos as $a): ?>
                                     <tr>
-                                        <td class="py-2 px-4"><?php echo $a['apellido'] . " " . $a['nombre']; ?></td>
+                                        <td class="py-2 px-4 text-gray-500 font-mono"><?= $contador++ ?></td>
+                                        <td class="py-2 px-4"><?= $a['apellido'] . " " . $a['nombre']; ?></td>
                                         <td class="py-2 px-4">
-                                            <select name="asistencias[<?php echo $a['id']; ?>][turno]" class="border rounded px-2 py-1">
+                                            <select name="asistencias[<?= $a['id'] ?>][turno]" class="border rounded px-2 py-1">
                                                 <option value="">-</option>
-                                                <option value="P" <?php if ($a['turno'] == 'P') echo "selected"; ?>>Presente</option>
-                                                <option value="A" <?php if ($a['turno'] == 'A') echo "selected"; ?>>Ausente</option>
-                                                <option value="T" <?php if ($a['turno'] == 'T') echo "selected"; ?>>Tarde</option>
+                                                <option value="P" <?= $a['turno'] == 'P' ? 'selected' : '' ?>>Presente</option>
+                                                <option value="A" <?= $a['turno'] == 'A' ? 'selected' : '' ?>>Ausente</option>
+                                                <option value="T" <?= $a['turno'] == 'T' ? 'selected' : '' ?>>Tarde</option>
                                             </select>
                                         </td>
                                         <td class="py-2 px-4">
-                                            <select name="asistencias[<?php echo $a['id']; ?>][contraturno]" class="border rounded px-2 py-1">
+                                            <select name="asistencias[<?= $a['id'] ?>][contraturno]" class="border rounded px-2 py-1">
                                                 <option value="">-</option>
-                                                <option value="P" <?php if ($a['contraturno'] == 'P') echo "selected"; ?>>Presente</option>
-                                                <option value="A" <?php if ($a['contraturno'] == 'A') echo "selected"; ?>>Ausente</option>
-                                                <option value="T" <?php if ($a['contraturno'] == 'T') echo "selected"; ?>>Tarde</option>
+                                                <option value="P" <?= $a['contraturno'] == 'P' ? 'selected' : '' ?>>Presente</option>
+                                                <option value="A" <?= $a['contraturno'] == 'A' ? 'selected' : '' ?>>Ausente</option>
+                                                <option value="T" <?= $a['contraturno'] == 'T' ? 'selected' : '' ?>>Tarde</option>
                                             </select>
                                         </td>
                                     </tr>
@@ -233,8 +236,10 @@ $msg = $_GET['msg'] ?? '';
                             </tr>
                         </thead>
                         <tbody>
+                            <?php $contador = 1; ?>
                             <?php foreach ($alumnos as $a): ?>
                                 <tr>
+                                    <td class="py-2 px-4 text-gray-500 font-mono"><?= $contador++ ?></td>
                                     <td class="py-2 px-4"><?php echo $a['apellido'] . " " . $a['nombre']; ?></td>
                                     <td class="py-2 px-4">
                                         <?php
