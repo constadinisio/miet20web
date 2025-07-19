@@ -19,6 +19,8 @@ $u = $_SESSION['usuario'];
 // Incluye la conexión a la base de datos
 include "../includes/db.php";
 
+$mostrar_modal = ($usuario['rol'] != 0 && $usuario['rol'] != 4 && empty($usuario['ficha_censal']));
+
 /* ======================== BLOQUES DE CONSULTAS ======================== */
 
 // 1. Consulta cuántas computadoras están "En uso" y **no están prestadas actualmente**
@@ -114,7 +116,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
             </select>
           </form>
         <?php endif; ?>
-        <form action="../includes/logout.php" method="POST">
+        <form action="../../includes/logout.php" method="POST">
           <button type="submit" class="w-full py-2 px-4 mt-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
             Cerrar sesión
           </button>
@@ -287,6 +289,69 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       document.getElementById('popupCreditos').classList.add('hidden');
     }
   </script>
+  <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('modalFichaCensal');
+            const form = document.getElementById('fichaCensalForm');
+            const errorMsg = document.getElementById('errorFichaCensal');
+
+            if (modal && form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    errorMsg.classList.add('hidden');
+                    const ficha = form.ficha_censal.value.trim();
+                    if (!ficha) {
+                        errorMsg.textContent = "El campo ficha censal es obligatorio.";
+                        errorMsg.classList.remove('hidden');
+                        return;
+                    }
+
+                    // Enviar AJAX
+                    fetch('../../includes/guardar_ficha_censal.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'ficha_censal=' + encodeURIComponent(ficha)
+                        })
+                        .then(res => res.text())
+                        .then(res => {
+                            if (res.trim() === 'OK') {
+                                // Cerrar el modal
+                                modal.classList.add('hidden');
+                                location.reload();
+                            } else {
+                                errorMsg.textContent = res;
+                                errorMsg.classList.remove('hidden');
+                            }
+                        })
+                        .catch(() => {
+                            errorMsg.textContent = "Hubo un error. Intentá de nuevo.";
+                            errorMsg.classList.remove('hidden');
+                        });
+                });
+            }
+        });
+    </script>
+    <!-- Modal de ficha censal -->
+    <div id="modalFichaCensal"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 <?= $mostrar_modal ? '' : 'hidden' ?>">
+        <form id="fichaCensalForm"
+            class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-5"
+            method="POST"
+            autocomplete="off"
+            style="min-width:300px">
+            <h2 class="text-2xl font-bold text-center mb-3 text-blue-700">Completar ficha censal</h2>
+            <p class="mb-2 text-gray-700 text-center">Para continuar, ingresá tu número de ficha censal:</p>
+            <input type="text" id="ficha_censal" name="ficha_censal" required
+                class="w-full border rounded-xl p-2" maxlength="30" autofocus>
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition mt-2">
+                Guardar
+            </button>
+            <p id="errorFichaCensal" class="text-red-600 text-center text-sm mt-2 hidden"></p>
+        </form>
+    </div>
 </body>
 
 </html>

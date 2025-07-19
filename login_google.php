@@ -34,24 +34,93 @@ if (!isset($_GET['code'])) {
 
     if ($resultado->num_rows === 1) {
         $usuario = $resultado->fetch_assoc();
-        $_SESSION['usuario'] = $usuario;
 
-        $tieneATTP = ((int)$usuario['rol'] === 5);
-        $tieneNoticias = (!empty($usuario['permNoticia']) && $usuario['permNoticia']);
+        // 1. Chequeo si está pendiente de aprobación (rol 0)
+        if ((int)$usuario['rol'] === 0) {
+            echo "<!DOCTYPE html>
+            <html lang='es'>
+            <head>
+                <meta charset='UTF-8'>
+                <title>Pendiente de aprobación</title>
+                <link href='output.css' rel='stylesheet'>
+            </head>
+            <body class='bg-gray-100 flex items-center justify-center min-h-screen'>
+            <div class='bg-white p-10 rounded-2xl shadow-xl text-center'>
+                <h1 class='text-2xl font-bold text-yellow-600 mb-4'>Registro pendiente de aprobación</h1>
+                <p class='text-gray-700 mb-6'>Tu registro fue enviado correctamente.<br>
+                Un administrador lo revisará y te habilitará el acceso.<br>
+                Volvé a intentar en unas horas.</p>
+                <a href='login.php' class='inline-block px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700'>Ir al inicio</a>
+            </div></body></html>";
+            exit;
+        }
 
-        if ($tieneATTP && $tieneNoticias) {
-            // Tiene ambos permisos → redirigimos a ATTP por defecto (podés cambiar esto)
-            header("Location: ./includes/seleccionar_panel.php");
+        // --------- Lógica de roles principal + secundarios ---------
+        // 1. Principal
+        $roles = [];
+        if (!empty($usuario['rol'])) {
+            $sql_rol = "SELECT id, nombre FROM roles WHERE id = ?";
+            $stmt_rol = $conexion->prepare($sql_rol);
+            $stmt_rol->bind_param("i", $usuario['rol']);
+            $stmt_rol->execute();
+            $res_rol = $stmt_rol->get_result();
+            if ($rol_row = $res_rol->fetch_assoc()) {
+                $roles[] = $rol_row;
+            }
+            $stmt_rol->close();
+        }
+        // 2. Secundarios/adicionales
+        $sql = "SELECT r.id, r.nombre FROM usuario_roles ur JOIN roles r ON ur.rol_id = r.id WHERE ur.usuario_id = ?";
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("i", $usuario['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $duplicado = false;
+            foreach ($roles as $r) {
+                if ($r['id'] == $row['id']) {
+                    $duplicado = true;
+                    break;
+                }
+            }
+            if (!$duplicado) $roles[] = $row;
+        }
+        $stmt->close();
+
+        // ---------------------------------------------------------------
+        $tienePermisoEspecial = (!empty($usuario['permNoticia']) || !empty($usuario['permSubidaArch']));
+
+        if (count($roles) === 0) {
+            header("Location: login.php?error=sin_rol");
             exit;
-        } elseif ($tieneATTP) {
-            header("Location: ./attpSystem/index.php");
-            exit;
-        } elseif ($tieneNoticias) {
-            header("Location: ./panelNoticias/panelNoticias.php");
+        } elseif (count($roles) === 1 && !$tienePermisoEspecial) {
+            // Un solo rol y NO permisos especiales, redirigí directo
+            $_SESSION['usuario'] = $usuario;
+            $_SESSION['usuario']['rol'] = $roles[0]['id'];
+            $_SESSION['usuario']['rol_nombre'] = $roles[0]['nombre'];
+            $_SESSION['usuario']['permNoticia'] = isset($usuario['permNoticia']) ? (int)$usuario['permNoticia'] : 0;
+            $_SESSION['usuario']['permSubidaArch'] = isset($usuario['permSubidaArch']) ? (int)$usuario['permSubidaArch'] : 0;
+            switch ($roles[0]['id']) {
+                case 1: header("Location: users/admin/admin.php"); exit;
+                case 2: header("Location: users/preceptor/preceptor.php"); exit;
+                case 3: header("Location: users/profesor/profesor.php"); exit;
+                case 4: header("Location: users/alumno/alumno.php"); exit;
+                case 5: header("Location: attpSystem/index.php"); exit;
+                default: header("Location: includes/seleccionar_panel.php"); exit;
+            }
+        } else {
+            // Tiene más de un rol O permisos especiales, mostrar selección
+            $_SESSION['usuario'] = $usuario;
+            $_SESSION['usuario_pending_roles'] = $roles;
+            $_SESSION['usuario']['permNoticia'] = isset($usuario['permNoticia']) ? (int)$usuario['permNoticia'] : 0;
+            $_SESSION['usuario']['permSubidaArch'] = isset($usuario['permSubidaArch']) ? (int)$usuario['permSubidaArch'] : 0;
+            header("Location: includes/seleccionar_panel.php");
             exit;
         }
     } else {
-        header("Location: login.php?error=correo");
+        // Si NO existe el mail, redirigí a registro
+        $_SESSION['google_email'] = $email; // opcional para prellenar
+        header("Location: ./includes/registro_google.php");
         exit;
     }
 }

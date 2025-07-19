@@ -7,10 +7,10 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 $usuario = $_SESSION['usuario'];
 require_once '../../includes/db.php';
 
-// Usuarios pendientes (status=0)
-$usuarios_pendientes = [];
-$sql = "SELECT id, nombre, apellido, mail, rol, status FROM usuarios WHERE status = 0";
+// Conexión a la base...
+$sql = "SELECT * FROM usuarios WHERE rol = 0";
 $result = $conexion->query($sql);
+$usuarios_pendientes = [];
 while ($row = $result->fetch_assoc()) {
     $usuarios_pendientes[] = $row;
 }

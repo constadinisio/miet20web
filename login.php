@@ -65,6 +65,7 @@
                     </div>
                 <?php endif; ?>
 
+
                 <form action="./includes/validar_login.php" method="POST" class="space-y-4">
                     <div>
                         <label for="email" class="block text-sm font-medium">Email</label>
