@@ -1,5 +1,5 @@
 node_modules/
 vendor/
-.env
-generar_tailwind.bat
+config/.env
+config/generar_tailwind.bat
 .github/workflows/deploy.yml

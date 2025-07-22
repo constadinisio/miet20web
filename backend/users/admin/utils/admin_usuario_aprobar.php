@@ -1,0 +1,20 @@
+<?php
+session_start();
+if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
+    header("Location: /login.php?error=rol");
+    exit;
+}
+require_once __DIR__ . '/../../../../backend/includes/db.php';
+
+$usuario_id = $_POST['usuario_id'] ?? null;
+$rol = $_POST['rol'] ?? null;
+
+if ($usuario_id && $rol) {
+    $sql = "UPDATE usuarios SET status = 1, rol = ? WHERE id = ?";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ii", $rol, $usuario_id);
+    $stmt->execute();
+    $stmt->close();
+}
+header("Location: /users/admin/usuarios.php");
+exit;
