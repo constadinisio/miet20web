@@ -6,6 +6,12 @@ if (!isset($_SESSION['usuario'])) {
   header("Location: /login.php");
   exit;
 }
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 $u = $_SESSION['usuario'];
 ?>
 <!DOCTYPE html>
@@ -59,6 +65,7 @@ $u = $_SESSION['usuario'];
       <div class="p-4 border-t border-blue-700">
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
           <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
               <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                 <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -69,6 +76,7 @@ $u = $_SESSION['usuario'];
           </form>
         <?php endif; ?>
         <form action="/includes/logout.php" method="POST">
+          <input type="hidden" name="csrf" value="<?= $csrf ?>">
           <button type="submit" class="w-full py-2 px-4 mt-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
             Cerrar sesión
           </button>
@@ -90,6 +98,7 @@ $u = $_SESSION['usuario'];
 
       <!-- Formulario para agregar préstamo -->
       <form action="agregar_prestamo.php" method="POST" class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input name="Netbook_ID" required placeholder="Netbook ID (ej: A1)" class="border p-2 rounded">
         <input name="Alumno" required placeholder="Alumno" class="border p-2 rounded">
         <input name="Curso" required placeholder="Curso (ej: 3°4°)" class="border p-2 rounded">

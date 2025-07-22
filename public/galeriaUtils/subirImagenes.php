@@ -3,11 +3,11 @@ session_start();
 
 // Verifica si hay sesión activa
 if (!isset($_SESSION['usuario'])) {
-    header("Location: ../login.php");
+    header("Location: /login.php");
     exit;
 }
 
-require_once '../includes/db.php';
+require_once __DIR__ . '/../../backend/includes/db.php';
 
 $mensaje = "";
 
@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Panel - Galeria de Imagenes</title>
-    <link rel="stylesheet" href="../output.css">
+    <link rel="stylesheet" href="/output.css">
     <link rel="icon" type="image/x-icon" href="../images/et20png.png">
 </head>
 
@@ -59,9 +59,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-center items-center h-16">
                 <div class="flex items-center">
-                    <a href="./index.php" class="flex items-center">
+                    <a href="/index.php" class="flex items-center">
                         <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
-                        <h1><img src="../images/et20ico.ico" alt="Icono personalizado" class="w-10 h-10"></h1>
+                        <h1><img src="/images/et20ico.ico" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
                     </a>
                 </div>
@@ -79,7 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="relative max-w-xl mx-auto mt-12 mb-12 bg-white p-6 rounded shadow text-black">
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-2xl font-bold">Subir nueva imagen</h1>
-                <a href="../includes/logout.php" class="bg-red-600 text-white px-4 py-2 rounded transition-colors hover:bg-red-700">
+                <a href="/includes/logout.php" class="bg-red-600 text-white px-4 py-2 rounded transition-colors hover:bg-red-700">
                     Cerrar sesión
                 </a>
             </div>

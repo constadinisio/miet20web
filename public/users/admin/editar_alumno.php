@@ -4,6 +4,12 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
     header("Location: /login.php?error=rol");
     exit;
 }
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
@@ -111,6 +117,7 @@ if ($alumno_id) {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/../../../backend/includes/cambiar_rol.php" class="mt-auto mb-3">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white sidebar-label">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -129,6 +136,7 @@ if ($alumno_id) {
         <?php if ($alumno): ?>
             <form method="post" class="bg-white rounded-xl p-8 shadow flex flex-col gap-4 max-w-xl">
                 <input type="hidden" name="alumno_id" value="<?php echo $alumno['id']; ?>">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <div>
                     <label class="font-bold">Nombre:</label>
                     <input type="text" name="nombre" value="<?php echo htmlspecialchars($alumno['nombre']); ?>" class="border rounded px-4 py-2 w-full" required>

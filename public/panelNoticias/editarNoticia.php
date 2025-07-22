@@ -1,14 +1,13 @@
 <?php
 session_start();
-$id = trim($_GET['id'] ?? '');
-if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['permNoticia'])) {
+if (!isset($_SESSION['usuario']) | empty($_SESSION['usuario']['permNoticia'])) {
     http_response_code(403);
     exit("Acceso no autorizado");
 }
 
 $id = trim($_GET['id'] ?? '');
-include "../../includes/db.php";
-include "../includes/jsonLoader.php";
+require_once __DIR__ . '/../../backend/includes/db.php';
+require_once __DIR__ . '/../../backend/panelNoticias/includes/jsonLoader.php';
 
 $noticias = cargarNoticias();
 $noticia = null;
@@ -47,7 +46,7 @@ if (!$noticia) {
 <body class="bg-gray-100 min-h-screen p-8 bg-front-et20 bg-no-repeat bg-cover">
     <div class="max-w-xl mx-auto bg-white p-6 rounded shadow-md">
         <h2 class="text-xl font-bold mb-4">Editar Noticia</h2>
-        <form action="guardarEdicion.php" method="POST" class="space-y-4">
+        <form action="/../../../backend/panelNoticias/actions/guardarEdicion.php" method="POST" class="space-y-4">
             <input type="hidden" name="id" value="<?= $id ?>">
 
             <label class="block font-semibold">Título:</label>

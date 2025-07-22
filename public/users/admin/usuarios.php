@@ -7,6 +7,11 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 // Conexión a la base...
 $sql = "SELECT * FROM usuarios WHERE rol = 0";
 $result = $conexion->query($sql);
@@ -95,6 +100,7 @@ while ($row = $result->fetch_assoc()) {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -130,6 +136,7 @@ while ($row = $result->fetch_assoc()) {
                                 <td class="py-2 px-4"><?php echo $u['mail']; ?></td>
                                 <td class="py-2 px-4">
                                     <form method="post" action="admin_usuario_aprobar.php" class="flex items-center gap-2">
+                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                         <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
                                         <select name="rol" class="border rounded px-2 py-1">
                                             <option value="1">Administrador</option>
@@ -142,6 +149,7 @@ while ($row = $result->fetch_assoc()) {
                                 </td>
                                 <td class="py-2 px-4">
                                     <form method="post" action="admin_usuario_rechazar.php" onsubmit="return confirm('¿Estás seguro de rechazar este usuario?');">
+                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                         <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
                                         <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Rechazar</button>
                                     </form>

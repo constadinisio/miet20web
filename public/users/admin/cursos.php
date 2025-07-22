@@ -4,6 +4,12 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
     header("Location: /login.php?error=rol");
     exit;
 }
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
@@ -108,6 +114,7 @@ if ($curso_id) {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/../../../backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -161,6 +168,7 @@ if ($curso_id) {
             <div class="bg-white rounded-xl shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">🔍 Ver alumnos por curso</h2>
                 <form class="mb-4 flex gap-4" method="get">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <select name="curso_id" class="px-4 py-2 rounded-xl border flex-1" required>
                         <option value="">Seleccionar curso</option>
                         <?php foreach ($cursos as $c): ?>
@@ -192,6 +200,7 @@ if ($curso_id) {
                                             <form method="post" action="admin_curso_eliminar_alumno.php" onsubmit="return confirm('¿Eliminar este alumno del curso?');">
                                                 <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
                                                 <input type="hidden" name="alumno_id" value="<?php echo $a['id']; ?>">
+                                                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                                 <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
                                             </form>
                                         </td>
@@ -207,6 +216,7 @@ if ($curso_id) {
                     </div>
 
                     <form method="post" action="admin_curso_agregar_alumno.php" class="flex gap-2 items-end mt-4">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
                         <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
                         <input type="text" name="dni" placeholder="DNI del alumno" class="px-4 py-2 border rounded-xl flex-1" required>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700">Agregar</button>
@@ -218,6 +228,7 @@ if ($curso_id) {
             <div class="bg-white rounded-xl shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">⚙️ Crear o modificar cursos (NO FUNCIONA)</h2>
                 <form action="crear_curso.php" method="post" class="flex flex-col gap-3 mb-6">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <div class="flex gap-3">
                         <input type="number" name="anio" placeholder="Año" class="px-4 py-2 border rounded-xl w-1/3" required>
                         <input type="text" name="division" placeholder="División" class="px-4 py-2 border rounded-xl w-1/3" required>
@@ -237,6 +248,7 @@ if ($curso_id) {
                         <li class="flex justify-between items-center border-b py-2">
                             <span><?php echo $c['anio'] . "°" . $c['division'] . " (" . $c['turno'] . ")"; ?></span>
                             <form action="admin_curso_toggle_estado.php" method="post">
+                                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                 <input type="hidden" name="curso_id" value="<?php echo $c['id']; ?>">
                                 <input type="hidden" name="estado" value="<?php echo $c['estado']; ?>">
                                 <button type="submit" class="text-sm px-3 py-1 rounded-xl <?php echo $c['estado'] === 'activo' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'; ?> text-white">

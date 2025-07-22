@@ -9,6 +9,12 @@ if (
     header("Location: /login.php?error=rol");
     exit;
 }
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
@@ -128,6 +134,7 @@ if ($curso_id && $materia_id) {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white sidebar-label">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -144,6 +151,7 @@ if ($curso_id && $materia_id) {
     <main class="flex-1 p-10">
         <h1 class="text-2xl font-bold mb-6">📝 Cargar Calificaciones</h1>
         <form class="mb-8 flex gap-4" method="get">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
                 <option value="">Seleccionar curso</option>
                 <?php foreach ($cursos as $c): ?>

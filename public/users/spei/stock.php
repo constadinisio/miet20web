@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 $query = "SELECT id, carrito, numero, numero_serie, fecha_adquisicion, estado, observaciones FROM netbooks ORDER BY carrito, numero";
 $result = $conexion->query($query);
 
@@ -97,6 +102,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <div class="p-4 border-t border-blue-700">
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
           <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
               <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                 <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -107,6 +113,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
           </form>
         <?php endif; ?>
         <form action="/includes/logout.php" method="POST">
+          <input type="hidden" name="csrf" value="<?= $csrf ?>">
           <button type="submit" class="w-full py-2 px-4 mt-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
             Cerrar sesión
           </button>
@@ -139,6 +146,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       </div>
 
       <form action="agregar_netbook.php" method="POST" class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input name="carrito" required placeholder="Carrito (A-Z)" class="border p-2 rounded">
         <input name="numero" required placeholder="Número (01-30)" class="border p-2 rounded">
         <input name="numero_serie" required placeholder="Número de Serie" class="border p-2 rounded">
@@ -188,6 +196,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
                 </td>
                 <td class="py-2 px-4">
                   <form action="editar_observacion.php" method="POST" class="flex">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
                     <input name="observaciones" value="<?= htmlspecialchars($row['observaciones']) ?>" class="border p-1 rounded w-full text-sm">
                     <button class="ml-2 px-2 bg-yellow-500 text-white text-sm rounded">💾</button>

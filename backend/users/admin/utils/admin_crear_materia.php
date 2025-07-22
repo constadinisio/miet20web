@@ -1,4 +1,9 @@
 <?php
+session_start();
+if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
+    header("Location: /login.php?error=rol");
+    exit;
+}
 require_once __DIR__ . '/../../../../backend/includes/db.php';
 
 $nombre = trim($_POST['nombre'] ?? '');

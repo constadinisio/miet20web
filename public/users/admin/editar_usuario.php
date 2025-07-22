@@ -6,6 +6,11 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 }
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 // --- RECIBE ID DE USUARIO POR GET ---
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
@@ -156,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/../../../backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -172,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="flex-1 p-10">
         <h1 class="text-2xl font-bold mb-6">Editar Usuario</h1>
         <form method="post" class="max-w-xl bg-white rounded-xl shadow p-6 space-y-4">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <div>
                 <label class="font-bold">Nombre:</label>
                 <input type="text" value="<?= htmlspecialchars($usuario_editado['nombre']) ?>" class="border rounded px-3 py-2 w-full bg-gray-100" disabled>

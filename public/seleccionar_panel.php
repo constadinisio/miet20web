@@ -2,9 +2,14 @@
 session_start();
 
 if (!isset($_SESSION['usuario'])) {
-    header("Location: ../login.php");
+    header("Location: /login.php");
     exit;
 }
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
 
 $usuario = $_SESSION['usuario'];
 $roles = $_SESSION['usuario_pending_roles'] ?? [];
@@ -29,11 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['opcion'])) {
             $_SESSION['rol_activo'] = $r['nombre'];
             unset($_SESSION['usuario_pending_roles']);
             switch ($r['id']) {
-                case 1: header("Location: ../users/admin/admin.php"); exit;
-                case 2: header("Location: ../users/preceptor/preceptor.php"); exit;
-                case 3: header("Location: ../users/profesor/profesor.php"); exit;
-                case 4: header("Location: ../users/alumno/alumno.php"); exit;
-                case 5: header("Location: ../attpSystem/index.php"); exit;
+                case 1: header("Location: /users/admin/admin.php"); exit;
+                case 2: header("Location: /users/preceptor/preceptor.php"); exit;
+                case 3: header("Location: /users/profesor/profesor.php"); exit;
+                case 4: header("Location: /users/alumno/alumno.php"); exit;
+                case 5: header("Location: /users/spei/index.php"); exit;
                 default: header("Location: seleccionar_panel.php"); exit;
             }
         }
@@ -42,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['opcion'])) {
     // Permisos especiales
     if ($opcion == 'noticias') {
         $_SESSION['usuario']['permNoticia'] = true;
-        header("Location: ../panelNoticias/panelNoticias.php");
+        header("Location: /panelNoticias/panelNoticias.php");
         exit;
     } elseif ($opcion == 'galeria') {
         $_SESSION['usuario']['permSubidaArch'] = true;
-        header("Location: ../galeriaUtils/subirImagenes.php");
+        header("Location: /galeriaUtils/subirImagenes.php");
         exit;
     } elseif ($opcion == 'attp') {
         $_SESSION['usuario']['rol'] = 5;
         $_SESSION['usuario']['rol_nombre'] = "ATTP";
         $_SESSION['rol_activo'] = "ATTP";
-        header("Location: ../attpSystem/index.php");
+        header("Location: /users/spei/index.php");
         exit;
     }
 
@@ -83,8 +88,8 @@ $tieneSubida = !empty($usuario['permSubidaArch']);
 <nav class="bg-white shadow-lg fixed w-full z-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-center items-center h-16">
-            <a href="../index.php" class="flex items-center">
-                <img src="../images/et20ico.ico" alt="Icono" class="w-10 h-10">
+            <a href="/index.php" class="flex items-center">
+                <img src="/images/et20ico.ico" alt="Icono" class="w-10 h-10">
                 <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
             </a>
         </div>
@@ -99,6 +104,7 @@ $tieneSubida = !empty($usuario['permSubidaArch']);
             <div class="bg-red-100 text-red-700 rounded-xl p-3 mb-4"><?= $error ?></div>
         <?php endif; ?>
         <form method="post" class="space-y-2">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <?php foreach ($roles as $r): ?>
                 <button type="submit" name="opcion" value="rol_<?= $r['id'] ?>"
                     class="block w-full text-lg mb-3 px-4 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-800 font-bold">

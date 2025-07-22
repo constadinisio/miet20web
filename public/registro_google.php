@@ -1,6 +1,11 @@
 <?php
 session_start();
 $google_email = $_SESSION['google_email'] ?? '';
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -36,11 +41,11 @@ $google_email = $_SESSION['google_email'] ?? '';
         </div>
     </nav>
     <main class="flex-grow flex justify-center items-center">
+        
         <form action="/../../../backend/includes/guardar_registro_google.php" method="POST" class="bg-white p-8 mt-20 mb-8 rounded-2xl shadow-xl w-full max-w-md space-y-5">
             <h2 class="text-2xl font-bold text-center mb-6 text-blue-700">Registro de usuario</h2>
 
             <input type="hidden" name="mail" value="<?= htmlspecialchars($google_email) ?>">
-
             <div>
                 <label class="block mb-1 font-semibold text-gray-700" for="nombre">Nombre</label>
                 <input type="text" id="nombre" name="nombre" required class="w-full border rounded-xl p-2 focus:outline-blue-500" value="<?= htmlspecialchars($google_nombre ?? '') ?>">
@@ -70,6 +75,7 @@ $google_email = $_SESSION['google_email'] ?? '';
                 <input type="password" id="contrasena" name="contrasena" required class="w-full border rounded-xl p-2" minlength="6" autocomplete="new-password">
                 <small class="text-gray-500">Mínimo 6 caracteres.</small>
             </div>
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition">Registrarme</button>
         </form>
     </main>

@@ -69,7 +69,7 @@
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center">
                         <i class="fas text-3xl text-blue-600 mr-4 -right-500"></i>
-                        <h1><img src="./images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
+                        <h1><img src="/images/et20png.png" alt="Icono personalizado" class="w-10 h-10"></h1>
                         <span class="text-xl font-semibold text-gray-800 ml-2">Escuela Técnica 20 D.E. 20</span>
                     </a>
                 </div>
@@ -153,7 +153,7 @@
             <h2 class="text-3xl font-bold text-center mb-12">Nuestra Institución</h2>
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div>
-                    <img src="./images/front_et20.webp" alt="Fachada del colegio" class="rounded-lg shadow-lg">
+                    <img src="/images/front_et20.webp" alt="Fachada del colegio" class="rounded-lg shadow-lg">
                 </div>
                 <div>
                     <h3 class="text-2xl font-semibold mb-4">Excelencia Educativa</h3>
@@ -201,7 +201,7 @@
                 <!-- Tecnologías de la Información y la Comunicación -->
                 <a href="./especialidad_tics.html">
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden transition duration-300 hover:shadow-xl">
-                        <img src="./images/ing_tics.webp" alt="Biblioteca" class="w-full h-48 object-cover">
+                        <img src="/images/ing_tics.webp" alt="Biblioteca" class="w-full h-48 object-cover">
                         <div class="p-6">
                             <h3 class="text-xl font-semibold mb-2">Tecnologías de la Información y la Comunicación</h3>
                             <p class="text-gray-600">
@@ -219,10 +219,10 @@
         <div class="max-w-7xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-center mb-6">Galería de Imágenes</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <img src="./images/5.JPG" alt="Actividades escolares" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/16.JPG" alt="Estudiantes en clase" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/24.JPG" alt="Laboratorio" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
-                <img src="./images/DSC_2365.jpg" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="/images/5.JPG" alt="Actividades escolares" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="/images/16.JPG" alt="Estudiantes en clase" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="/images/24.JPG" alt="Laboratorio" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
+                <img src="/images/DSC_2365.jpg" alt="Biblioteca" class="rounded-lg shadow-md hover:shadow-xl transition duration-300">
             </div>
             <div class="flex justify-center my-10">
                 <a href="galeria_home.php" class="bg-blue-600 text-white px-4 py-1 rounded-full text-lg shadow-lg hover:bg-blue-900 transition">
@@ -303,7 +303,7 @@
     <!-- Botón flotante de WhatsApp -->
     <a href="https://wa.me/5491139107733" target="_blank"
         class="fixed bottom-4 right-4 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition">
-        <img src="./images/whatsapp_icon.svg" alt="WhatsApp" class="w-8 h-8">
+        <img src="/images/whatsapp_icon.svg" alt="WhatsApp" class="w-8 h-8">
     </a>
 
 </body>

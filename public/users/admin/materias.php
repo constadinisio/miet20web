@@ -7,6 +7,11 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 // Categorías
 $categorias = [];
 $res = $conexion->query("SELECT id, nombre FROM categorias ORDER BY nombre");
@@ -125,6 +130,7 @@ if ($profesor_id) {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -186,6 +192,7 @@ if ($profesor_id) {
             <div class="bg-white rounded-xl shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">➕ Crear nueva materia</h2>
                 <form action="admin_crear_materia.php" method="post" class="flex flex-col gap-4">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="text" name="nombre" placeholder="Nombre de la materia" class="px-4 py-2 border rounded-xl" required>
                     <input type="text" name="codigo" placeholder="Código interno (opcional)" class="px-4 py-2 border rounded-xl">
                     <select name="categoria_id" required class="px-4 py-2 border rounded-xl">
@@ -222,6 +229,7 @@ if ($profesor_id) {
                                         </div>
                                     </div>
                                     <form action="admin_toggle_estado_materia.php" method="post">
+                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                         <input type="hidden" name="materia_id" value="<?= $m['id'] ?>">
                                         <input type="hidden" name="estado" value="<?= $m['estado'] ?>">
                                         <button type="submit"
@@ -242,6 +250,7 @@ if ($profesor_id) {
 
                 <!-- Selección de profesor -->
                 <form method="get" class="mb-6 flex gap-4 items-center">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <select name="profesor_id" class="px-4 py-2 rounded-xl border w-full md:w-1/3" required>
                         <option value="">Seleccionar profesor</option>
                         <?php foreach ($profesores as $p): ?>
@@ -256,6 +265,7 @@ if ($profesor_id) {
                 <?php if ($profesor_id): ?>
                     <!-- Asignar materia -->
                     <form method="post" action="admin_asignar_materia.php" class="flex flex-col md:flex-row gap-4 mb-6">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
                         <input type="hidden" name="profesor_id" value="<?php echo $profesor_id; ?>">
                         <select name="curso_id" class="border rounded-xl px-4 py-2 flex-1" required>
                             <option value="">Curso</option>
@@ -294,6 +304,7 @@ if ($profesor_id) {
                                     <td class="px-4 py-2"><?php echo $a['materia']; ?></td>
                                     <td class="px-4 py-2">
                                         <form method="post" action="/../../../backend/users/admin/utils/admin_eliminar_asignacion.php" onsubmit="return confirm('¿Eliminar esta asignación?');">
+                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                             <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
                                             <input type="hidden" name="profesor_id" value="<?php echo $profesor_id; ?>">
                                             <button type="submit" class="text-red-600 hover:underline">Eliminar</button>

@@ -7,6 +7,11 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 2) {
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 // Todos los cursos del sistema
 $cursos = [];
 $sql = "SELECT id, anio, division FROM cursos ORDER BY anio, division";
@@ -170,6 +175,7 @@ $msg = $_GET['msg'] ?? '';
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white sidebar-label">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -189,6 +195,7 @@ $msg = $_GET['msg'] ?? '';
             <div class="bg-green-100 text-green-700 rounded-xl p-3 mb-4">Asistencias guardadas correctamente.</div>
         <?php endif; ?>
         <form class="mb-8 flex gap-4" method="get">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
                 <option value="">Seleccionar curso</option>
                 <?php foreach ($cursos as $c): ?>
@@ -207,6 +214,7 @@ $msg = $_GET['msg'] ?? '';
         <?php if ($curso_id): ?>
             <?php if ($modo == 'editar'): ?>
                 <form method="post" class="min-w-full">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
                     <input type="hidden" name="fecha" value="<?php echo $fecha; ?>">
                     <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 500px;">

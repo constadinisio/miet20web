@@ -10,6 +10,7 @@ $database = $_ENV['DB_NAME'];
 $conexion = new mysqli($host, $user, $password, $database);
 
 if ($conexion->connect_error) {
-    die("Error de conexión: " . $conexion->connect_error);
+    error_log('DB error: '.$conexion->connect_error);
+    die('Error interno, intente más tarde.');
 }
 ?>

@@ -1,3 +1,9 @@
+<?php
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+?>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -67,6 +73,7 @@
 
 
                 <form action="/includes/validar_login.php" method="POST" class="space-y-4">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <div>
                         <label for="email" class="block text-sm font-medium">Email</label>
                         <input type="email" name="mail" id="usuario"

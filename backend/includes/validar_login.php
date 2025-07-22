@@ -24,6 +24,13 @@ if (!$usuario || $contrasena !== $usuario['contrasena']) {
     exit;
 }
 
+/* VALIDACIÓN DE CREDENCIALES POR HASH
+if (password_verify($contrasena, $usuario['contrasena'])) {
+    header("Location: /login.php?error=login");
+    exit;
+}
+*/
+
 // ---------- CAMBIO ACÁ: roles principal + secundarios ----------
 
 // 1. Primero agrego el rol principal del usuario (si tiene)

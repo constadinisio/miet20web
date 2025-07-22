@@ -7,6 +7,11 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 // Traer asignaciones existentes
 $asignaciones = [];
 $sql = "SELECT pcm.id, u.nombre AS prof_nombre, u.apellido AS prof_apellido,
@@ -110,6 +115,7 @@ if ($asignacion_id) {
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                         <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -153,6 +159,7 @@ if ($asignacion_id) {
         <div class="bg-white rounded-xl shadow p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">🔍 Seleccionar asignación</h2>
             <form method="get" class="flex gap-4">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="asignacion_id" class="w-full md:w-1/2 px-4 py-2 rounded-xl border" required>
                     <option value="">Seleccionar curso + materia + profesor</option>
                     <?php foreach ($asignaciones as $a): ?>
@@ -170,6 +177,7 @@ if ($asignacion_id) {
             <div class="bg-white rounded-xl shadow p-6 mb-6">
                 <h2 class="text-lg font-semibold mb-4">➕ Agregar horario</h2>
                 <form action="admin_agregar_horario.php" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="hidden" name="asignacion_id" value="<?php echo $asignacion_id; ?>">
                     <select name="dia" class="px-4 py-2 border rounded-xl" required>
                         <option value="">Día</option>
@@ -206,6 +214,7 @@ if ($asignacion_id) {
                                 <td class="px-4 py-2"><?php echo substr($h['hora_fin'], 0, 5); ?></td>
                                 <td class="px-4 py-2">
                                     <form method="post" action="admin_eliminar_horario.php" onsubmit="return confirm('¿Eliminar este horario?');">
+                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                         <input type="hidden" name="id" value="<?php echo $h['id']; ?>">
                                         <input type="hidden" name="asignacion_id" value="<?php echo $asignacion_id; ?>">
                                         <button type="submit" class="text-red-600 hover:underline">Eliminar</button>

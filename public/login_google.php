@@ -122,7 +122,7 @@ if (!isset($_GET['code'])) {
     } else {
         // Si NO existe el mail, redirigí a registro
         $_SESSION['google_email'] = $email; // opcional para prellenar
-        header("Location: /includes/registro_google.php");
+        header("Location: registro_google.php");
         exit;
     }
 }

@@ -13,6 +13,11 @@ if (
   exit;
 }
 
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 // Guarda los datos del usuario logueado en una variable $u
 $u = $_SESSION['usuario'];
 
@@ -107,6 +112,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <div class="p-4 border-t border-blue-700">
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
           <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
               <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                 <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
@@ -117,6 +123,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
           </form>
         <?php endif; ?>
         <form action="/includes/logout.php" method="POST">
+          <input type="hidden" name="csrf" value="<?= $csrf ?>">
           <button type="submit" class="w-full py-2 px-4 mt-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
             Cerrar sesión
           </button>
@@ -140,6 +147,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
 
           <!-- Formulario para nueva nota -->
           <form id="formNota" class="mb-4">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <div class="flex flex-col gap-2">
               <textarea id="mensaje" name="mensaje" placeholder="Escribí una nota..." rows="3" class="border p-2 rounded"></textarea>
               <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-fit">
