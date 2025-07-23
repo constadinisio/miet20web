@@ -163,7 +163,7 @@
         let paginaActual = 1;
         let noticias = [];
 
-        fetch('./panelNoticias/data/noticias.json')
+        fetch('/panelNoticias/data/noticias.json')
             .then(res => res.json())
             .then(data => {
                 noticias = data.reverse();
@@ -194,7 +194,7 @@
                 let imagen = null;
                 if (noticia.hasOwnProperty('imagen') && noticia.imagen.trim() !== "") {
                     imagen = document.createElement('img');
-                    imagen.src = `panelNoticias/images/${noticia.imagen}`;
+                    imagen.src = `/panelNoticias/images/${noticia.imagen}`;
                     imagen.alt = "Imagen de la noticia";
                     imagen.className = "mb-4 max-w-64 h-auto rounded";
                 }

@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/db.php';
+require_once __DIR__ . '/../backend/includes/db.php';
 
 $categoria = $_GET['categoria'] ?? '';
 $page = $_GET['page'] ?? 1;

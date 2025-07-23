@@ -32,13 +32,6 @@ while ($m = $res->fetch_assoc()) {
     $materiasPorCategoria[$categoria][] = $m;
 }
 
-// Profesores
-$profesores = [];
-$res = $conexion->query("SELECT id, nombre, apellido FROM usuarios WHERE rol = '3' ORDER BY apellido");
-while ($p = $res->fetch_assoc()) {
-    $profesores[] = $p;
-}
-
 // Cursos
 $cursos = [];
 $res = $conexion->query("SELECT id, anio, division FROM cursos ORDER BY anio, division");
@@ -46,9 +39,25 @@ while ($c = $res->fetch_assoc()) {
     $cursos[] = $c;
 }
 
-// Asignaciones
-$asignaciones = [];
+// --- BLOQUE BUSCADOR DE PROFESORES ---
+$busqueda = $_GET['busqueda_profesor'] ?? '';
+$profesores = [];
+if ($busqueda !== '') {
+    $sql = "SELECT id, nombre, apellido FROM usuarios 
+            WHERE rol = 3 AND (nombre LIKE ? OR apellido LIKE ?) 
+            ORDER BY apellido, nombre LIMIT 30";
+    $stmt = $conexion->prepare($sql);
+    $like = "%$busqueda%";
+    $stmt->bind_param("ss", $like, $like);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $profesores[] = $row;
+    $stmt->close();
+}
+
+// Asignaciones solo para el profe elegido
 $profesor_id = $_GET['profesor_id'] ?? null;
+$asignaciones = [];
 if ($profesor_id) {
     $stmt = $conexion->prepare("SELECT pcm.id, c.anio, c.division, m.nombre AS materia 
         FROM profesor_curso_materia pcm
@@ -249,18 +258,31 @@ if ($profesor_id) {
                 <h2 class="text-xl font-semibold mb-4">👨‍🏫 Asignar materias a profesores</h2>
 
                 <!-- Selección de profesor -->
-                <form method="get" class="mb-6 flex gap-4 items-center">
+                <!-- Buscador de profesores -->
+                <form method="get" class="mb-6 flex flex-col md:flex-row gap-4 items-center">
                     <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <select name="profesor_id" class="px-4 py-2 rounded-xl border w-full md:w-1/3" required>
-                        <option value="">Seleccionar profesor</option>
-                        <?php foreach ($profesores as $p): ?>
-                            <option value="<?php echo $p['id']; ?>" <?php if ($profesor_id == $p['id']) echo "selected"; ?>>
-                                <?php echo $p['apellido'] . ", " . $p['nombre']; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">Ver asignaciones</button>
+                    <input type="text" name="busqueda_profesor" class="border rounded-xl px-4 py-2 flex-1"
+                        placeholder="Buscar profesor por nombre o apellido" value="<?= htmlspecialchars($_GET['busqueda_profesor'] ?? '') ?>">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700">Buscar</button>
                 </form>
+
+                <!-- Selección de profesor tras búsqueda -->
+                <?php if (!empty($profesores)): ?>
+                    <form method="get" class="mb-6 flex gap-4 items-center">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                        <input type="hidden" name="busqueda_profesor" value="<?= htmlspecialchars($busqueda) ?>">
+                        <select name="profesor_id" class="px-4 py-2 rounded-xl border w-full md:w-1/3" required onchange="this.form.submit()">
+                            <option value="">Seleccioná un profesor</option>
+                            <?php foreach ($profesores as $p): ?>
+                                <option value="<?= $p['id'] ?>" <?= ($profesor_id == $p['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($p['apellido'] . ', ' . $p['nombre']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php elseif ($busqueda !== ''): ?>
+                    <div class="text-red-600 mb-6">No se encontraron profesores con ese nombre/apellido.</div>
+                <?php endif; ?>
 
                 <?php if ($profesor_id): ?>
                     <!-- Asignar materia -->
@@ -303,7 +325,7 @@ if ($profesor_id) {
                                     <td class="px-4 py-2"><?php echo $a['anio'] . "°" . $a['division']; ?></td>
                                     <td class="px-4 py-2"><?php echo $a['materia']; ?></td>
                                     <td class="px-4 py-2">
-                                        <form method="post" action="/../../../backend/users/admin/utils/admin_eliminar_asignacion.php" onsubmit="return confirm('¿Eliminar esta asignación?');">
+                                        <form method="post" action="admin_eliminar_asignacion.php" onsubmit="return confirm('¿Eliminar esta asignación?');">
                                             <input type="hidden" name="csrf" value="<?= $csrf ?>">
                                             <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
                                             <input type="hidden" name="profesor_id" value="<?php echo $profesor_id; ?>">

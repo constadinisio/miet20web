@@ -80,7 +80,7 @@ $stmt->close();
             <div class="flex flex-col pl-3 sidebar-label">
                 <div class="font-bold text-lg leading-tight"><?php echo $usuario['nombre']; ?></div>
                 <div class="font-bold text-lg leading-tight"><?php echo $usuario['apellido']; ?></div>
-                <div class="mt-2 text-xs text-gray-500">Alumno/a</div>
+                <div class="mt-2 text-xs text-gray-500">Profesor/a</div>
             </div>
         </div>
         <a href="profesor.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Inicio">

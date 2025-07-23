@@ -20,19 +20,41 @@ while ($row = $result->fetch_assoc()) {
     $cursos[] = $row;
 }
 
-$curso_id = $_GET['curso_id'] ?? null;
+$curso_id = isset($_GET['curso_id']) ? (int)$_GET['curso_id'] : null;
+$periodo = $_GET['periodo'] ?? '';
 
+// Buscar notas (por bimestre/cuatrimestre o todos)
 $calificaciones = [];
 if ($curso_id) {
-    $sql2 = "SELECT u.id, u.nombre, u.apellido, m.nombre AS materia, n.nota, n.fecha_carga
+    $wherePeriodo = '';
+    $paramTipos = "i"; // curso_id
+    $params = [$curso_id];
+
+    if ($periodo == '1er Cuatrimestre') {
+        $wherePeriodo = " AND (n.periodo = '1er Bimestre' OR n.periodo = '2do Bimestre')";
+    } elseif ($periodo == '2do Cuatrimestre') {
+        $wherePeriodo = " AND (n.periodo = '3er Bimestre' OR n.periodo = '4to Bimestre')";
+    } elseif ($periodo && !in_array($periodo, ['1er Cuatrimestre', '2do Cuatrimestre'])) {
+        $wherePeriodo = " AND n.periodo = ?";
+        $paramTipos .= "s";
+        $params[] = $periodo;
+    }
+
+    $sql2 = "SELECT u.id, u.nombre, u.apellido, m.nombre AS materia, n.nota, n.fecha_carga, n.periodo
             FROM alumno_curso ac
             JOIN usuarios u ON ac.alumno_id = u.id
-            JOIN notas n ON n.alumno_id = u.id
+            JOIN notas_bimestrales n ON n.alumno_id = u.id
             JOIN materias m ON n.materia_id = m.id
-            WHERE ac.curso_id = ?
-            ORDER BY u.apellido, u.nombre, m.nombre";
+            WHERE ac.curso_id = ? $wherePeriodo
+            ORDER BY u.apellido, u.nombre, m.nombre, n.periodo";
     $stmt2 = $conexion->prepare($sql2);
-    $stmt2->bind_param("i", $curso_id);
+
+    // Bind dinámico
+    if ($periodo && !in_array($periodo, ['1er Cuatrimestre', '2do Cuatrimestre'])) {
+        $stmt2->bind_param($paramTipos, ...$params);
+    } else {
+        $stmt2->bind_param($paramTipos, $curso_id);
+    }
     $stmt2->execute();
     $result2 = $stmt2->get_result();
     while ($row = $result2->fetch_assoc()) {
@@ -48,22 +70,25 @@ if ($curso_id) {
     <meta charset="UTF-8">
     <title>Calificaciones | Preceptor</title>
     <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
         }
+
         .sidebar-item {
             min-height: 3.5rem;
             width: 100%;
         }
+
         .w-16 .sidebar-item {
             justify-content: center !important;
         }
+
         .w-16 .sidebar-item span.sidebar-label {
             display: none;
         }
+
         .w-16 .sidebar-item span.text-xl {
             margin: 0 auto;
         }
@@ -127,6 +152,15 @@ if ($curso_id) {
                     </option>
                 <?php endforeach; ?>
             </select>
+            <select name="periodo" class="px-4 py-2 rounded-xl border">
+                <option value="">Todos los bimestres/cuatrimestres</option>
+                <option value="1er Bimestre" <?= $periodo == '1er Bimestre' ? 'selected' : '' ?>>1º Bimestre</option>
+                <option value="2do Bimestre" <?= $periodo == '2do Bimestre' ? 'selected' : '' ?>>2º Bimestre</option>
+                <option value="1er Cuatrimestre" <?= $periodo == '1er Cuatrimestre' ? 'selected' : '' ?>>1º Cuatrimestre</option>
+                <option value="3er Bimestre" <?= $periodo == '3er Bimestre' ? 'selected' : '' ?>>3º Bimestre</option>
+                <option value="4to Bimestre" <?= $periodo == '4to Bimestre' ? 'selected' : '' ?>>4º Bimestre</option>
+                <option value="2do Cuatrimestre" <?= $periodo == '2do Cuatrimestre' ? 'selected' : '' ?>>2º Cuatrimestre</option>
+            </select>
             <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
         </form>
         <?php if ($curso_id): ?>
@@ -136,7 +170,10 @@ if ($curso_id) {
                         <tr>
                             <th class="py-2 px-4 text-left">Alumno</th>
                             <th class="py-2 px-4 text-left">Materia</th>
+                            <th class="py-2 px-4 text-left">Bimestre</th>
+                            <th class="py-2 px-4 text-left">Cuatrimestre</th>
                             <th class="py-2 px-4 text-left">Nota</th>
+                            <th class="py-2 px-4 text-left">Desempeño</th>
                             <th class="py-2 px-4 text-left">Fecha</th>
                         </tr>
                     </thead>
@@ -145,13 +182,35 @@ if ($curso_id) {
                             <tr>
                                 <td class="py-2 px-4"><?php echo $cal['apellido'] . " " . $cal['nombre']; ?></td>
                                 <td class="py-2 px-4"><?php echo $cal['materia']; ?></td>
+                                <td class="py-2 px-4"><?php echo $cal['periodo']; ?></td>
+                                <td class="py-2 px-4">
+                                    <?php
+                                    if (in_array($cal['periodo'], ['1er Bimestre', '2do Bimestre'])) echo '1º Cuatrimestre';
+                                    elseif (in_array($cal['periodo'], ['3er Bimestre', '4to Bimestre'])) echo '2º Cuatrimestre';
+                                    else echo '-';
+                                    ?>
+                                </td>
                                 <td class="py-2 px-4 font-semibold"><?php echo $cal['nota']; ?></td>
+                                <td class="py-2 px-4">
+                                    <?php
+                                    $nota = (float)$cal['nota'];
+                                    if ($nota >= 1 && $nota < 6) {
+                                        echo '<span class="text-red-600 font-bold">En Proceso</span>';
+                                    } elseif ($nota >= 6 && $nota < 8) {
+                                        echo '<span class="text-yellow-700 font-bold">Suficiente</span>';
+                                    } elseif ($nota >= 8 && $nota <= 10) {
+                                        echo '<span class="text-green-700 font-bold">Avanzado</span>';
+                                    } else {
+                                        echo '-';
+                                    }
+                                    ?>
+                                </td>
                                 <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($cal['fecha_carga'])); ?></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($calificaciones)): ?>
                             <tr>
-                                <td colspan="4" class="py-4 text-center text-gray-500">No hay calificaciones cargadas.</td>
+                                <td colspan="7" class="py-4 text-center text-gray-500">No hay calificaciones cargadas.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -162,12 +221,11 @@ if ($curso_id) {
         <?php endif; ?>
     </main>
     <script>
-        document.getElementById('toggleSidebar').addEventListener('click', function () {
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             const labels = sidebar.querySelectorAll('.sidebar-label');
             const expandedElements = sidebar.querySelectorAll('.sidebar-expanded');
             const collapsedElements = sidebar.querySelectorAll('.sidebar-collapsed');
-
             if (sidebar.classList.contains('w-60')) {
                 sidebar.classList.remove('w-60');
                 sidebar.classList.add('w-16');

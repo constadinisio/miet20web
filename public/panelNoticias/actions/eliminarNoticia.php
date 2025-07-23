@@ -5,7 +5,7 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['permNoticia'])) 
     http_response_code(403);
     exit("Acceso no autorizado");
 }
-include "../../includes/db.php";
+require_once __DIR__ . '/../../../backend/includes/db.php';
 include "../includes/jsonLoader.php";
 
 $noticias = cargarNoticias();

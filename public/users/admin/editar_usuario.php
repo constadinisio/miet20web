@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span class="text-xl">⏰</span><span class="sidebar-label">Horarios</span>
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-            <form method="post" action="/../../../backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+            <form method="post" action="/backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </select>
             </form>
         <?php endif; ?>
-        <button onclick="window.location='/../../../backend/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
+        <button onclick="window.location='/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>

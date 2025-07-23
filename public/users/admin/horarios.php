@@ -45,6 +45,67 @@ if ($asignacion_id) {
     $horarios = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 }
+
+// 1. Cargar todos los cursos activos
+$cursos = [];
+$sql = "SELECT id, anio, division FROM cursos WHERE estado = 'activo' ORDER BY anio, division";
+$res = $conexion->query($sql);
+while ($row = $res->fetch_assoc()) $cursos[] = $row;
+
+// 2. Recibir selección por GET
+$curso_id = $_GET['curso_id'] ?? '';
+$materia_id = $_GET['materia_id'] ?? '';
+$profesor_id = $_GET['profesor_id'] ?? '';
+$asignacion_id = $_GET['asignacion_id'] ?? null;
+
+// 3. Cargar materias solo si hay curso elegido
+$materias = [];
+if ($curso_id) {
+    $stmt = $conexion->prepare("SELECT m.id, m.nombre
+        FROM profesor_curso_materia pcm
+        JOIN materias m ON pcm.materia_id = m.id
+        WHERE pcm.curso_id = ? AND pcm.estado = 'activo'
+        GROUP BY m.id, m.nombre
+        ORDER BY m.nombre");
+    if (!$stmt) die("Error en prepare de materias: " . $conexion->error);
+    $stmt->bind_param("i", $curso_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $materias[] = $row;
+    $stmt->close();
+}
+
+// 4. Cargar profesores solo si hay curso y materia elegidos
+$profesores = [];
+if ($curso_id && $materia_id) {
+    $stmt = $conexion->prepare("SELECT u.id, u.nombre, u.apellido
+        FROM profesor_curso_materia pcm
+        JOIN usuarios u ON pcm.profesor_id = u.id
+        WHERE pcm.curso_id = ? AND pcm.materia_id = ? AND pcm.estado = 'activo'
+        ORDER BY u.apellido, u.nombre");
+    if (!$stmt) die("Error en prepare de profesores: " . $conexion->error);
+    $stmt->bind_param("ii", $curso_id, $materia_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $profesores[] = $row;
+    $stmt->close();
+}
+
+if (!$asignacion_id && $curso_id && $materia_id && $profesor_id) {
+    $stmt = $conexion->prepare("SELECT id FROM profesor_curso_materia
+        WHERE curso_id = ? AND materia_id = ? AND profesor_id = ? AND estado = 'activo'
+        LIMIT 1");
+    $stmt->bind_param("iii", $curso_id, $materia_id, $profesor_id);
+    $stmt->execute();
+    $stmt->bind_result($asig_id);
+    if ($stmt->fetch()) {
+        // Redirigí automáticamente para mantener el flujo con asignacion_id
+        header("Location: horarios.php?asignacion_id=$asig_id");
+        exit;
+    }
+    $stmt->close();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -95,7 +156,7 @@ if ($asignacion_id) {
                 <div class="mt-2 text-xs text-gray-500">Administrador/a</div>
             </div>
         </div>
-        <a href="admin.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Inicio">
+        <a href="admin.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition" title="Inicio">
             <span class="text-xl">🏠</span><span class="sidebar-label">Inicio</span>
         </a>
         <a href="usuarios.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Usuarios">
@@ -110,7 +171,7 @@ if ($asignacion_id) {
         <a href="materias.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Materias">
             <span class="text-xl">📚</span><span class="sidebar-label">Materias</span>
         </a>
-        <a href="horarios.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Horarios">
+        <a href="horarios.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100 transition" title="Horarios">
             <span class="text-xl">⏰</span><span class="sidebar-label">Horarios</span>
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
@@ -158,19 +219,47 @@ if ($asignacion_id) {
         <!-- Card 1: Selección -->
         <div class="bg-white rounded-xl shadow p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">🔍 Seleccionar asignación</h2>
-            <form method="get" class="flex gap-4">
+            <form method="get" class="flex flex-col md:flex-row gap-4" id="seleccion-horario-form">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                <select name="asignacion_id" class="w-full md:w-1/2 px-4 py-2 rounded-xl border" required>
-                    <option value="">Seleccionar curso + materia + profesor</option>
-                    <?php foreach ($asignaciones as $a): ?>
-                        <option value="<?php echo $a['id']; ?>" <?php if ($asignacion_id == $a['id']) echo 'selected'; ?>>
-                            <?php echo "{$a['anio']}°{$a['division']} - {$a['materia']} ({$a['prof_apellido']}, {$a['prof_nombre']})"; ?>
+
+                <!-- Select Curso -->
+                <select name="curso_id" id="curso_id" class="w-full md:w-1/3 px-4 py-2 rounded-xl border" required onchange="this.form.submit()">
+                    <option value="">Seleccionar curso</option>
+                    <?php foreach ($cursos as $c): ?>
+                        <option value="<?= $c['id'] ?>" <?= $curso_id == $c['id'] ? 'selected' : '' ?>>
+                            <?= "{$c['anio']}°{$c['division']}" ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">Ver</button>
+
+                <!-- Select Materia -->
+                <select name="materia_id" id="materia_id" class="w-full md:w-1/3 px-4 py-2 rounded-xl border" <?= $curso_id ? '' : 'disabled' ?> onchange="this.form.submit()">
+                    <option value="">Seleccionar materia</option>
+                    <?php foreach ($materias as $m): ?>
+                        <option value="<?= $m['id'] ?>" <?= $materia_id == $m['id'] ? 'selected' : '' ?>>
+                            <?= $m['nombre'] ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <!-- Select Profesor -->
+                <select name="profesor_id" id="profesor_id" class="w-full md:w-1/3 px-4 py-2 rounded-xl border" <?= ($curso_id && $materia_id) ? '' : 'disabled' ?> onchange="this.form.submit()">
+                    <option value="">Seleccionar profesor</option>
+                    <?php foreach ($profesores as $p): ?>
+                        <option value="<?= $p['id'] ?>" <?= $profesor_id == $p['id'] ? 'selected' : '' ?>>
+                            <?= "{$p['apellido']}, {$p['nombre']}" ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <!-- Botón Ver solo habilitado si se seleccionó todo -->
+                <button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700"
+                    <?= ($curso_id && $materia_id && $profesor_id) ? '' : 'disabled' ?>>
+                    Ver
+                </button>
             </form>
         </div>
+
 
         <?php if ($asignacion_id): ?>
             <!-- Card 2: Formulario -->

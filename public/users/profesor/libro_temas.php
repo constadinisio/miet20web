@@ -1,12 +1,12 @@
 <?php
 session_start();
 if (
-  !isset($_SESSION['usuario']) ||
-  !is_array($_SESSION['usuario']) ||
-  (int)$_SESSION['usuario']['rol'] !== 3
+    !isset($_SESSION['usuario']) ||
+    !is_array($_SESSION['usuario']) ||
+    (int)$_SESSION['usuario']['rol'] !== 3
 ) {
-  header("Location: /login.php?error=rol");
-  exit;
+    header("Location: /login.php?error=rol");
+    exit;
 }
 
 if (!isset($_SESSION['csrf'])) {
@@ -102,6 +102,7 @@ if ($curso_id && $materia_id) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Libro de Temas</title>
@@ -112,21 +113,26 @@ if ($curso_id && $materia_id) {
         body {
             font-family: 'Poppins', sans-serif;
         }
+
         .sidebar-item {
             min-height: 3.5rem;
             width: 100%;
         }
+
         .w-16 .sidebar-item {
             justify-content: center !important;
         }
+
         .w-16 .sidebar-item span.sidebar-label {
             display: none;
         }
+
         .w-16 .sidebar-item span.text-xl {
             margin: 0 auto;
         }
     </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen flex">
     <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
         ☰
@@ -141,7 +147,7 @@ if ($curso_id && $materia_id) {
             <div class="flex flex-col pl-3 sidebar-label">
                 <div class="font-bold text-lg leading-tight"><?php echo $usuario['nombre']; ?></div>
                 <div class="font-bold text-lg leading-tight"><?php echo $usuario['apellido']; ?></div>
-                <div class="mt-2 text-xs text-gray-500">Alumno/a</div>
+                <div class="mt-2 text-xs text-gray-500">Profesor/a</div>
             </div>
         </div>
         <a href="profesor.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition" title="Inicio">
@@ -171,21 +177,21 @@ if ($curso_id && $materia_id) {
     </nav>
     <main class="flex-1 p-10">
         <h1 class="text-2xl font-bold mb-6">📚 Libro de Temas</h1>
-        <form class="mb-8 flex gap-4" method="get">
+        <form class="mb-8 flex gap-4" method="get" id="form-filtros">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
+            <select name="curso_id" class="px-4 py-2 rounded-xl border" required onchange="document.getElementById('form-filtros').submit()">
                 <option value="">Seleccionar curso</option>
-                <?php foreach($cursos as $c): ?>
-                    <option value="<?php echo $c['curso_id']; ?>" <?php if($curso_id==$c['curso_id']) echo "selected"; ?>>
-                        <?php echo $c['anio']."°".$c['division']; ?>
+                <?php foreach ($cursos as $c): ?>
+                    <option value="<?php echo $c['curso_id']; ?>" <?php if ($curso_id == $c['curso_id']) echo "selected"; ?>>
+                        <?php echo $c['anio'] . "°" . $c['division']; ?>
                     </option>
                 <?php endforeach; ?>
             </select>
             <select name="materia_id" class="px-4 py-2 rounded-xl border" required>
                 <option value="">Seleccionar materia</option>
-                <?php foreach($cursos as $c): ?>
-                    <?php if($curso_id==$c['curso_id']): ?>
-                        <option value="<?php echo $c['materia_id']; ?>" <?php if($materia_id==$c['materia_id']) echo "selected"; ?>>
+                <?php foreach ($cursos as $c): ?>
+                    <?php if ($curso_id == $c['curso_id']): ?>
+                        <option value="<?php echo $c['materia_id']; ?>" <?php if ($materia_id == $c['materia_id']) echo "selected"; ?>>
                             <?php echo $c['materia']; ?>
                         </option>
                     <?php endif; ?>
@@ -193,61 +199,62 @@ if ($curso_id && $materia_id) {
             </select>
             <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
         </form>
-
         <?php echo $mensaje; ?>
 
         <?php if ($curso_id && $materia_id): ?>
-        <!-- Formulario para nuevo tema -->
-        <form method="post" class="bg-white rounded-xl shadow p-6 mb-6 flex flex-col gap-3">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-            <input type="hidden" name="materia_id" value="<?php echo $materia_id; ?>">
-            <input type="hidden" name="nuevo_tema" value="1">
-            <div>
-                <label class="font-semibold">Fecha:</label>
-                <input type="date" name="fecha" value="<?php echo date('Y-m-d'); ?>" class="px-4 py-2 border rounded-xl" required>
+            <!-- Formulario para nuevo tema -->
+            <form method="post" class="bg-white rounded-xl shadow p-6 mb-6 flex flex-col gap-3">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
+                <input type="hidden" name="materia_id" value="<?php echo $materia_id; ?>">
+                <input type="hidden" name="nuevo_tema" value="1">
+                <div>
+                    <label class="font-semibold">Fecha:</label>
+                    <input type="date" name="fecha" value="<?php echo date('Y-m-d'); ?>" class="px-4 py-2 border rounded-xl" required>
+                </div>
+                <div>
+                    <label class="font-semibold">Contenido del tema:</label>
+                    <textarea name="contenido" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
+                </div>
+                <div>
+                    <label class="font-semibold">Observaciones:</label>
+                    <input name="observaciones" type="text" class="w-full px-4 py-2 border rounded-xl" placeholder="Opcional">
+                </div>
+                <button type="submit" class="mt-2 px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-bold">
+                    + Agregar tema
+                </button>
+            </form>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white rounded-xl shadow">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 text-left">Fecha</th>
+                            <th class="py-2 px-4 text-left">Contenido</th>
+                            <th class="py-2 px-4 text-left">Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($temas as $t): ?>
+                            <tr>
+                                <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
+                                <td class="py-2 px-4"><?php echo $t['contenido']; ?></td>
+                                <td class="py-2 px-4"><?php echo $t['observaciones']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($temas)): ?>
+                            <tr>
+                                <td colspan="3" class="py-4 text-center text-gray-500">No hay temas cargados.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
-            <div>
-                <label class="font-semibold">Contenido del tema:</label>
-                <textarea name="contenido" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
-            </div>
-            <div>
-                <label class="font-semibold">Observaciones:</label>
-                <input name="observaciones" type="text" class="w-full px-4 py-2 border rounded-xl" placeholder="Opcional">
-            </div>
-            <button type="submit" class="mt-2 px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-bold">
-                + Agregar tema
-            </button>
-        </form>
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white rounded-xl shadow">
-                <thead>
-                    <tr>
-                        <th class="py-2 px-4 text-left">Fecha</th>
-                        <th class="py-2 px-4 text-left">Contenido</th>
-                        <th class="py-2 px-4 text-left">Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($temas as $t): ?>
-                    <tr>
-                        <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
-                        <td class="py-2 px-4"><?php echo $t['contenido']; ?></td>
-                        <td class="py-2 px-4"><?php echo $t['observaciones']; ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($temas)): ?>
-                    <tr><td colspan="3" class="py-4 text-center text-gray-500">No hay temas cargados.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
         <?php else: ?>
-        <div class="text-gray-500">Seleccioná un curso y una materia para ver el libro de temas.</div>
+            <div class="text-gray-500">Seleccioná un curso y una materia para ver el libro de temas.</div>
         <?php endif; ?>
     </main>
     <script>
-        document.getElementById('toggleSidebar').addEventListener('click', function () {
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             const labels = sidebar.querySelectorAll('.sidebar-label');
             const expandedElements = sidebar.querySelectorAll('.sidebar-expanded');
@@ -269,4 +276,5 @@ if ($curso_id && $materia_id) {
         });
     </script>
 </body>
+
 </html>

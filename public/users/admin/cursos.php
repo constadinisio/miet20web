@@ -113,7 +113,7 @@ if ($curso_id) {
             <span class="text-xl">⏰</span><span class="sidebar-label">Horarios</span>
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-            <form method="post" action="/../../../backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+            <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
@@ -124,7 +124,7 @@ if ($curso_id) {
                 </select>
             </form>
         <?php endif; ?>
-        <button onclick="window.location='/../../../backend/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
+        <button onclick="window.location='/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>
@@ -226,24 +226,9 @@ if ($curso_id) {
 
             <!-- Card: Crear y gestionar cursos -->
             <div class="bg-white rounded-xl shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">⚙️ Crear o modificar cursos (NO FUNCIONA)</h2>
-                <form action="crear_curso.php" method="post" class="flex flex-col gap-3 mb-6">
-                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <div class="flex gap-3">
-                        <input type="number" name="anio" placeholder="Año" class="px-4 py-2 border rounded-xl w-1/3" required>
-                        <input type="text" name="division" placeholder="División" class="px-4 py-2 border rounded-xl w-1/3" required>
-                        <select name="turno" class="px-4 py-2 border rounded-xl w-1/3" required>
-                            <option value="">Turno</option>
-                            <option value="M">M</option>
-                            <option value="T">T</option>
-                            <option value="N">N</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">➕ Crear nuevo curso</button>
-                </form>
-
+                <h2 class="text-xl font-semibold mb-4">⚙️ Cambiar estado de cursos</h2>
                 <h3 class="text-lg font-semibold mb-2">Cambiar estado de cursos</h3>
-                <ul class="text-sm max-h-[200px] overflow-y-auto">
+                <ul class="text-sm max-h-[400px] overflow-y-auto">
                     <?php foreach ($cursos as $c): ?>
                         <li class="flex justify-between items-center border-b py-2">
                             <span><?php echo $c['anio'] . "°" . $c['division'] . " (" . $c['turno'] . ")"; ?></span>

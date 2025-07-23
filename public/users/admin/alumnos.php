@@ -127,7 +127,7 @@ $stmt->close();
             <span class="text-xl">⏰</span><span class="sidebar-label">Horarios</span>
         </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-            <form method="post" action="/../../../backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
+            <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
                     <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
@@ -138,7 +138,7 @@ $stmt->close();
                 </select>
             </form>
         <?php endif; ?>
-        <button onclick="window.location='/../../../backend/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
+        <button onclick="window.location='/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>
@@ -174,7 +174,11 @@ $stmt->close();
                                 <td class="py-2 px-4"><?php echo $a['division']; ?></td>
                                 <td class="py-2 px-4">
                                     <a href="editar_alumno.php?id=<?php echo $a['id']; ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">🩹 Editar</a>
-                                    <a href="eliminar_alumno.php?id=<?= $alumno['id'] ?>" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm" onclick="return confirm('¿Estás seguro de que querés eliminar este alumno?')">🗑️ Eliminar</a>
+                                    <form method="post" action="eliminar_alumno.php" onsubmit="return confirm('¿Eliminar este alumno?');" style="display:inline">
+                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                                        <input type="hidden" name="alumno_id" value="<?= $a['id'] ?>">
+                                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm">🗑️ Eliminar</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
