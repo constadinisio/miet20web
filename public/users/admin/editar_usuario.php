@@ -159,6 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="horarios.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Horarios">
             <span class="text-xl">⏰</span><span class="sidebar-label">Horarios</span>
         </a>
+        <a href="progresion.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Progresión">
+            <span class="text-xl">📈</span><span class="sidebar-label">Progresión</span>
+        </a>
+        <a href="historial.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Historial p/ Curso">
+            <span class="text-xl">📋</span><span class="sidebar-label">Historial p/ Curso</span>
+        </a>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
             <form method="post" action="/backend/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
