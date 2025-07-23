@@ -68,48 +68,107 @@ if ($curso_id) {
     $stmt3->close();
 }
 
-// Guardar cambios (solo si está en modo edición)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['asistencias'])) {
-    $curso_id = $_POST['curso_id'];
-    $fecha = $_POST['fecha'];
-    $preceptor_id = $usuario['id'];
-    foreach ($_POST['asistencias'] as $alumno_id => $asist) {
-        // Procesar ambos: turno y contraturno
-        foreach (['turno' => 0, 'contraturno' => 1] as $tipo => $es_contraturno) {
-            $estado = $asist[$tipo] ?? '';
-            if (!$estado) continue; // Si no se envió, saltar
+$dias_es = [
+    'Monday' => 'Lunes',
+    'Tuesday' => 'Martes',
+    'Wednesday' => 'Miércoles',
+    'Thursday' => 'Jueves',
+    'Friday' => 'Viernes',
+    'Saturday' => 'Sábado',
+    'Sunday' => 'Domingo',
+];
 
-            // Buscar si ya existe
-            $sql_check = "SELECT id FROM asistencia_general WHERE alumno_id=? AND curso_id=? AND fecha=? AND es_contraturno=?";
-            $stmt_check = $conexion->prepare($sql_check);
-            $stmt_check->bind_param("iisi", $alumno_id, $curso_id, $fecha, $es_contraturno);
-            $stmt_check->execute();
-            $stmt_check->store_result();
-            if ($stmt_check->num_rows > 0) {
-                // Update
-                $stmt_check->bind_result($asist_id);
-                $stmt_check->fetch();
-                $sql_upd = "UPDATE asistencia_general SET estado=? WHERE id=?";
-                $stmt_upd = $conexion->prepare($sql_upd);
-                $stmt_upd->bind_param("si", $estado, $asist_id);
-                $stmt_upd->execute();
-                $stmt_upd->close();
-            } else {
-                // Insert
-                $sql_ins = "INSERT INTO asistencia_general (alumno_id, curso_id, fecha, estado, creado_por, es_contraturno)
-                            VALUES (?, ?, ?, ?, ?, ?)";
-                $stmt_ins = $conexion->prepare($sql_ins);
-                $stmt_ins->bind_param("iissii", $alumno_id, $curso_id, $fecha, $estado, $preceptor_id, $es_contraturno);
-                $stmt_ins->execute();
-                $stmt_ins->close();
+// Guardar cambios (solo si está en modo edición)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['asistencias']) && isset($_POST['curso_id']) && isset($_POST['dias_semana'])) {
+    $curso_id = $_POST['curso_id'];
+    $preceptor_id = $usuario['id'];
+    $dias_semana = $_POST['dias_semana']; // Array de fechas (lunes a viernes)
+    $semana_lunes = $_POST['semana_lunes'] ?? '';
+
+    foreach ($_POST['asistencias'] as $alumno_id => $asist_dias) {
+        foreach ($dias_semana as $fecha) {
+            foreach (['turno' => 0, 'contraturno' => 1] as $tipo => $es_contraturno) {
+                $estado = $asist_dias[$fecha][$tipo] ?? '';
+                if (!$estado) continue;
+
+                // Buscar si ya existe
+                $sql_check = "SELECT id FROM asistencia_general WHERE alumno_id=? AND curso_id=? AND fecha=? AND es_contraturno=?";
+                $stmt_check = $conexion->prepare($sql_check);
+                if (!$stmt_check) die("Error: " . $conexion->error);
+                $stmt_check->bind_param("iisi", $alumno_id, $curso_id, $fecha, $es_contraturno);
+                $stmt_check->execute();
+                $stmt_check->store_result();
+
+                if ($stmt_check->num_rows > 0) {
+                    $stmt_check->bind_result($asist_id);
+                    $stmt_check->fetch();
+                    $sql_upd = "UPDATE asistencia_general SET estado=? WHERE id=?";
+                    $stmt_upd = $conexion->prepare($sql_upd);
+                    if (!$stmt_upd) die("Error: " . $conexion->error);
+                    $stmt_upd->bind_param("si", $estado, $asist_id);
+                    $stmt_upd->execute();
+                    $stmt_upd->close();
+                } else {
+                    $sql_ins = "INSERT INTO asistencia_general (alumno_id, curso_id, fecha, estado, creado_por, es_contraturno)
+                                VALUES (?, ?, ?, ?, ?, ?)";
+                    $stmt_ins = $conexion->prepare($sql_ins);
+                    if (!$stmt_ins) die("Error: " . $conexion->error);
+                    $stmt_ins->bind_param("iissii", $alumno_id, $curso_id, $fecha, $estado, $preceptor_id, $es_contraturno);
+                    $stmt_ins->execute();
+                    $stmt_ins->close();
+                }
+                $stmt_check->close();
             }
-            $stmt_check->close();
         }
     }
-    header("Location: asistencias.php?curso_id=$curso_id&fecha=$fecha&modo=editar&msg=ok");
+    header("Location: asistencias.php?curso_id=$curso_id&semana_lunes=$semana_lunes&modo=editar&msg=ok");
     exit;
 }
 $msg = $_GET['msg'] ?? '';
+
+// Busca el rango total de fechas con asistencias cargadas para ese curso
+$fechas = $conexion->query("SELECT MIN(fecha) AS inicio, MAX(fecha) AS fin FROM asistencia_general WHERE curso_id = " . (int)$curso_id)->fetch_assoc();
+$fecha_inicio = $fechas['inicio'] ?? date('Y-m-d');
+$fecha_fin = $fechas['fin'] ?? date('Y-m-d');
+
+// Rango escolar típico (ajustá si tu ciclo empieza/termina en otra fecha)
+$año_actual = date('Y');
+$primer_lunes = new DateTime("$año_actual-03-05");
+if ($primer_lunes->format('N') != 1) {
+    $primer_lunes->modify('next monday');
+}
+
+// El último lunes será el mayor entre hoy (semana actual) y último lunes de diciembre
+$hoy = new DateTime();
+$lunes_hoy = clone $hoy;
+if ($lunes_hoy->format('N') != 1) {
+    $lunes_hoy->modify('monday this week');
+}
+$ultimo_lunes_calendario = new DateTime("$año_actual-12-19");
+if ($ultimo_lunes_calendario->format('N') != 1) {
+    $ultimo_lunes_calendario->modify('last monday');
+}
+$ultimo_lunes = ($lunes_hoy > $ultimo_lunes_calendario) ? $lunes_hoy : $ultimo_lunes_calendario;
+
+// Genera todos los lunes del ciclo (de marzo hasta el último lunes definido)
+$luneses = [];
+$dt = clone $primer_lunes;
+while ($dt <= $ultimo_lunes) {
+    $luneses[] = $dt->format('Y-m-d');
+    $dt->modify('+1 week');
+}
+
+// Semana seleccionada: por defecto, la última semana con datos o la actual
+$semana_lunes = $_GET['semana_lunes'] ?? (end($luneses) ?: date('Y-m-d'));
+if (!in_array($semana_lunes, $luneses)) $semana_lunes = reset($luneses);
+
+// Genera los 5 días hábiles de la semana seleccionada
+$dias_semana = [];
+$dt = new DateTime($semana_lunes);
+for ($i = 0; $i < 5; $i++) {
+    $dias_semana[] = $dt->format('Y-m-d');
+    $dt->modify('+1 day');
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -194,6 +253,8 @@ $msg = $_GET['msg'] ?? '';
         <?php if ($msg == 'ok'): ?>
             <div class="bg-green-100 text-green-700 rounded-xl p-3 mb-4">Asistencias guardadas correctamente.</div>
         <?php endif; ?>
+
+        <!-- Selector de curso y semana -->
         <form class="mb-8 flex gap-4" method="get">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
@@ -204,27 +265,64 @@ $msg = $_GET['msg'] ?? '';
                     </option>
                 <?php endforeach; ?>
             </select>
-            <input type="date" name="fecha" value="<?php echo $fecha; ?>" class="px-4 py-2 rounded-xl border">
+            <select name="semana_lunes" class="px-4 py-2 rounded-xl border" required>
+                <?php foreach ($luneses as $lunes): ?>
+                    <option value="<?= $lunes ?>" <?= $semana_lunes == $lunes ? 'selected' : '' ?>>
+                        Semana del <?= (new DateTime($lunes))->format('d/m/Y') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             <select name="modo" class="px-4 py-2 rounded-xl border">
                 <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
                 <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
             </select>
             <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
         </form>
+
         <?php if ($curso_id): ?>
+            <?php
+            // Trae asistencias de todos los días de la semana seleccionada
+            $asist_semana = [];
+            if ($curso_id && $dias_semana) {
+                $in = "'" . implode("','", $dias_semana) . "'";
+                $sql = "SELECT alumno_id, fecha, estado, es_contraturno FROM asistencia_general WHERE curso_id = $curso_id AND fecha IN ($in)";
+                $res = $conexion->query($sql);
+                while ($row = $res->fetch_assoc()) {
+                    $asist_semana[$row['alumno_id']][$row['fecha']][$row['es_contraturno'] ? 'contraturno' : 'turno'] = $row['estado'];
+                }
+            }
+            ?>
+
             <?php if ($modo == 'editar'): ?>
-                <form method="post" class="min-w-full">
+                <!-- EDICIÓN SEMANAL -->
+                <form method="post" class="mt-4">
                     <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                    <input type="hidden" name="fecha" value="<?php echo $fecha; ?>">
-                    <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 500px;">
+                    <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
+                    <input type="hidden" name="semana_lunes" value="<?= $semana_lunes ?>">
+                    <?php foreach ($dias_semana as $dia): ?>
+                        <input type="hidden" name="dias_semana[]" value="<?= $dia ?>">
+                    <?php endforeach; ?>
+                    <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 600px;">
                         <table class="min-w-full bg-white rounded-xl shadow">
                             <thead>
                                 <tr>
                                     <th class="py-2 px-4 text-left">#</th>
                                     <th class="py-2 px-4 text-left">Alumno</th>
-                                    <th class="py-2 px-4 text-left">Turno</th>
-                                    <th class="py-2 px-4 text-left">Contraturno</th>
+                                    <?php foreach ($dias_semana as $dia): ?>
+                                        <?php
+                                        $dt = new DateTime($dia);
+                                        $nombre_es = $dias_es[$dt->format('l')]; // Nombre en español
+                                        ?>
+                                        <th class="py-2 px-4 text-center" colspan="2"><?= $nombre_es . " " . $dt->format('d/m') ?></th>
+                                    <?php endforeach; ?>
+                                </tr>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <?php foreach ($dias_semana as $dia): ?>
+                                        <th class="py-1 px-2 text-center">Turno</th>
+                                        <th class="py-1 px-2 text-center">Contra</th>
+                                    <?php endforeach; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -233,27 +331,23 @@ $msg = $_GET['msg'] ?? '';
                                     <tr>
                                         <td class="py-2 px-4 text-gray-500 font-mono"><?= $contador++ ?></td>
                                         <td class="py-2 px-4"><?= $a['apellido'] . " " . $a['nombre']; ?></td>
-                                        <td class="py-2 px-4">
-                                            <select name="asistencias[<?= $a['id'] ?>][turno]" class="border rounded px-2 py-1">
-                                                <option value="">-</option>
-                                                <option value="P" <?= $a['turno'] == 'P' ? 'selected' : '' ?>>Presente</option>
-                                                <option value="A" <?= $a['turno'] == 'A' ? 'selected' : '' ?>>Ausente</option>
-                                                <option value="T" <?= $a['turno'] == 'T' ? 'selected' : '' ?>>Tarde</option>
-                                            </select>
-                                        </td>
-                                        <td class="py-2 px-4">
-                                            <select name="asistencias[<?= $a['id'] ?>][contraturno]" class="border rounded px-2 py-1">
-                                                <option value="">-</option>
-                                                <option value="P" <?= $a['contraturno'] == 'P' ? 'selected' : '' ?>>Presente</option>
-                                                <option value="A" <?= $a['contraturno'] == 'A' ? 'selected' : '' ?>>Ausente</option>
-                                                <option value="T" <?= $a['contraturno'] == 'T' ? 'selected' : '' ?>>Tarde</option>
-                                            </select>
-                                        </td>
+                                        <?php foreach ($dias_semana as $dia): ?>
+                                            <?php foreach (['turno', 'contraturno'] as $tipo): ?>
+                                                <td class="py-2 px-4 text-center">
+                                                    <select name="asistencias[<?= $a['id'] ?>][<?= $dia ?>][<?= $tipo ?>]" class="border rounded px-2 py-1">
+                                                        <option value="">-</option>
+                                                        <option value="P" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'P' ? 'selected' : '' ?>>P</option>
+                                                        <option value="A" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'A' ? 'selected' : '' ?>>A</option>
+                                                        <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T' ? 'selected' : '' ?>>T</option>
+                                                    </select>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        <?php endforeach; ?>
                                     </tr>
                                 <?php endforeach; ?>
                                 <?php if (empty($alumnos)): ?>
                                     <tr>
-                                        <td colspan="3" class="py-4 text-center text-gray-500">No hay alumnos cargados.</td>
+                                        <td colspan="<?= 2 + count($dias_semana) * 2 ?>" class="py-4 text-center text-gray-500">No hay alumnos cargados.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -265,13 +359,28 @@ $msg = $_GET['msg'] ?? '';
                 </form>
             <?php else: ?>
                 <!-- MODO VISUALIZACIÓN -->
-                <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 500px;">
+                <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 600px;">
                     <table class="min-w-full bg-white rounded-xl shadow">
                         <thead>
                             <tr>
+                                <th class="py-2 px-4 text-left">#</th>
                                 <th class="py-2 px-4 text-left">Alumno</th>
-                                <th class="py-2 px-4 text-left">Turno</th>
-                                <th class="py-2 px-4 text-left">Contraturno</th>
+                                <?php foreach ($dias_semana as $dia): ?>
+                                    <?php
+                                        $dt = new DateTime($dia);
+                                        $nombre_es = $dias_es[$dt->format('l')]; // Nombre en español
+                                    ?>
+                                    <th class="py-2 px-4 text-center" colspan="2"><?= $nombre_es . " " . $dt->format('d/m') ?></th>
+
+                                <?php endforeach; ?>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <?php foreach ($dias_semana as $dia): ?>
+                                    <th class="py-1 px-2 text-center">Turno</th>
+                                    <th class="py-1 px-2 text-center">Contra</th>
+                                <?php endforeach; ?>
                             </tr>
                         </thead>
                         <tbody>
@@ -279,36 +388,31 @@ $msg = $_GET['msg'] ?? '';
                             <?php foreach ($alumnos as $a): ?>
                                 <tr>
                                     <td class="py-2 px-4 text-gray-500 font-mono"><?= $contador++ ?></td>
-                                    <td class="py-2 px-4"><?php echo $a['apellido'] . " " . $a['nombre']; ?></td>
-                                    <td class="py-2 px-4">
-                                        <?php
-                                        if ($a['turno'] == 'P') echo 'Presente';
-                                        elseif ($a['turno'] == 'A') echo 'Ausente';
-                                        elseif ($a['turno'] == 'T') echo 'Tarde';
-                                        else echo '-';
-                                        ?>
-                                    </td>
-                                    <td class="py-2 px-4">
-                                        <?php
-                                        if ($a['contraturno'] == 'P') echo 'Presente';
-                                        elseif ($a['contraturno'] == 'A') echo 'Ausente';
-                                        elseif ($a['contraturno'] == 'T') echo 'Tarde';
-                                        else echo '-';
-                                        ?>
-                                    </td>
+                                    <td class="py-2 px-4"><?= $a['apellido'] . " " . $a['nombre']; ?></td>
+                                    <?php foreach ($dias_semana as $dia): ?>
+                                        <?php foreach (['turno', 'contraturno'] as $tipo): ?>
+                                            <td class="py-2 px-4 text-center">
+                                                <?php
+                                                $est = $asist_semana[$a['id']][$dia][$tipo] ?? '-';
+                                                if ($est == 'P') echo '<span class="text-green-700 font-bold">P</span>';
+                                                elseif ($est == 'A') echo '<span class="text-red-700 font-bold">A</span>';
+                                                elseif ($est == 'T') echo '<span class="text-yellow-700 font-bold">T</span>';
+                                                else echo '-';
+                                                ?>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    <?php endforeach; ?>
                                 </tr>
                             <?php endforeach; ?>
                             <?php if (empty($alumnos)): ?>
                                 <tr>
-                                    <td colspan="3" class="py-4 text-center text-gray-500">No hay alumnos cargados.</td>
+                                    <td colspan="<?= 2 + count($dias_semana) * 2 ?>" class="py-4 text-center text-gray-500">No hay alumnos cargados.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             <?php endif; ?>
-        <?php else: ?>
-            <div class="text-gray-500">Seleccioná un curso para gestionar asistencias.</div>
         <?php endif; ?>
     </main>
     <script>
