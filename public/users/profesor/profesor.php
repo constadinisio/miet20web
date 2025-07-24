@@ -40,12 +40,29 @@ $stmt->close();
     <title>Panel de Profesor</title>
     <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body { font-family: 'Poppins', sans-serif; }
-        .sidebar-item { min-height: 3.5rem; width: 100%; }
-        .w-16 .sidebar-item { justify-content: center !important; }
-        .w-16 .sidebar-item span.sidebar-label { display: none; }
-        .w-16 .sidebar-item span.text-xl { margin: 0 auto; }
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .sidebar-item {
+            min-height: 3.5rem;
+            width: 100%;
+        }
+
+        .w-16 .sidebar-item {
+            justify-content: center !important;
+        }
+
+        .w-16 .sidebar-item span.sidebar-label {
+            display: none;
+        }
+
+        .w-16 .sidebar-item span.text-xl {
+            margin: 0 auto;
+        }
     </style>
 </head>
 
@@ -95,6 +112,25 @@ $stmt->close();
                         </select>
                     </form>
                 <?php endif; ?>
+                <button id="btn-notificaciones" class="relative focus:outline-none group">
+                    <!-- Campanita Font Awesome -->
+                    <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
+                    <!-- Badge cantidad (oculto si no hay notificaciones) -->
+                    <span id="badge-notificaciones"
+                        class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
+                        style="min-width:1.2em; text-align:center;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- POPUP DE NOTIFICACIONES -->
+        <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 border-b">
+                <span class="font-bold text-gray-800 text-lg">Notificaciones</span>
+                <button onclick="cerrarPopup()" class="text-gray-400 hover:text-red-400 text-xl">&times;</button>
+            </div>
+            <div id="lista-notificaciones" class="overflow-y-auto p-2">
+                <!-- Notificaciones aquí -->
             </div>
         </div>
 
@@ -200,6 +236,99 @@ $stmt->close();
             }
         });
     </script>
+    <script>
+        document.getElementById('btn-notificaciones').addEventListener('click', function() {
+            const popup = document.getElementById('popup-notificaciones');
+            popup.classList.toggle('hidden');
+            cargarNotificaciones();
+        });
+
+        function cerrarPopup() {
+            document.getElementById('popup-notificaciones').classList.add('hidden');
+        }
+
+        function marcarLeida(destinatarioId) {
+            fetch('/../../../includes/notificaciones/marcar_leida.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'id=' + encodeURIComponent(destinatarioId)
+                }).then(res => res.json())
+                .then(data => {
+                    if (data.ok) cargarNotificaciones();
+                });
+        }
+
+        function confirmar(destinatarioId) {
+            fetch('/../../../includes/notificaciones/confirmar.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'id=' + encodeURIComponent(destinatarioId)
+                }).then(res => res.json())
+                .then(data => {
+                    if (data.ok) cargarNotificaciones();
+                });
+        }
+
+        function cargarNotificaciones() {
+            fetch('/../../../includes/notificaciones/listar.php')
+                .then(res => res.json())
+                .then(data => {
+                    const lista = document.getElementById('lista-notificaciones');
+                    const badge = document.getElementById('badge-notificaciones');
+                    const campana = document.getElementById('icono-campana');
+                    lista.innerHTML = '';
+                    let sinLeer = 0;
+                    if (data.length === 0) {
+                        lista.innerHTML = '<div class="text-center text-gray-400 p-4">Sin notificaciones nuevas.</div>';
+                        badge.classList.add('hidden');
+                        // Ícono gris claro, sin detalles rojos
+                        campana.classList.remove('text-red-500');
+                        campana.classList.add('text-gray-400');
+                        campana.classList.remove('fa-shake');
+                    } else {
+                        data.forEach(n => {
+                            if (n.estado_lectura === 'NO_LEIDA') sinLeer++;
+                            lista.innerHTML += `
+                                <div class="rounded-xl px-3 py-2 mb-2 bg-gray-100 shadow hover:bg-gray-50 flex flex-col">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-base font-semibold">${n.titulo}</span>
+                                    <span class="ml-auto text-xs">${n.fecha_creacion}</span>
+                                </div>
+                                <div class="text-sm text-gray-700 mb-2">${n.contenido}</div>
+                                <div class="flex gap-2">
+                                    ${n.estado_lectura === 'NO_LEIDA' ? `<button class="text-blue-600 text-xs" onclick="marcarLeida(${n.destinatario_row_id})">Marcar como leída</button>` : ''}
+                                    ${(n.requiere_confirmacion == 1 && n.estado_lectura !== 'CONFIRMADA') ? `<button class="text-green-600 text-xs" onclick="confirmar(${n.destinatario_row_id})">Confirmar</button>` : ''}
+                                    ${n.estado_lectura === 'LEIDA' ? '<span class="text-green-700 text-xs">Leída</span>' : ''}
+                                    ${n.estado_lectura === 'CONFIRMADA' ? '<span class="text-green-700 text-xs">Confirmada</span>' : ''}
+                                </div>
+                                </div>`;
+                        });
+
+                        if (sinLeer > 0) {
+                            badge.textContent = sinLeer;
+                            badge.classList.remove('hidden');
+                            // Ícono gris pero con detalle rojo (y/o animación, opcional)
+                            campana.classList.remove('text-gray-400');
+                            campana.classList.add('text-red-500');
+                            campana.classList.add('fa-shake'); // animación de FA, opcional
+                        } else {
+                            badge.classList.add('hidden');
+                            campana.classList.remove('text-red-500');
+                            campana.classList.add('text-gray-400');
+                            campana.classList.remove('fa-shake');
+                        }
+                    }
+                });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarNotificaciones(); // Esto chequea notificaciones ni bien se carga la página
+            setInterval(cargarNotificaciones, 15000);
+        });
+    </script>
     <!-- Modal de ficha censal -->
     <div id="modalFichaCensal"
         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 <?= $mostrar_modal ? '' : 'hidden' ?>">
@@ -220,4 +349,5 @@ $stmt->close();
         </form>
     </div>
 </body>
+
 </html>
