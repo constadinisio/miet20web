@@ -68,51 +68,53 @@ $stmt->close();
 </head>
 
 <body class="bg-gray-100 min-h-screen flex">
-    <!-- Botón hamburguesa -->
     <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">☰</button>
-
     <!-- Sidebar -->
     <nav id="sidebar" class="w-60 transition-all duration-300 bg-white shadow-lg px-4 py-4 flex flex-col gap-2">
         <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400 h-28">
             <img src="/images/et20ico.ico" class="sidebar-expanded block h-full w-auto object-contain">
             <img src="/images/et20ico.ico" class="sidebar-collapsed hidden h-10 w-auto object-contain">
         </div>
-        <div class="flex items-center mb-10 gap-2">
-            <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-14 h-14">
-            <div class="flex flex-col pl-3 sidebar-label">
-                <div class="font-bold text-lg leading-tight"><?php echo $usuario['nombre']; ?></div>
-                <div class="font-bold text-lg leading-tight"><?php echo $usuario['apellido']; ?></div>
-                <div class="mt-2 text-xs text-gray-500">Alumno/a</div>
-            </div>
-        </div>
-
-        <a href="alumno.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-gray-200 transition" title="Inicio">
+        <a href="alumno.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Inicio">
             <span class="text-xl">🏠</span><span class="sidebar-label">Inicio</span>
         </a>
-        <a href="asistencias.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-indigo-100 transition" title="Asistencias">
+        <a href="asistencias.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Asistencias">
             <span class="text-xl">📆</span><span class="sidebar-label">Asistencias</span>
         </a>
         <a href="notas.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Notas">
             <span class="text-xl">📝</span><span class="sidebar-label">Notas</span>
         </a>
-        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-            <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3 sidebar-label">
-                <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
-                    <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
-                        <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
-                            Cambiar a: <?php echo ucfirst($r['nombre']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
-        <?php endif; ?>
-        <!-- Botón salir -->
         <button onclick="window.location='/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>
+
+    <!-- Contenido principal -->
     <main class="flex-1 p-10">
+        <!-- BLOQUE DE USUARIO, ROL Y SALIR A LA DERECHA -->
+        <div class="w-full flex justify-end mb-6">
+            <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
+                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
+                <div class="flex flex-col pr-2 text-right">
+                    <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
+                    <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
+                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
+                </div>
+                <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+                    <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                        <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
+                            <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                                    Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <h1 class="text-2xl font-bold mb-6">📆 Mis Asistencias</h1>
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white rounded-xl shadow">
