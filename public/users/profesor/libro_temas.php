@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_tema'])) {
         if ($stmt_insert->execute()) {
             $mensaje = '<div class="bg-green-100 text-green-700 rounded-xl p-3 mb-4">Tema guardado correctamente.</div>';
         } else {
-            $mensaje = '<div class="bg-red-100 text-red-700 rounded-xl p-3 mb-4">Error al guardar el tema.</div>';
+            $mensaje = '<div class="bg-red-100 text-red-700 rounded-xl p-3 mb-4">Error al guardar el tema: ' . $stmt_insert->error . '</div>';
         }
         $stmt_insert->close();
     } else {
@@ -85,11 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_tema'])) {
 // Mostrar los temas
 $temas = [];
 if ($curso_id && $materia_id) {
-    $sql2 = "SELECT cl.fecha, cl.contenido, cl.observaciones
-             FROM libros_temas lt
-             JOIN contenidos_libro cl ON lt.id = cl.libro_id
-             WHERE lt.curso_id = ? AND lt.materia_id = ? AND lt.profesor_id = ?
-             ORDER BY cl.fecha DESC";
+    $sql2 = "SELECT cl.id, cl.fecha, cl.contenido, cl.observaciones, cl.contenido
+         FROM libros_temas lt
+         JOIN contenidos_libro cl ON lt.id = cl.libro_id
+         WHERE lt.curso_id = ? AND lt.materia_id = ? AND lt.profesor_id = ?
+         ORDER BY cl.fecha DESC";
     $stmt2 = $conexion->prepare($sql2);
     $stmt2->bind_param("iii", $curso_id, $materia_id, $profesor_id);
     $stmt2->execute();
@@ -136,7 +136,7 @@ if ($curso_id && $materia_id) {
 </head>
 
 <body class="bg-gray-100 min-h-screen flex">
-        <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
+    <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
         ☰
     </button>
     <nav id="sidebar" class="w-60 transition-all duration-300 bg-white shadow-lg px-4 py-4 flex flex-col gap-2">
@@ -229,52 +229,74 @@ if ($curso_id && $materia_id) {
         <?php echo $mensaje; ?>
 
         <?php if ($curso_id && $materia_id): ?>
-            <!-- Formulario para nuevo tema -->
-            <form method="post" class="bg-white rounded-xl shadow p-6 mb-6 flex flex-col gap-3">
-                <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                <input type="hidden" name="materia_id" value="<?php echo $materia_id; ?>">
-                <input type="hidden" name="nuevo_tema" value="1">
-                <div>
-                    <label class="font-semibold">Fecha:</label>
-                    <input type="date" name="fecha" value="<?php echo date('Y-m-d'); ?>" class="px-4 py-2 border rounded-xl" required>
-                </div>
-                <div>
-                    <label class="font-semibold">Contenido del tema:</label>
-                    <textarea name="contenido" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
-                </div>
-                <div>
-                    <label class="font-semibold">Observaciones:</label>
-                    <input name="observaciones" type="text" class="w-full px-4 py-2 border rounded-xl" placeholder="Opcional">
-                </div>
-                <button type="submit" class="mt-2 px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-bold">
-                    + Agregar tema
-                </button>
-            </form>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded-xl shadow">
-                    <thead>
-                        <tr>
-                            <th class="py-2 px-4 text-left">Fecha</th>
-                            <th class="py-2 px-4 text-left">Contenido</th>
-                            <th class="py-2 px-4 text-left">Observaciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($temas as $t): ?>
+            <div class="flex flex-col md:flex-row gap-6 mb-10 items-start">
+                <!-- FORMULARIO AÑADIR TEMA -->
+                <form method="post" class="bg-white rounded-xl shadow p-6 flex flex-col gap-3 w-full md:w-1/3">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                    <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
+                    <input type="hidden" name="materia_id" value="<?php echo $materia_id; ?>">
+                    <input type="hidden" name="nuevo_tema" value="1">
+
+                    <div>
+                        <label class="font-semibold">Fecha:</label>
+                        <input type="date" name="fecha" value="<?= date('Y-m-d') ?>" class="px-4 py-2 border rounded-xl w-full" required>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Contenido del tema:</label>
+                        <textarea name="contenido" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Observaciones:</label>
+                        <input name="observaciones" type="text" class="w-full px-4 py-2 border rounded-xl" placeholder="Opcional">
+                    </div>
+                    <button type="submit" class="mt-2 px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-bold">
+                        + Agregar tema
+                    </button>
+                </form>
+
+                <!-- LISTADO DE TEMAS -->
+                <div class="w-full md:w-2/3 max-h-[400px] overflow-y-auto rounded-xl shadow border bg-white">
+                    <table class="min-w-full text-sm">
+                        <thead class="sticky top-0 bg-white shadow z-10">
                             <tr>
-                                <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
-                                <td class="py-2 px-4"><?php echo $t['contenido']; ?></td>
-                                <td class="py-2 px-4"><?php echo $t['observaciones']; ?></td>
+                                <th class="py-2 px-4 text-left">ID</th>
+                                <th class="py-2 px-4 text-left">Fecha</th>
+                                <th class="py-2 px-4 text-left">Contenido</th>
+                                <th class="py-2 px-4 text-left">Observaciones</th>
+                                <th class="py-2 px-4 text-left">Acciones</th>
                             </tr>
-                        <?php endforeach; ?>
-                        <?php if (empty($temas)): ?>
-                            <tr>
-                                <td colspan="3" class="py-4 text-center text-gray-500">No hay temas cargados.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($temas as $t): ?>
+                                <tr class="border-t">
+                                    <td class="py-2 px-4"><?php echo $t['id']; ?></td>
+                                    <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
+                                    <td class="py-2 px-4"><?php echo htmlspecialchars($t['contenido']); ?></td>
+                                    <td class="py-2 px-4"><?php echo htmlspecialchars($t['observaciones']); ?></td>
+                                    <td class="py-2 px-4 flex gap-2">
+                                        <!-- Editar -->
+                                        <form method="post" action="editar_contenido.php" class="inline-block">
+                                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
+                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                                            <button class="text-blue-600 hover:underline text-sm" type="submit">Editar</button>
+                                        </form>
+                                        <!-- Eliminar -->
+                                        <form method="post" action="eliminar_contenido.php" class="inline-block" onsubmit="return confirm('¿Seguro que querés eliminar este contenido?');">
+                                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
+                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                                            <button class="text-red-600 hover:underline text-sm" type="submit">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($temas)): ?>
+                                <tr>
+                                    <td colspan="5" class="py-4 text-center text-gray-500">No hay temas cargados.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         <?php else: ?>
             <div class="text-gray-500">Seleccioná un curso y una materia para ver el libro de temas.</div>

@@ -155,7 +155,7 @@ if (isset($_GET['alumno_id'])) {
         <a href="historial.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Historial p/ Curso">
             <span class="text-xl">📋</span><span class="sidebar-label">Historial p/ Curso</span>
         </a>
-        <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Panel de Notificaciones">
+        <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Panel de Notificaciones">
             <span class="text-xl">🔔</span><span class="sidebar-label">Panel de Notificaciones</span>
         </a>
         <button onclick="window.location='/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
