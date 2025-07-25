@@ -19,19 +19,27 @@ $result = $stmt->get_result();
 $usuario = $result->fetch_assoc();
 $stmt->close();
 
-/*
-if (!$usuario || $contrasena !== $usuario['contrasena']) {
+// ---- LÓGICA DE CONTRASEÑA HÍBRIDA ----
+$contrasena_ok = false;
+
+if ($usuario) {
+    if (password_verify($contrasena, $usuario['contrasena'])) {
+        $contrasena_ok = true;
+    } elseif ($contrasena === $usuario['contrasena']) {
+        // Contraseña guardada sin hash (texto plano) → actualizar
+        $contrasena_ok = true;
+        $nuevo_hash = password_hash($contrasena, PASSWORD_DEFAULT);
+        $stmt = $conexion->prepare("UPDATE usuarios SET contrasena = ? WHERE id = ?");
+        $stmt->bind_param("si", $nuevo_hash, $usuario['id']);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+if (!$contrasena_ok) {
     header("Location: /login.php?error=login");
     exit;
 }
-*/
-
-
-if (!password_verify($contrasena, $usuario['contrasena'])) {
-    header("Location: /login.php?error=login");
-    exit;
-}
-
 
 // ---------- CAMBIO ACÁ: roles principal + secundarios ----------
 
