@@ -108,7 +108,7 @@ if (!isset($_GET['code'])) {
                 case 3: header("Location: /users/profesor/profesor.php"); exit;
                 case 4: header("Location: /users/alumno/alumno.php"); exit;
                 case 5: header("Location: /users/spei/index.php"); exit;
-                default: header("Location: /includes/seleccionar_panel.php"); exit;
+                default: header("Location: /seleccionar_panel.php"); exit;
             }
         } else {
             // Tiene más de un rol O permisos especiales, mostrar selección
@@ -116,7 +116,7 @@ if (!isset($_GET['code'])) {
             $_SESSION['usuario_pending_roles'] = $roles;
             $_SESSION['usuario']['permNoticia'] = isset($usuario['permNoticia']) ? (int)$usuario['permNoticia'] : 0;
             $_SESSION['usuario']['permSubidaArch'] = isset($usuario['permSubidaArch']) ? (int)$usuario['permSubidaArch'] : 0;
-            header("Location: /includes/seleccionar_panel.php");
+            header("Location: /seleccionar_panel.php");
             exit;
         }
     } else {
