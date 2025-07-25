@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['opcion'])) {
                 case 3: header("Location: /users/profesor/profesor.php"); exit;
                 case 4: header("Location: /users/alumno/alumno.php"); exit;
                 case 5: header("Location: /users/spei/index.php"); exit;
-                default: header("Location: seleccionar_panel.php"); exit;
+                default: header("Location: /seleccionar_panel.php"); exit;
             }
         }
     }

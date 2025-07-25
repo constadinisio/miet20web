@@ -49,12 +49,6 @@ if ($resultado->num_rows > 0) {
         $tipos .= "s";
     }
 
-    if ($rol && $rol !== $usuario['rol']) {
-        $campos[] = "rol = ?";
-        $params[] = $rol;
-        $tipos .= "s";
-    }
-
     if ($telefono && $telefono !== $usuario['telefono']) {
         $campos[] = "telefono = ?";
         $params[] = $telefono;
