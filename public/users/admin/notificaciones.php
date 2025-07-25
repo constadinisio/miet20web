@@ -4,29 +4,81 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 1) {
     header("Location: /login.php?error=rol");
     exit;
 }
-$usuario = $_SESSION['usuario'];
-require_once __DIR__ . '/../../../backend/includes/db.php';
 
 if (!isset($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
 }
 $csrf = $_SESSION['csrf'];
 
-// Conexión a la base...
-$sql = "SELECT * FROM usuarios WHERE rol = 0";
-$result = $conexion->query($sql);
-$usuarios_pendientes = [];
-while ($row = $result->fetch_assoc()) {
-    $usuarios_pendientes[] = $row;
-}
+require_once __DIR__ . '/../../../backend/includes/db.php';
 
-// Usuarios activos (no alumnos, solo rol 1-3 y 5)
-$usuarios_activos = [];
-$sql = "SELECT id, nombre, apellido, mail, rol FROM usuarios 
-        WHERE status = 1 AND rol IN (1,2,3,5)";
-$result = $conexion->query($sql);
-while ($row = $result->fetch_assoc()) {
-    $usuarios_activos[] = $row;
+$usuario = $_SESSION['usuario'];
+
+// Conseguir usuarios, roles y grupos de tu base
+$usuarios = $conexion->query("SELECT id, nombre, apellido FROM usuarios WHERE status='1' ORDER BY apellido, nombre");
+$roles = $conexion->query("SELECT id, nombre FROM roles WHERE id > 0"); // Excluye Pendiente
+$grupos = $conexion->query("SELECT id, nombre FROM grupos_notificacion ORDER BY nombre");
+$cursos = $conexion->query("SELECT id, anio, division FROM cursos ORDER BY anio, division");
+$cursos_array = [];
+while ($c = $cursos->fetch_assoc()) $cursos_array[] = $c;
+
+$mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['csrf'] === $csrf) {
+    $titulo = $_POST['titulo'] ?? '';
+    $contenido = $_POST['contenido'] ?? '';
+    $tipo = $_POST['tipo'] ?? '';
+    $destinos = $_POST['destino'] ?? [];
+    $remitente_id = $usuario['id'];
+
+    // Crear notificación
+    $stmt = $conexion->prepare("INSERT INTO notificaciones 
+        (titulo, contenido, tipo_notificacion, remitente_id, fecha_creacion, prioridad, estado, requiere_confirmacion) 
+        VALUES (?, ?, ?, ?, NOW(), 'NORMAL', 'ACTIVA', 0)");
+    $stmt->bind_param("sssi", $titulo, $contenido, $tipo, $remitente_id);
+    $stmt->execute();
+    $notificacion_id = $stmt->insert_id;
+    $stmt->close();
+
+    // Asignar destinatarios según tipo
+    if ($tipo === 'INDIVIDUAL') {
+        foreach ($destinos as $uid) {
+            $conexion->query("INSERT INTO notificaciones_destinatarios (notificacion_id, destinatario_id, estado_lectura) VALUES ($notificacion_id, $uid, 'NO_LEIDA')");
+        }
+    } elseif ($tipo === 'ROL') {
+        foreach ($destinos as $rid) {
+            // Asigna a todos los usuarios activos de ese rol
+            $q = $conexion->query("SELECT id FROM usuarios WHERE rol = $rid AND status='1'");
+            while ($u = $q->fetch_assoc()) {
+                $conexion->query("INSERT INTO notificaciones_destinatarios (notificacion_id, destinatario_id, estado_lectura) VALUES ($notificacion_id, {$u['id']}, 'NO_LEIDA')");
+            }
+        }
+    } elseif ($tipo === 'GRUPO') {
+        foreach ($destinos as $gid) {
+            // Asigna a todos los miembros activos de ese grupo
+            $q = $conexion->query("SELECT usuario_id FROM grupos_notificacion_miembros WHERE grupo_id = $gid AND activo=1");
+            while ($u = $q->fetch_assoc()) {
+                $conexion->query("INSERT INTO notificaciones_destinatarios (notificacion_id, destinatario_id, estado_lectura) VALUES ($notificacion_id, {$u['usuario_id']}, 'NO_LEIDA')");
+            }
+        }
+    } elseif ($tipo === 'GLOBAL') {
+        // Todos los usuarios activos
+        $q = $conexion->query("SELECT id FROM usuarios WHERE status='1'");
+        while ($u = $q->fetch_assoc()) {
+            $conexion->query("INSERT INTO notificaciones_destinatarios (notificacion_id, destinatario_id, estado_lectura) VALUES ($notificacion_id, {$u['id']}, 'NO_LEIDA')");
+        }
+    } elseif ($tipo === 'CURSO') {
+        foreach ($destinos as $curso_id) {
+            // Buscá todos los usuarios de alumnos_curso en ese curso
+            $q = $conexion->query("SELECT alumno_id FROM alumno_curso WHERE curso_id = $curso_id");
+            while ($a = $q->fetch_assoc()) {
+                $conexion->query("INSERT INTO notificaciones_destinatarios (notificacion_id, destinatario_id, estado_lectura) VALUES ($notificacion_id, {$a['alumno_id']}, 'NO_LEIDA')");
+            }
+        }
+    }
+
+
+    $mensaje = "✅ ¡Notificación enviada!";
 }
 
 ?>
@@ -35,9 +87,8 @@ while ($row = $result->fetch_assoc()) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Usuarios</title>
+    <title>Panel de Administración</title>
     <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -65,7 +116,7 @@ while ($row = $result->fetch_assoc()) {
     </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-gray-100 min-h-screen flex relative">
     <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
         ☰
     </button>
@@ -78,7 +129,7 @@ while ($row = $result->fetch_assoc()) {
         <a href="admin.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Inicio">
             <span class="text-xl">🏠</span><span class="sidebar-label">Inicio</span>
         </a>
-        <a href="usuarios.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Usuarios">
+        <a href="usuarios.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Usuarios">
             <span class="text-xl">👥</span><span class="sidebar-label">Usuarios</span>
         </a>
         <a href="cursos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Cursos">
@@ -106,6 +157,7 @@ while ($row = $result->fetch_assoc()) {
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>
+    <!-- Contenido -->
     <main class="flex-1 p-10">
         <div class="w-full flex justify-end items-center gap-4 mb-6">
             <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
@@ -137,6 +189,7 @@ while ($row = $result->fetch_assoc()) {
                 </button>
             </div>
         </div>
+
         <!-- POPUP DE NOTIFICACIONES -->
         <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
             <div class="flex items-center justify-between px-4 py-3 border-b">
@@ -147,120 +200,74 @@ while ($row = $result->fetch_assoc()) {
                 <!-- Notificaciones aquí -->
             </div>
         </div>
-        <h1 class="text-2xl font-bold mb-6">👥 Gestión de Usuarios Pendientes</h1>
-        <div class="overflow-x-auto">
-            <div class="max-h-[400px] overflow-y-auto rounded-xl shadow">
-                <table class="min-w-full bg-white rounded-xl shadow">
-                    <thead>
-                        <tr>
-                            <th class="py-2 px-4 text-left">Nombre</th>
-                            <th class="py-2 px-4 text-left">Apellido</th>
-                            <th class="py-2 px-4 text-left">Mail</th>
-                            <th class="py-2 px-4 text-left">Rol</th>
-                            <th class="py-2 px-4 text-left">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($usuarios_pendientes as $u): ?>
-                            <tr>
-                                <td class="py-2 px-4"><?php echo $u['nombre']; ?></td>
-                                <td class="py-2 px-4"><?php echo $u['apellido']; ?></td>
-                                <td class="py-2 px-4"><?php echo $u['mail']; ?></td>
-                                <td class="py-2 px-4">
-                                    <form method="post" action="admin_usuario_aprobar.php" class="flex items-center gap-2">
-                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                                        <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
-                                        <select name="rol" class="border rounded px-2 py-1">
-                                            <option value="1">Administrador</option>
-                                            <option value="2">Preceptor</option>
-                                            <option value="3">Profesor</option>
-                                            <option value="4">Alumno</option>
-                                        </select>
-                                        <button type="submit" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">Aprobar</button>
-                                    </form>
-                                </td>
-                                <td class="py-2 px-4">
-                                    <form method="post" action="admin_usuario_rechazar.php" onsubmit="return confirm('¿Estás seguro de rechazar este usuario?');">
-                                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                                        <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
-                                        <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Rechazar</button>
-                                    </form>
-                                </td>
-                            </tr>
+
+        <!-- ACÁ EL PANEL DE CREACIÓN DE NOTIFICACIONES -->
+        <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-8 mt-6">
+            <h2 class="text-2xl font-bold mb-4">Crear nueva notificación</h2>
+            <?php if ($mensaje): ?>
+                <div class="bg-green-100 text-green-800 rounded p-2 mb-4 font-semibold"><?= $mensaje ?></div>
+            <?php endif; ?>
+            <form method="POST" class="flex flex-col gap-4">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                <label class="font-semibold">Título:</label>
+                <input type="text" name="titulo" required class="border rounded p-2" maxlength="100">
+
+                <label class="font-semibold">Contenido:</label>
+                <textarea name="contenido" required class="border rounded p-2" maxlength="500"></textarea>
+
+                <label class="font-semibold">Tipo de notificación:</label>
+                <select name="tipo" id="tipo" class="border rounded p-2" required>
+                    <option value="">Seleccioná tipo</option>
+                    <option value="INDIVIDUAL">A un usuario</option>
+                    <option value="ROL">A un rol</option>
+                    <option value="GRUPO">A un grupo</option>
+                    <option value="CURSO">A un curso</option>
+                    <option value="GLOBAL">Global (todos)</option>
+                </select>
+
+
+                <div id="destino-individual" class="hidden">
+                    <label class="font-semibold mt-2">Usuarios:</label>
+                    <input type="text" id="filtro-usuarios" class="border rounded p-2 mb-2 w-full" placeholder="Buscar usuario...">
+                    <select id="select-usuarios" name="destino[]" class="border rounded p-2 w-full" size="10" multiple>
+                        <?php foreach ($usuarios as $u): ?>
+                            <option value="<?= $u['id'] ?>">
+                                <?= htmlspecialchars($u['apellido'] . ", " . $u['nombre']) ?>
+                            </option>
                         <?php endforeach; ?>
-                        <?php if (empty($usuarios_pendientes)): ?>
-                            <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-500">No hay usuarios pendientes de aprobación.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <h2 class="text-xl font-bold mt-10 mb-4">👤 Usuarios Activos (No alumnos)</h2>
-        <div class="overflow-x-auto">
-            <div class="max-h-[400px] overflow-y-auto rounded-xl shadow">
-                <table class="min-w-full bg-white rounded-xl shadow">
-                    <thead>
-                        <tr>
-                            <th class="py-2 px-4 text-left">Nombre</th>
-                            <th class="py-2 px-4 text-left">Apellido</th>
-                            <th class="py-2 px-4 text-left">Mail</th>
-                            <th class="py-2 px-4 text-left">Rol</th>
-                            <th class="py-2 px-4 text-left">Editar</th>
-                            <!-- Si querés, sumar Borrar/Desactivar -->
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($usuarios_activos as $u): ?>
-                            <tr>
-                                <td class="py-2 px-4"><?= htmlspecialchars($u['nombre']) ?></td>
-                                <td class="py-2 px-4"><?= htmlspecialchars($u['apellido']) ?></td>
-                                <td class="py-2 px-4"><?= htmlspecialchars($u['mail']) ?></td>
-                                <td class="py-2 px-4">
-                                    <?php
-                                    switch ($u['rol']) {
-                                        case 1:
-                                            echo "Administrador";
-                                            break;
-                                        case 2:
-                                            echo "Preceptor";
-                                            break;
-                                        case 3:
-                                            echo "Profesor";
-                                            break;
-                                        case 5:
-                                            echo "ATTP";
-                                            break;
-                                        default:
-                                            echo "Desconocido";
-                                            break;
-                                    }
-                                    ?>
-                                </td>
-                                <td class="py-2 px-4">
-                                    <a href="editar_usuario.php?id=<?= $u['id'] ?>" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Editar</a>
-                                </td>
-                                <!--
-                                <td class="py-2 px-4">
-                                    <form method="post" action="usuario_borrar.php" onsubmit="return confirm('¿Seguro que querés borrar este usuario?');">
-                                        <input type="hidden" name="usuario_id" value="<?= $u['id'] ?>">
-                                        <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Borrar</button>
-                                    </form>
-                                </td>
-                                -->
-                            </tr>
+                    </select>
+                </div>
+                <div id="destino-rol" class="hidden">
+                    <label class="font-semibold mt-2">Roles:</label>
+                    <select name="destino[]" class="border rounded p-2 w-full" multiple>
+                        <?php while ($r = $roles->fetch_assoc()): ?>
+                            <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div id="destino-grupo" class="hidden">
+                    <label class="font-semibold mt-2">Grupos:</label>
+                    <select name="destino[]" class="border rounded p-2 w-full" multiple>
+                        <?php while ($g = $grupos->fetch_assoc()): ?>
+                            <option value="<?= $g['id'] ?>"><?= htmlspecialchars($g['nombre']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div id="destino-curso" class="hidden">
+                    <label class="font-semibold mt-2">Cursos:</label>
+                    <select name="destino[]" class="border rounded p-2 w-full" multiple>
+                        <?php foreach ($cursos_array as $c): ?>
+                            <option value="<?= $c['id'] ?>">
+                                <?= htmlspecialchars($c['anio'] . "° " . $c['division']) ?>
+                            </option>
                         <?php endforeach; ?>
-                        <?php if (empty($usuarios_activos)): ?>
-                            <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-500">No hay usuarios activos (Admin, Preceptor, Profesor, ATTP).</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                    </select>
+                </div>
+                <button type="submit" class="mt-4 bg-blue-600 text-white rounded-xl px-4 py-2 font-bold hover:bg-blue-700">Enviar notificación</button>
+            </form>
         </div>
     </main>
+
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
@@ -283,6 +290,22 @@ while ($row = $result->fetch_assoc()) {
             }
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filtro = document.getElementById('filtro-usuarios');
+            const select = document.getElementById('select-usuarios');
+            if (filtro && select) {
+                filtro.addEventListener('input', function() {
+                    const valor = this.value.toLowerCase();
+                    for (let option of select.options) {
+                        const texto = option.textContent.toLowerCase();
+                        option.style.display = texto.includes(valor) ? '' : 'none';
+                    }
+                });
+            }
+        });
+    </script>
+
     <script>
         document.getElementById('btn-notificaciones').addEventListener('click', function() {
             const popup = document.getElementById('popup-notificaciones');
@@ -374,6 +397,42 @@ while ($row = $result->fetch_assoc()) {
         document.addEventListener('DOMContentLoaded', function() {
             cargarNotificaciones(); // Esto chequea notificaciones ni bien se carga la página
             setInterval(cargarNotificaciones, 15000);
+        });
+    </script>
+    <script>
+        function mostrarOpcionesDestino() {
+            var individual = document.getElementById('destino-individual');
+            var rol = document.getElementById('destino-rol');
+            var grupo = document.getElementById('destino-grupo');
+            var curso = document.getElementById('destino-curso');
+            if (individual) individual.classList.add('hidden');
+            if (rol) rol.classList.add('hidden');
+            if (grupo) grupo.classList.add('hidden');
+            if (curso) curso.classList.add('hidden');
+            var tipo = document.getElementById('tipo').value;
+            if (tipo === 'INDIVIDUAL' && individual) {
+                const filtro = document.getElementById('filtro-usuarios');
+                const select = document.getElementById('select-usuarios');
+                if (filtro && select) {
+                    filtro.value = '';
+                    for (let option of select.options) {
+                        option.style.display = '';
+                    }
+                }
+                individual.classList.remove('hidden');
+            } else if (tipo === 'ROL' && rol) {
+                rol.classList.remove('hidden');
+            } else if (tipo === 'GRUPO' && grupo) {
+                grupo.classList.remove('hidden');
+            } else if (tipo === 'CURSO' && curso) {
+                curso.classList.remove('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var tipo = document.getElementById('tipo');
+            if (tipo) tipo.addEventListener('change', mostrarOpcionesDestino);
+            mostrarOpcionesDestino();
         });
     </script>
 </body>

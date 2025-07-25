@@ -42,7 +42,7 @@ $csrf = $_SESSION['csrf'];
     </nav>
     <main class="flex-grow flex justify-center items-center">
         
-        <form action="/../../../backend/includes/guardar_registro_google.php" method="POST" class="bg-white p-8 mt-20 mb-8 rounded-2xl shadow-xl w-full max-w-md space-y-5">
+        <form action="guardar_registro_google.php" method="POST" class="bg-white p-8 mt-20 mb-8 rounded-2xl shadow-xl w-full max-w-md space-y-5">
             <h2 class="text-2xl font-bold text-center mb-6 text-blue-700">Registro de usuario</h2>
 
             <input type="hidden" name="mail" value="<?= htmlspecialchars($google_email) ?>">

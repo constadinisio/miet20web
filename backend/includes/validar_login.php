@@ -19,17 +19,19 @@ $result = $stmt->get_result();
 $usuario = $result->fetch_assoc();
 $stmt->close();
 
+/*
 if (!$usuario || $contrasena !== $usuario['contrasena']) {
     header("Location: /login.php?error=login");
     exit;
 }
+*/
 
-/* VALIDACIÓN DE CREDENCIALES POR HASH
-if (password_verify($contrasena, $usuario['contrasena'])) {
+
+if (!password_verify($contrasena, $usuario['contrasena'])) {
     header("Location: /login.php?error=login");
     exit;
 }
-*/
+
 
 // ---------- CAMBIO ACÁ: roles principal + secundarios ----------
 
