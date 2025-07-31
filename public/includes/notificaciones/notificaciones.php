@@ -38,7 +38,7 @@ $usuarios = $conexion->query("SELECT id, nombre, apellido FROM usuarios ORDER BY
 <head>
   <meta charset="UTF-8">
   <title>Test Notificaciones</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.3/dist/tailwind.min.css">
+  <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
   <form method="post" class="bg-white shadow-xl p-8 rounded-2xl flex flex-col gap-4 w-96">

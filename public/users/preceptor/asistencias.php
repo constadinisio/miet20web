@@ -110,14 +110,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['asistencias']) && iss
                     $stmt_upd->close();
                 } else {
                     $sql_ins = "INSERT INTO asistencia_general (alumno_id, curso_id, fecha, estado, creado_por, es_contraturno)
-                                VALUES (?, ?, ?, ?, ?, ?)";
+            VALUES (?, ?, ?, ?, ?, ?)";
                     $stmt_ins = $conexion->prepare($sql_ins);
                     if (!$stmt_ins) die("Error: " . $conexion->error);
                     $stmt_ins->bind_param("iissii", $alumno_id, $curso_id, $fecha, $estado, $preceptor_id, $es_contraturno);
-                    $stmt_ins->execute();
+                    if (!$stmt_ins->execute()) {
+                        die("❌ Error al ejecutar: " . $stmt_ins->error);
+                    }
                     $stmt_ins->close();
                 }
                 $stmt_check->close();
+                file_put_contents("debug_asistencia.log", "ID: $alumno_id - Curso: $curso_id - Fecha: $fecha - Estado: $estado - Contraturno: $es_contraturno\n", FILE_APPEND);
             }
         }
     }
@@ -291,13 +294,13 @@ for ($i = 0; $i < 5; $i++) {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <select name="semana_lunes" class="px-4 py-2 rounded-xl border" required>
-                <?php foreach ($luneses as $lunes): ?>
-                    <option value="<?= $lunes ?>" <?= $semana_lunes == $lunes ? 'selected' : '' ?>>
-                        Semana del <?= (new DateTime($lunes))->format('d/m/Y') ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+
+            <div class="flex items-center gap-3">
+                <input type="date" id="selector-fecha" class="px-4 py-2 rounded-xl border" required>
+                <input type="hidden" name="semana_lunes" id="input-semana-lunes" value="<?= $semana_lunes ?>">
+                <div id="texto-rango" class="text-gray-600 font-semibold"></div>
+            </div>
+
             <select name="modo" class="px-4 py-2 rounded-xl border">
                 <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
                 <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
@@ -321,7 +324,7 @@ for ($i = 0; $i < 5; $i++) {
 
             <?php if ($modo == 'editar'): ?>
                 <!-- EDICIÓN SEMANAL -->
-                <form method="post" class="mt-4">
+                <form method="post" class="mt-4">a
                     <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
                     <input type="hidden" name="semana_lunes" value="<?= $semana_lunes ?>">
@@ -345,10 +348,26 @@ for ($i = 0; $i < 5; $i++) {
                                 <tr>
                                     <th></th>
                                     <th></th>
+                                <tr class="bg-gray-50 text-sm text-center">
+                                    <th colspan="2" class="py-2 px-4 font-medium text-left">Aplicar a todos:</th>
                                     <?php foreach ($dias_semana as $dia): ?>
-                                        <th class="py-1 px-2 text-center">Turno</th>
-                                        <th class="py-1 px-2 text-center">Contra</th>
+                                        <?php foreach (['turno', 'contraturno'] as $tipo): ?>
+                                            <th class="py-1 px-2">
+                                                <select onchange="setAll('<?= $dia ?>', '<?= $tipo ?>', this.value)" class="border rounded px-2 py-1 text-sm">
+                                                    <option value="">—</option>
+                                                    <option value="P">P</option>
+                                                    <option value="A">A</option>
+                                                    <option value="T">T</option>
+                                                    <option value="NC">NC</option>
+                                                </select>
+                                            </th>
+                                        <?php endforeach; ?>
                                     <?php endforeach; ?>
+                                </tr>
+                                <?php foreach ($dias_semana as $dia): ?>
+                                    <th class="py-1 px-2 text-center">Turno</th>
+                                    <th class="py-1 px-2 text-center">Contra</th>
+                                <?php endforeach; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -360,11 +379,12 @@ for ($i = 0; $i < 5; $i++) {
                                         <?php foreach ($dias_semana as $dia): ?>
                                             <?php foreach (['turno', 'contraturno'] as $tipo): ?>
                                                 <td class="py-2 px-4 text-center">
-                                                    <select name="asistencias[<?= $a['id'] ?>][<?= $dia ?>][<?= $tipo ?>]" class="border rounded px-2 py-1">
+                                                    <select name="asistencias[<?= $a['id'] ?>][<?= $dia ?>][<?= $tipo ?>]" data-dia="<?= $dia ?>" data-tipo="<?= $tipo ?>" class="border rounded px-2 py-1">
                                                         <option value="">-</option>
                                                         <option value="P" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'P' ? 'selected' : '' ?>>P</option>
                                                         <option value="A" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'A' ? 'selected' : '' ?>>A</option>
                                                         <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T' ? 'selected' : '' ?>>T</option>
+                                                        <option value="NC" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T' ? 'selected' : '' ?>>NC</option>
                                                     </select>
                                                 </td>
                                             <?php endforeach; ?>
@@ -423,6 +443,7 @@ for ($i = 0; $i < 5; $i++) {
                                                 if ($est == 'P') echo '<span class="text-green-700 font-bold">P</span>';
                                                 elseif ($est == 'A') echo '<span class="text-red-700 font-bold">A</span>';
                                                 elseif ($est == 'T') echo '<span class="text-yellow-700 font-bold">T</span>';
+                                                elseif ($est == 'NC') echo '<span class="text-gray-700 font-bold">NC</span>';
                                                 else echo '-';
                                                 ?>
                                             </td>
@@ -554,6 +575,50 @@ for ($i = 0; $i < 5; $i++) {
         document.addEventListener('DOMContentLoaded', function() {
             cargarNotificaciones(); // Esto chequea notificaciones ni bien se carga la página
             setInterval(cargarNotificaciones, 15000);
+        });
+    </script>
+    <script>
+        function setAll(dia, tipo, valor) {
+            const selects = document.querySelectorAll(`select[data-dia='${dia}'][data-tipo='${tipo}']`);
+            selects.forEach(s => s.value = valor);
+        }
+    </script>
+    <script>
+        function calcularLunesDesde(fechaStr) {
+            const partes = fechaStr.split('-');
+            const fecha = new Date(partes[0], partes[1] - 1, partes[2]); // local date
+            const diaSemana = fecha.getDay(); // 0 = domingo ... 6 = sábado
+            const diff = diaSemana === 0 ? -6 : 1 - diaSemana;
+            fecha.setDate(fecha.getDate() + diff);
+            return fecha;
+        }
+
+        function formatoFechaCorta(fecha) {
+            const d = fecha.getDate().toString().padStart(2, '0');
+            const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
+            return `${d}-${m}`;
+        }
+
+        function actualizarRangoVisual(fechaStr) {
+            const lunes = calcularLunesDesde(fechaStr);
+            const viernes = new Date(lunes);
+            viernes.setDate(lunes.getDate() + 4);
+
+            const lunesISO = lunes.toISOString().split('T')[0];
+            document.getElementById('selector-fecha').value = lunesISO;
+            document.getElementById('input-semana-lunes').value = lunesISO;
+
+            document.getElementById('texto-rango').textContent =
+                `${formatoFechaCorta(lunes)} / ${formatoFechaCorta(viernes)}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const fechaActual = document.getElementById('input-semana-lunes').value || new Date().toISOString().split('T')[0];
+            actualizarRangoVisual(fechaActual);
+
+            document.getElementById('selector-fecha').addEventListener('change', function() {
+                actualizarRangoVisual(this.value);
+            });
         });
     </script>
 </body>

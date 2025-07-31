@@ -6,22 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi ET20 - Noticias</title>
     <link rel="icon" type="image/x-icon" href="images/et20png.png">
-
-    <!-- Configuración previa de Tailwind -->
-    <script>
-        window.tailwind = {
-            config: {
-                corePlugins: {
-                    preflight: false // Esto evita que el CDN te pise estilos como listas
-                }
-            }
-        };
-    </script>
-
-    <!-- CDN de Tailwind (lo cargás después de definir window.tailwind) -->
-
-
-    <!-- Tu archivo local compilado con @tailwindcss/typography -->
     <link href="output.css?v=<?= time() ?>" rel="stylesheet">
 
 

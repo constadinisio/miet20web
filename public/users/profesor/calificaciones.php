@@ -108,6 +108,36 @@ if ($curso_id && $materia_id) {
     }
     $stmt3->close();
 }
+// Cargar trabajos (tp y actividad) de la materia
+$trabajos = [];
+if ($materia_id) {
+    $sql_trab = "SELECT id, nombre FROM trabajos WHERE materia_id = ? ORDER BY fecha_creacion ASC";
+    $stmt4 = $conexion->prepare($sql_trab);
+    $stmt4->bind_param("i", $materia_id);
+    $stmt4->execute();
+    $trab_result = $stmt4->get_result();
+    while ($t = $trab_result->fetch_assoc()) {
+        $trabajos[] = $t;
+    }
+    $stmt4->close();
+}
+
+// Cargar notas existentes para estos trabajos y alumnos
+$notas_existentes = [];
+if (!empty($trabajos) && !empty($alumnos)) {
+    $trabajo_ids = implode(",", array_column($trabajos, 'id'));
+    $alumno_ids = implode(",", array_column($alumnos, 'id'));
+    if ($trabajo_ids && $alumno_ids) {
+        $sql_notas = "SELECT * FROM notas WHERE trabajo_id IN ($trabajo_ids) AND alumno_id IN ($alumno_ids)";
+        $result = $conexion->query($sql_notas);
+        if ($result) {
+            while ($n = $result->fetch_assoc()) {
+                $notas_existentes[$n['alumno_id']][$n['trabajo_id']] = $n['nota'];
+            }
+        }
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -161,6 +191,12 @@ if ($curso_id && $materia_id) {
         </a>
         <a href="calificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Calificaciones">
             <span class="text-xl">📝</span><span class="sidebar-label">Calificaciones</span>
+        </a>
+        <a href="trabajos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
+            <span class="text-xl">📎</span><span class="sidebar-label">TPs y Actividades</span>
+        </a>
+        <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Panel de Notificaciones">
+            <span class="text-xl">🔔</span><span class="sidebar-label">Panel de Notificaciones</span>
         </a>
         <button onclick="window.location='../../includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
@@ -227,7 +263,7 @@ if ($curso_id && $materia_id) {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <select name="materia_id" class="px-4 py-2 rounded-xl border" required>
+            <select name="materia_id" class="px-4 py-2 rounded-xl border" required onchange="document.getElementById('form-filtros').submit()">
                 <option value="">Seleccionar materia</option>
                 <?php foreach ($materias_del_curso as $id => $nombre): ?>
                     <option value="<?php echo $id; ?>" <?php if ((int)$materia_id === (int)$id) echo "selected"; ?>>
@@ -235,7 +271,7 @@ if ($curso_id && $materia_id) {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <select name="periodo" class="px-4 py-2 rounded-xl border">
+            <select name="periodo" class="px-4 py-2 rounded-xl border" onchange="document.getElementById('form-filtros').submit()">
                 <option value="">Todos los bimestres/cuatrimestres</option>
                 <option value="1er Bimestre" <?= $periodo == '1er Bimestre' ? 'selected' : '' ?>>1º Bimestre</option>
                 <option value="2do Bimestre" <?= $periodo == '2do Bimestre' ? 'selected' : '' ?>>2º Bimestre</option>
@@ -243,13 +279,15 @@ if ($curso_id && $materia_id) {
                 <option value="3er Bimestre" <?= $periodo == '3er Bimestre' ? 'selected' : '' ?>>3º Bimestre</option>
                 <option value="4to Bimestre" <?= $periodo == '4to Bimestre' ? 'selected' : '' ?>>4º Bimestre</option>
                 <option value="2do Cuatrimestre" <?= $periodo == '2do Cuatrimestre' ? 'selected' : '' ?>>2º Cuatrimestre</option>
+                <option value="Diciembre" <?= $periodo == 'Diciembre' ? 'selected' : '' ?>>Diciembre</option>
+                <option value="Febrero" <?= $periodo == 'Febrero' ? 'selected' : '' ?>>Febrero</option>
             </select>
-            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
         </form>
-        <?php if ($curso_id && $materia_id && $periodo): ?>
+        <?php if ($curso_id && $materia_id): ?>
+            <!-- Carga de notas bimestrales/cuatrimestrales -->
             <div class="mb-8 bg-white rounded-xl shadow p-6">
                 <h2 class="text-lg font-semibold mb-4">➕ Cargar nueva calificación</h2>
-                <form method="post" action="profesor_cargar_nota.php" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form method="post" action="profesor_cargar_nota.php" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
                     <input type="hidden" name="materia_id" value="<?= $materia_id ?>">
@@ -267,59 +305,79 @@ if ($curso_id && $materia_id) {
                     </div>
                 </form>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded-xl shadow">
-                    <thead>
-                        <tr>
-                            <th class="py-2 px-4 text-left">Alumno</th>
-                            <th class="py-2 px-4 text-left">Nota</th>
-                            <th class="py-2 px-4 text-left">Bimestre</th>
-                            <th class="py-2 px-4 text-left">Cuatrimestre</th>
-                            <th class="py-2 px-4 text-left">Desempeño</th>
-                            <th class="py-2 px-4 text-left">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($notas as $n): ?>
+            <div class="overflow-y-auto max-h-[70vh] rounded-xl shadow">
+                <form method="post" action="profesor_editar_nota.php">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                    <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
+                    <input type="hidden" name="materia_id" value="<?= $materia_id ?>">
+                    <input type="hidden" name="periodo" value="<?= htmlspecialchars($periodo) ?>">
+
+                    <table class="min-w-full bg-white rounded-xl shadow">
+                        <thead>
                             <tr>
-                                <td class="py-2 px-4"><?php echo $n['apellido'] . " " . $n['nombre']; ?></td>
-                                <td class="py-2 px-4 font-semibold"><?php echo $n['nota']; ?></td>
-                                <td class="py-2 px-4"><?php echo $n['periodo']; ?></td>
-                                <td class="py-2 px-4">
-                                    <?php
-                                    if (in_array($n['periodo'], ['1er Bimestre', '2do Bimestre'])) echo '1º Cuatrimestre';
-                                    elseif (in_array($n['periodo'], ['3er Bimestre', '4to Bimestre'])) echo '2º Cuatrimestre';
-                                    else echo '-';
-                                    ?>
-                                </td>
-                                <td class="py-2 px-4">
-                                    <?php
-                                    $nota = (float)$n['nota'];
-                                    if ($nota >= 1 && $nota < 6) {
-                                        echo '<span class="text-red-600 font-bold">En Proceso</span>';
-                                    } elseif ($nota >= 6 && $nota < 8) {
-                                        echo '<span class="text-yellow-700 font-bold">Suficiente</span>';
-                                    } elseif ($nota >= 8 && $nota <= 10) {
-                                        echo '<span class="text-green-700 font-bold">Avanzado</span>';
-                                    } else {
-                                        echo '-';
-                                    }
-                                    ?>
-                                </td>
-                                <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($n['fecha_carga'])); ?></td>
+                                <th class="py-2 px-4 text-left">Alumno</th>
+                                <th class="py-2 px-4 text-left">Nota</th>
+                                <th class="py-2 px-4 text-left">Bimestre</th>
+                                <th class="py-2 px-4 text-left">Cuatrimestre</th>
+                                <th class="py-2 px-4 text-left">Desempeño</th>
+                                <th class="py-2 px-4 text-left">Fecha</th>
                             </tr>
-                        <?php endforeach; ?>
-                        <?php if (empty($notas)): ?>
-                            <tr>
-                                <td colspan="6" class="py-4 text-center text-gray-500">No hay notas cargadas aún.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($notas as $n): ?>
+                                <tr>
+                                    <td class="py-2 px-4"><?= $n['apellido'] . " " . $n['nombre'] ?></td>
+                                    <td class="py-2 px-4">
+                                        <input type="number" step="0.01" min="1" max="10"
+                                            name="notas[<?= $n['id'] ?>]" value="<?= $n['nota'] ?>"
+                                            class="border rounded px-2 py-1 w-20">
+                                    </td>
+                                    <td class="py-2 px-4"><?= $n['periodo'] ?></td>
+                                    <td class="py-2 px-4">
+                                        <?php
+                                        if (in_array($n['periodo'], ['1er Bimestre', '2do Bimestre'])) echo '1º Cuatrimestre';
+                                        elseif (in_array($n['periodo'], ['3er Bimestre', '4to Bimestre'])) echo '2º Cuatrimestre';
+                                        elseif (in_array($n['periodo'], ['Diciembre', 'Febrero'])) echo 'Llamado Extraordinario';
+                                        else echo '-';
+                                        ?>
+                                    </td>
+                                    <td class="py-2 px-4">
+                                        <?php
+                                        $nota = (float)$n['nota'];
+                                        if ($nota >= 1 && $nota < 6) {
+                                            echo '<span class="text-red-600 font-bold">En Proceso</span>';
+                                        } elseif ($nota >= 6 && $nota < 8) {
+                                            echo '<span class="text-yellow-700 font-bold">Suficiente</span>';
+                                        } elseif ($nota >= 8 && $nota <= 10) {
+                                            echo '<span class="text-green-700 font-bold">Avanzado</span>';
+                                        } else {
+                                            echo '-';
+                                        }
+                                        ?>
+                                    </td>
+                                    <td class="py-2 px-4"><?= date("d/m/Y", strtotime($n['fecha_carga'])) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($notas)): ?>
+                                <tr>
+                                    <td colspan="6" class="py-4 text-center text-gray-500">No hay notas cargadas aún.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                    <?php if (!empty($notas)): ?>
+                        <div class="mt-4 flex justify-end">
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700">
+                                💾 Guardar Cambios
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                </form>
             </div>
         <?php else: ?>
-            <div class="text-gray-500">Seleccioná un curso, materia y bimestre para ver y cargar calificaciones.</div>
+            <div class="text-gray-500">Seleccioná curso y materia para continuar.</div>
         <?php endif; ?>
+
     </main>
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
@@ -433,6 +491,34 @@ if ($curso_id && $materia_id) {
         document.addEventListener('DOMContentLoaded', function() {
             cargarNotificaciones(); // Esto chequea notificaciones ni bien se carga la página
             setInterval(cargarNotificaciones, 15000);
+        });
+    </script>
+    <script>
+        document.querySelectorAll('.nota-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const alumnoId = this.dataset.alumno;
+                const trabajoId = this.dataset.trabajo;
+                const nota = this.value;
+
+                fetch('guardar_nota_trabajo.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: `csrf=<?= $csrf ?>&alumno_id=${alumnoId}&trabajo_id=${trabajoId}&nota=${nota}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.ok) {
+                            this.classList.remove('border-red-500');
+                            this.classList.add('border-green-500');
+                        } else {
+                            this.classList.remove('border-green-500');
+                            this.classList.add('border-red-500');
+                            alert(data.error || 'Error al guardar');
+                        }
+                    });
+            });
         });
     </script>
 </body>

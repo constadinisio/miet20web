@@ -79,6 +79,9 @@ if (!$contenido || $contenido['profesor_id'] != $_SESSION['usuario']['id']) {
         <a href="calificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
             <span class="text-xl">📝</span><span class="sidebar-label">Calificaciones</span>
         </a>
+        <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Panel de Notificaciones">
+            <span class="text-xl">🔔</span><span class="sidebar-label">Panel de Notificaciones</span>
+        </a>
         <button onclick="window.location='../../includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>

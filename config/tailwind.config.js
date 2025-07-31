@@ -1,19 +1,20 @@
+const plugin = require('@tailwindcss/typography');
+
 module.exports = {
   content: [
-    "./*.php",
-    "./**/*.php",
-    "./*.html",
-    "./**/*.html",
+    "./public/**/*.php",
+    "./public/**/*.html",
+    "./public/**/*.js"
   ],
   theme: {
     extend: {
       backgroundImage: {
-        'front-et20': "url('./images/front_et20.webp')",
-        'demo-tics': "url('./images/ing_tics.webp')",
-        'demo-mult': "url('./images/set_mult.webp')",
-        'cat-eventos': "url('./images/categoria1.webp')",
-        'cat-especialidad': "url('./images/categoria2.webp')",
-        'cat-talleres': "url('./images/categoria3.webp')",
+        'front-et20': "url('/images/front_et20.webp')",
+        'demo-tics': "url('/images/ing_tics.webp')",
+        'demo-mult': "url('/images/set_mult.webp')",
+        'cat-eventos': "url('/images/categoria1.webp')",
+        'cat-especialidad': "url('/images/categoria2.webp')",
+        'cat-talleres': "url('/images/categoria3.webp')",
       },
       colors: {
         azulInstitucional: '#376bb1',
@@ -25,5 +26,5 @@ module.exports = {
       }
     },
   },
-  plugins: [require('@tailwindcss/typography')]
+  plugins: [plugin],
 };

@@ -1,0 +1,9 @@
+{
+    "materia_id": "1",
+    "csrf": "d5b4b70c55cea771ea65198b5296605d44dada09ad8b3675fb8b4ea7253a085a",
+    "alumno_id": "880",
+    "nota": {
+        "9": "6.60",
+        "10": "9"
+    }
+}

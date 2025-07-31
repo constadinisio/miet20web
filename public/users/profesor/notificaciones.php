@@ -1,43 +1,91 @@
 <?php
 session_start();
-if (
-    !isset($_SESSION['usuario']) ||
-    !is_array($_SESSION['usuario']) ||
-    (int)$_SESSION['usuario']['rol'] !== 3
-) {
+if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 3) {
     header("Location: /login.php?error=rol");
     exit;
 }
-$usuario = $_SESSION['usuario'];
+
+if (!isset($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf'];
+
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
-$mostrar_modal = ($usuario['rol'] != 0 && $usuario['rol'] != 4 && empty($usuario['ficha_censal']));
-
-// Buscar cursos asignados al profesor
+$usuario = $_SESSION['usuario'];
 $profesor_id = $usuario['id'];
-$cursos = [];
 
-$sql = "SELECT c.id, c.anio, c.division, m.nombre AS materia
+// Cursos asignados
+$cursos = [];
+$sql = "SELECT c.id, c.anio, c.division
         FROM profesor_curso_materia pcm
         JOIN cursos c ON pcm.curso_id = c.id
-        JOIN materias m ON pcm.materia_id = m.id
         WHERE pcm.profesor_id = ?
-        ORDER BY c.anio, c.division, m.nombre";
+        GROUP BY c.id, c.anio, c.division
+        ORDER BY c.anio, c.division";
 $stmt = $conexion->prepare($sql);
 $stmt->bind_param("i", $profesor_id);
 $stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $cursos[] = $row;
-}
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) $cursos[] = $row;
 $stmt->close();
+
+// Alumnos de esos cursos
+$alumnos = [];
+if (!empty($cursos)) {
+    $curso_ids = implode(",", array_column($cursos, 'id'));
+    $q = $conexion->query("SELECT u.id, u.nombre, u.apellido 
+                           FROM alumno_curso ac 
+                           JOIN usuarios u ON ac.alumno_id = u.id
+                           WHERE ac.curso_id IN ($curso_ids) 
+                           ORDER BY u.apellido, u.nombre");
+    while ($u = $q->fetch_assoc()) $alumnos[] = $u;
+}
+
+$mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['csrf'] === $csrf) {
+    $titulo = $_POST['titulo'] ?? '';
+    $contenido = $_POST['contenido'] ?? '';
+    $tipo = $_POST['tipo'] ?? '';
+    $destinos = $_POST['destino'] ?? [];
+    $remitente_id = $usuario['id'];
+
+    $stmt = $conexion->prepare("INSERT INTO notificaciones 
+        (titulo, contenido, tipo_notificacion, remitente_id, fecha_creacion, prioridad, estado, requiere_confirmacion) 
+        VALUES (?, ?, ?, ?, NOW(), 'NORMAL', 'ACTIVA', 0)");
+    $stmt->bind_param("sssi", $titulo, $contenido, $tipo, $remitente_id);
+    $stmt->execute();
+    $notificacion_id = $stmt->insert_id;
+    $stmt->close();
+
+    if ($tipo === 'INDIVIDUAL') {
+        foreach ($destinos as $uid) {
+            $conexion->query("INSERT INTO notificaciones_destinatarios 
+                (notificacion_id, destinatario_id, estado_lectura) 
+                VALUES ($notificacion_id, $uid, 'NO_LEIDA')");
+        }
+    } elseif ($tipo === 'CURSO') {
+        foreach ($destinos as $curso_id) {
+            $curso_id = (int)$curso_id;
+            $q = $conexion->query("SELECT alumno_id FROM alumno_curso WHERE curso_id = $curso_id");
+            while ($a = $q->fetch_assoc()) {
+                $conexion->query("INSERT INTO notificaciones_destinatarios 
+                    (notificacion_id, destinatario_id, estado_lectura) 
+                    VALUES ($notificacion_id, {$a['alumno_id']}, 'NO_LEIDA')");
+            }
+        }
+    }
+
+    $mensaje = "✅ ¡Notificación enviada!";
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Profesor</title>
+    <title>Panel de Notificaciones</title>
     <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome CDN -->
@@ -76,7 +124,7 @@ $stmt->close();
             <img src="../../images/et20ico.ico" class="sidebar-collapsed hidden h-10 w-auto object-contain">
         </div>
         <!-- Bloque usuario/rol/salir ELIMINADO DEL SIDEBAR -->
-        <a href="profesor.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Inicio">
+        <a href="profesor.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Inicio">
             <span class="text-xl">🏠</span><span class="sidebar-label">Inicio</span>
         </a>
         <a href="libro_temas.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Libro de Temas">
@@ -88,7 +136,7 @@ $stmt->close();
         <a href="trabajos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
             <span class="text-xl">📎</span><span class="sidebar-label">TPs y Actividades</span>
         </a>
-        <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Panel de Notificaciones">
+        <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Panel de Notificaciones">
             <span class="text-xl">🔔</span><span class="sidebar-label">Panel de Notificaciones</span>
         </a>
         <button onclick="window.location='../../includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
@@ -140,42 +188,52 @@ $stmt->close();
             </div>
         </div>
 
-        <h1 class="text-3xl font-bold mb-4">¡Bienvenido/a, <?php echo $usuario['nombre']; ?>!</h1>
-        <div class="mt-4 text-lg text-gray-700">
-            Desde tu panel podés cargar <b>temas vistos</b>, <b>calificaciones</b> y más.
-        </div>
-        <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
-                <div class="text-5xl mb-2">📚</div>
-                <h2 class="text-xl font-bold mb-2">Libro de Temas</h2>
-                <p class="text-gray-500 text-center mb-4">Registrá o consultá los temas dados en cada clase.</p>
-                <a href="profesor_libro_temas.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir al Libro</a>
+        <h1 class="text-2xl font-bold mb-4">📢 Nueva Notificación</h1>
+        <?php if ($mensaje): ?>
+            <div class="bg-green-100 text-green-800 p-2 mb-4 rounded font-semibold"><?= $mensaje ?></div>
+        <?php endif; ?>
+        <form method="post" class="space-y-4">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+            <div>
+                <label class="font-semibold">Título:</label>
+                <input type="text" name="titulo" required class="w-full border rounded p-2">
             </div>
-            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
-                <div class="text-5xl mb-2">📝</div>
-                <h2 class="text-xl font-bold mb-2">Calificaciones</h2>
-                <p class="text-gray-500 text-center mb-4">Subí las notas de tus alumnos.</p>
-                <a href="profesor_calificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Calificaciones</a>
+            <div>
+                <label class="font-semibold">Contenido:</label>
+                <textarea name="contenido" required class="w-full border rounded p-2" rows="4"></textarea>
             </div>
-        </div>
-        <div class="mt-10">
-            <div class="bg-yellow-100 p-4 rounded-xl text-yellow-900 text-center">
-                📢 <b>Próximamente</b> notificaciones y avisos importantes.
+            <div>
+                <label class="font-semibold">Enviar a:</label>
+                <select name="tipo" id="tipo" required class="w-full border rounded p-2">
+                    <option value="">Seleccionar tipo</option>
+                    <option value="INDIVIDUAL">Alumno individual</option>
+                    <option value="CURSO">Curso completo</option>
+                </select>
             </div>
-        </div>
-        <div class="mt-8">
-            <h2 class="font-bold mb-2">Tus Cursos y Materias:</h2>
-            <ul class="bg-white rounded-xl p-4 shadow grid grid-cols-1 gap-2">
-                <?php foreach ($cursos as $curso): ?>
-                    <li>
-                        <span class="font-semibold"><?php echo $curso['anio'] . "°" . $curso['division']; ?></span> — <span><?php echo $curso['materia']; ?></span>
-                    </li>
-                <?php endforeach; ?>
-                <?php if (empty($cursos)): ?>
-                    <li class="text-gray-500">No tenés cursos asignados.</li>
-                <?php endif; ?>
-            </ul>
-        </div>
+
+            <div id="bloque-individual" class="hidden">
+                <label class="font-semibold">Alumnos:</label>
+                <input type="text" id="filtro-alumnos" class="border rounded p-2 mb-2 w-full" placeholder="Buscar alumno...">
+                <select id="select-alumnos" name="destino[]" class="w-full border rounded p-2" multiple size="10">
+                    <?php foreach ($alumnos as $a): ?>
+                        <option value="<?= $a['id'] ?>">
+                            <?= htmlspecialchars($a['apellido'] . ', ' . $a['nombre']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div id="bloque-curso" class="hidden">
+                <label class="font-semibold">Cursos:</label>
+                <select name="destino[]" class="w-full border rounded p-2" multiple>
+                    <?php foreach ($cursos as $c): ?>
+                        <option value="<?= $c['id'] ?>"><?= $c['anio'] . "° " . $c['division'] ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-bold">Enviar</button>
+        </form>
     </main>
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
@@ -196,49 +254,6 @@ $stmt->close();
                 labels.forEach(label => label.classList.remove('hidden'));
                 expandedElements.forEach(el => el.classList.remove('hidden'));
                 collapsedElements.forEach(el => el.classList.add('hidden'));
-            }
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('modalFichaCensal');
-            const form = document.getElementById('fichaCensalForm');
-            const errorMsg = document.getElementById('errorFichaCensal');
-
-            if (modal && form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    errorMsg.classList.add('hidden');
-                    const ficha = form.ficha_censal.value.trim();
-                    if (!ficha) {
-                        errorMsg.textContent = "El campo ficha censal es obligatorio.";
-                        errorMsg.classList.remove('hidden');
-                        return;
-                    }
-
-                    // Enviar AJAX
-                    fetch('../../includes/guardar_ficha_censal.php', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: 'ficha_censal=' + encodeURIComponent(ficha)
-                        })
-                        .then(res => res.text())
-                        .then(res => {
-                            if (res.trim() === 'OK') {
-                                modal.classList.add('hidden');
-                                location.reload();
-                            } else {
-                                errorMsg.textContent = res;
-                                errorMsg.classList.remove('hidden');
-                            }
-                        })
-                        .catch(() => {
-                            errorMsg.textContent = "Hubo un error. Intentá de nuevo.";
-                            errorMsg.classList.remove('hidden');
-                        });
-                });
             }
         });
     </script>
@@ -335,6 +350,35 @@ $stmt->close();
             setInterval(cargarNotificaciones, 15000);
         });
     </script>
+    <script>
+        document.getElementById('tipo').addEventListener('change', function() {
+            document.getElementById('bloque-individual').classList.add('hidden');
+            document.getElementById('bloque-curso').classList.add('hidden');
+
+            if (this.value === 'INDIVIDUAL') {
+                document.getElementById('bloque-individual').classList.remove('hidden');
+            } else if (this.value === 'CURSO') {
+                document.getElementById('bloque-curso').classList.remove('hidden');
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filtro = document.getElementById('filtro-alumnos');
+            const select = document.getElementById('select-alumnos');
+            if (filtro && select) {
+                filtro.addEventListener('input', function() {
+                    const valor = this.value.toLowerCase();
+                    for (let option of select.options) {
+                        const texto = option.textContent.toLowerCase();
+                        option.style.display = texto.includes(valor) ? '' : 'none';
+                    }
+                });
+            }
+        });
+    </script>
+
     <!-- Modal de ficha censal -->
     <div id="modalFichaCensal"
         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 <?= $mostrar_modal ? '' : 'hidden' ?>">
