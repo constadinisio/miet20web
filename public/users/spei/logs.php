@@ -2,13 +2,17 @@
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
 session_start();
-$fecha_desde = trim($_GET['fecha_desde'] ?? '');
-$fecha_hasta = trim($_GET['fecha_hasta'] ?? '');
+
 if (!isset($_SESSION['usuario'])) {
   header("Location: /login.php");
   exit;
 }
-$u = $_SESSION['usuario'];
+
+$usuario = $_SESSION['usuario'];
+
+$fecha_desde = trim($_GET['fecha_desde'] ?? '');
+$fecha_hasta = trim($_GET['fecha_hasta'] ?? '');
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -29,50 +33,65 @@ $u = $_SESSION['usuario'];
       font-family: 'Poppins', sans-serif;
     }
 
-    img {
-      width: 50px;
-      height: 50px;
+    .sidebar-item {
+      min-height: 3.5rem;
+      width: 100%;
+    }
+
+    .w-16 .sidebar-item {
+      justify-content: center !important;
+    }
+
+    .w-16 .sidebar-item span.sidebar-label {
+      display: none;
+    }
+
+    .w-16 .sidebar-item span.text-xl {
+      margin: 0 auto;
     }
   </style>
 </head>
 
-<body class="bg-gray-100">
-  <div class="relative min-h-screen flex">
-    <!-- Sidebar -->
-    <div id="sidebar" class="absolute top-0 left-0 w-64 bg-blue-800 text-white min-h-screen z-50 transform -translate-x-full transition-transform duration-300">
-      <div class="flex justify-between items-center p-4 border-b border-blue-700">
-        <a href="#" class="flex items-center text-xl font-bold">
-          <img src="/images/et20ico.ico" class="mr-2">
-          Panel SPEI
-        </a>
-      </div>
-
-      <!-- Perfil del usuario -->
-      <div class="p-6 text-center border-b border-blue-700">
-        <img src="<?php echo $u['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $u['nombre']; ?>" class="block mx-auto rounded-full w-14 h-14">
-        <h2 class="text-lg font-semibold"><?php echo $u['nombre'] . ' ' . $u['apellido']; ?></h2>
-        <p class="text-sm text-blue-200">SPEI</p>
-        <button id="btn-notificaciones" class="relative focus:outline-none group mt-4">
-          <!-- Campanita Font Awesome -->
-          <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
-          <!-- Badge cantidad (oculto si no hay notificaciones) -->
-          <span id="badge-notificaciones"
-            class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
-            style="min-width:1.2em; text-align:center;"></span>
-        </button>
-      </div>
-
-      <!-- Menú -->
-      <nav class="p-4 space-y-2">
-        <a href="index.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Página Principal</a>
-        <a href="stock.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Stock</a>
-        <a href="prestamos.php" class="block py-2 px-4 hover:bg-blue-700 rounded">Préstamos</a>
-        <a href="logs.php" class="block py-2 px-4 bg-blue-700 rounded">Logs</a>
-      </nav>
-      <div class="p-4 border-t border-blue-700">
+<body class="bg-gray-100 min-h-screen flex relative">
+  <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
+    ☰
+  </button>
+  <!-- Sidebar -->
+  <nav id="sidebar" class="w-60 transition-all duration-300 bg-white shadow-lg px-4 py-4 flex flex-col gap-2">
+    <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400 h-28">
+      <img src="/images/et20ico.ico" class="sidebar-expanded block h-full w-auto object-contain">
+      <img src="/images/et20ico.ico" class="sidebar-collapsed hidden h-10 w-auto object-contain">
+    </div>
+    <a href="index.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Inicio">
+      <span class="text-xl">🏠</span><span class="sidebar-label">Inicio</span>
+    </a>
+    <a href="stock.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Stock">
+      <span class="text-xl">📂</span><span class="sidebar-label">Stock</span>
+    </a>
+    <a href="prestamos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Prestamos">
+      <span class="text-xl">📑</span><span class="sidebar-label">Prestamos</span>
+    </a>
+    <a href="logs.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Logs">
+      <span class="text-xl">📝</span><span class="sidebar-label">Logs</span>
+    </a>
+    <button onclick="window.location='/includes/logout.php'" class="sidebar-item flex items-center justify-center gap-2 mt-auto py-2 px-3 rounded-xl text-white bg-red-500 hover:bg-red-600">
+      <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
+    </button>
+  </nav>
+  <!-- Contenido -->
+  <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
+    <div class="w-full flex justify-end items-center gap-4 mb-6">
+      <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
+        <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
+        <div class="flex flex-col pr-2 text-right">
+          <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
+          <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
+          <div class="mt-1 text-xs text-gray-500">Administrador/a</div>
+        </div>
         <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-          <form method="post" action="/includes/cambiar_rol.php" class="mt-auto mb-3">
-            <select name="rol" onchange="this.form.submit()" class="w-full px-3 py-2 border text-sm rounded-xl text-gray-700 bg-white">
+          <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+            <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
               <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
                 <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
                   Cambiar a: <?php echo ucfirst($r['nombre']); ?>
@@ -81,129 +100,126 @@ $u = $_SESSION['usuario'];
             </select>
           </form>
         <?php endif; ?>
-        <form action="/includes/logout.php" method="POST">
-          <button type="submit" class="w-full py-2 px-4 mt-4 bg-red-600 hover:bg-red-700 text-white rounded text-center">
-            Cerrar sesión
-          </button>
-        </form>
+        <button id="btn-notificaciones" class="relative focus:outline-none group">
+          <!-- Campanita Font Awesome -->
+          <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
+          <!-- Badge cantidad (oculto si no hay notificaciones) -->
+          <span id="badge-notificaciones"
+            class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
+            style="min-width:1.2em; text-align:center;"></span>
+        </button>
       </div>
-      <div class="p-6 mt-10 text-center text-gray-400"><button onclick="mostrarCreditos()">Créditos</button></div>
     </div>
 
-    <!-- Contenido -->
-    <main id="mainContent" class="w-full px-4 py-8 transition-all duration-300 container mx-auto">
-      <!-- POPUP DE NOTIFICACIONES -->
-        <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b">
-                <span class="font-bold text-gray-800 text-lg">Notificaciones</span>
-                <button onclick="cerrarPopup()" class="text-gray-400 hover:text-red-400 text-xl">&times;</button>
-            </div>
-            <div id="lista-notificaciones" class="overflow-y-auto p-2">
-                <!-- Notificaciones aquí -->
-            </div>
-        </div>
-      <!-- Botón hamburguesa -->
-      <div class="mb-4">
-        <button id="toggleSidebar" class="text-2xl text-blue-800 bg-white p-2 rounded shadow">
-          ☰</button>
+    <!-- POPUP DE NOTIFICACIONES -->
+    <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <span class="font-bold text-gray-800 text-lg">Notificaciones</span>
+        <button onclick="cerrarPopup()" class="text-gray-400 hover:text-red-400 text-xl">&times;</button>
       </div>
+      <div id="lista-notificaciones" class="overflow-y-auto p-2">
+        <!-- Notificaciones aquí -->
+      </div>
+    </div>
 
-      <h1 class="text-3xl font-bold mb-6">Logs de Préstamos</h1>
+    <h1 class="text-3xl font-bold mb-6">Logs de Préstamos</h1>
 
-      <!-- Filtro de fecha -->
-      <form method="GET" class="mb-6 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
-        <div class="w-full sm:w-auto">
-          <label class="block mb-1 font-semibold" for="fecha_desde">Fecha Desde (DD/MM/YYYY):</label>
-          <input type="text" name="fecha_desde" id="fecha_desde" placeholder="01/06/2025" value="<?= htmlspecialchars($fecha_desde ?? '') ?>" class="border p-2 rounded w-full">
-        </div>
-        <div class="w-full sm:w-auto">
-          <label class="block mb-1 font-semibold" for="fecha_hasta">Fecha Hasta (DD/MM/YYYY):</label>
-          <input type="text" name="fecha_hasta" id="fecha_hasta" placeholder="13/06/2025" value="<?= htmlspecialchars($fecha_hasta ?? '') ?>" class="border p-2 rounded w-full">
-        </div>
-        <div class="flex gap-2">
-          <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded">Filtrar</button>
-          <a href="logs.php" class="bg-blue-700 text-white px-4 py-2 rounded">Limpiar filtro</a>
-        </div>
-      </form>
+    <!-- Filtro de fecha -->
+    <form method="GET" class="mb-6 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
+      <div class="w-full sm:w-auto">
+        <label class="block mb-1 font-semibold" for="fecha_desde">Fecha Desde (DD/MM/YYYY):</label>
+        <input type="text" name="fecha_desde" id="fecha_desde" placeholder="01/06/2025" value="<?= htmlspecialchars($fecha_desde ?? '') ?>" class="border p-2 rounded w-full">
+      </div>
+      <div class="w-full sm:w-auto">
+        <label class="block mb-1 font-semibold" for="fecha_hasta">Fecha Hasta (DD/MM/YYYY):</label>
+        <input type="text" name="fecha_hasta" id="fecha_hasta" placeholder="13/06/2025" value="<?= htmlspecialchars($fecha_hasta ?? '') ?>" class="border p-2 rounded w-full">
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded">Filtrar</button>
+        <a href="logs.php" class="bg-blue-700 text-white px-4 py-2 rounded">Limpiar filtro</a>
+      </div>
+    </form>
 
-      <!-- Tabla logs -->
-      <div class="overflow-x-auto rounded shadow bg-white">
-        <table class="min-w-full">
-          <thead class="bg-blue-800 text-white text-sm">
+    <!-- Tabla logs -->
+    <div class="overflow-x-auto rounded shadow bg-white">
+      <table class="min-w-full">
+        <thead class="bg-blue-800 text-white text-sm">
+          <tr>
+            <th class="py-2 px-4 whitespace-nowrap">ID</th>
+            <th class="py-2 px-4 whitespace-nowrap">Netbook</th>
+            <th class="py-2 px-4 whitespace-nowrap">Alumno</th>
+            <th class="py-2 px-4 whitespace-nowrap">Curso</th>
+            <th class="py-2 px-4 whitespace-nowrap">Tutor</th>
+            <th class="py-2 px-4 whitespace-nowrap">Fecha Préstamo</th>
+            <th class="py-2 px-4 whitespace-nowrap">Hora Préstamo</th>
+            <th class="py-2 px-4 whitespace-nowrap">Fecha Devolución</th>
+            <th class="py-2 px-4 whitespace-nowrap">Hora Devolución</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-700 divide-y text-sm">
+          <?php
+          function convertDateToSQL($fecha)
+          {
+            $parts = explode('/', $fecha);
+            return count($parts) === 3 ? "$parts[2]-$parts[1]-$parts[0]" : null;
+          }
+
+          $where = [];
+          if (!empty($fecha_desde)) {
+            $desde = convertDateToSQL($fecha_desde);
+            if ($desde) $where[] = "STR_TO_DATE(Fecha_Prestamo, '%d/%m/%Y') >= '$desde'";
+          }
+          if (!empty($fecha_hasta)) {
+            $hasta = convertDateToSQL($fecha_hasta);
+            if ($hasta) $where[] = "STR_TO_DATE(Fecha_Prestamo, '%d/%m/%Y') <= '$hasta'";
+          }
+
+          $sql = "SELECT * FROM prestamos";
+          if (count($where) > 0) $sql .= " WHERE " . implode(' AND ', $where);
+          $sql .= " ORDER BY STR_TO_DATE(Fecha_Prestamo, '%d/%m/%Y') DESC, Hora_Prestamo DESC";
+
+          $result = $conexion->query($sql);
+          while ($row = $result->fetch_assoc()):
+          ?>
             <tr>
-              <th class="py-2 px-4 whitespace-nowrap">ID</th>
-              <th class="py-2 px-4 whitespace-nowrap">Netbook</th>
-              <th class="py-2 px-4 whitespace-nowrap">Alumno</th>
-              <th class="py-2 px-4 whitespace-nowrap">Curso</th>
-              <th class="py-2 px-4 whitespace-nowrap">Tutor</th>
-              <th class="py-2 px-4 whitespace-nowrap">Fecha Préstamo</th>
-              <th class="py-2 px-4 whitespace-nowrap">Hora Préstamo</th>
-              <th class="py-2 px-4 whitespace-nowrap">Fecha Devolución</th>
-              <th class="py-2 px-4 whitespace-nowrap">Hora Devolución</th>
+              <td class="py-2 px-4"><?= $row['Prestamo_ID'] ?></td>
+              <td class="py-2 px-4"><?= $row['Netbook_ID'] ?></td>
+              <td class="py-2 px-4"><?= $row['Alumno'] ?></td>
+              <td class="py-2 px-4"><?= $row['Curso'] ?></td>
+              <td class="py-2 px-4"><?= $row['Tutor'] ?></td>
+              <td class="py-2 px-4"><?= $row['Fecha_Prestamo'] ?></td>
+              <td class="py-2 px-4"><?= $row['Hora_Prestamo'] ?></td>
+              <td class="py-2 px-4"><?= $row['Fecha_Devolucion'] ?? '-' ?></td>
+              <td class="py-2 px-4"><?= $row['Hora_Devolucion'] ?? '-' ?></td>
             </tr>
-          </thead>
-          <tbody class="text-gray-700 divide-y text-sm">
-            <?php
-            function convertDateToSQL($fecha)
-            {
-              $parts = explode('/', $fecha);
-              return count($parts) === 3 ? "$parts[2]-$parts[1]-$parts[0]" : null;
-            }
-
-            $where = [];
-            if (!empty($fecha_desde)) {
-              $desde = convertDateToSQL($fecha_desde);
-              if ($desde) $where[] = "STR_TO_DATE(Fecha_Prestamo, '%d/%m/%Y') >= '$desde'";
-            }
-            if (!empty($fecha_hasta)) {
-              $hasta = convertDateToSQL($fecha_hasta);
-              if ($hasta) $where[] = "STR_TO_DATE(Fecha_Prestamo, '%d/%m/%Y') <= '$hasta'";
-            }
-
-            $sql = "SELECT * FROM prestamos";
-            if (count($where) > 0) $sql .= " WHERE " . implode(' AND ', $where);
-            $sql .= " ORDER BY STR_TO_DATE(Fecha_Prestamo, '%d/%m/%Y') DESC, Hora_Prestamo DESC";
-
-            $result = $conexion->query($sql);
-            while ($row = $result->fetch_assoc()):
-            ?>
-              <tr>
-                <td class="py-2 px-4"><?= $row['Prestamo_ID'] ?></td>
-                <td class="py-2 px-4"><?= $row['Netbook_ID'] ?></td>
-                <td class="py-2 px-4"><?= $row['Alumno'] ?></td>
-                <td class="py-2 px-4"><?= $row['Curso'] ?></td>
-                <td class="py-2 px-4"><?= $row['Tutor'] ?></td>
-                <td class="py-2 px-4"><?= $row['Fecha_Prestamo'] ?></td>
-                <td class="py-2 px-4"><?= $row['Hora_Prestamo'] ?></td>
-                <td class="py-2 px-4"><?= $row['Fecha_Devolucion'] ?? '-' ?></td>
-                <td class="py-2 px-4"><?= $row['Hora_Devolucion'] ?? '-' ?></td>
-              </tr>
-            <?php endwhile; ?>
-          </tbody>
-        </table>
-      </div>
-    </main>
+          <?php endwhile; ?>
+        </tbody>
+      </table>
+    </div>
+  </main>
   </div>
 
   <script>
-    const sidebar = document.getElementById("sidebar");
-    const toggleSidebar = document.getElementById("toggleSidebar");
-    const closeSidebar = document.getElementById("closeSidebar");
-    const mainContent = document.getElementById("mainContent");
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+      const sidebar = document.getElementById('sidebar');
+      const labels = sidebar.querySelectorAll('.sidebar-label');
+      const expandedElements = sidebar.querySelectorAll('.sidebar-expanded');
+      const collapsedElements = sidebar.querySelectorAll('.sidebar-collapsed');
 
-    function toggleSidebarVisible() {
-      const visible = !sidebar.classList.contains("-translate-x-full");
-      if (visible) {
-        sidebar.classList.add("-translate-x-full");
-        mainContent.classList.remove("ml-64");
+      if (sidebar.classList.contains('w-60')) {
+        sidebar.classList.remove('w-60');
+        sidebar.classList.add('w-16');
+        labels.forEach(label => label.classList.add('hidden'));
+        expandedElements.forEach(el => el.classList.add('hidden'));
+        collapsedElements.forEach(el => el.classList.remove('hidden'));
       } else {
-        sidebar.classList.remove("-translate-x-full");
-        mainContent.classList.add("ml-64");
+        sidebar.classList.remove('w-16');
+        sidebar.classList.add('w-60');
+        labels.forEach(label => label.classList.remove('hidden'));
+        expandedElements.forEach(el => el.classList.remove('hidden'));
+        collapsedElements.forEach(el => el.classList.add('hidden'));
       }
-    }
-
-    toggleSidebar.addEventListener("click", toggleSidebarVisible);
-    closeSidebar.addEventListener("click", toggleSidebarVisible);
+    });
   </script>
 
   <script>
