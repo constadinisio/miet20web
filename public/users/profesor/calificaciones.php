@@ -287,23 +287,60 @@ if (!empty($trabajos) && !empty($alumnos)) {
             <!-- Carga de notas bimestrales/cuatrimestrales -->
             <div class="mb-8 bg-white rounded-xl shadow p-6">
                 <h2 class="text-lg font-semibold mb-4">➕ Cargar nueva calificación</h2>
-                <form method="post" action="profesor_cargar_nota.php" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
-                    <input type="hidden" name="materia_id" value="<?= $materia_id ?>">
-                    <input type="hidden" name="periodo" value="<?= htmlspecialchars($periodo) ?>">
-                    <?php foreach ($alumnos as $al): ?>
-                        <div class="flex items-center gap-2">
-                            <label class="w-40"><?php echo htmlspecialchars($al['apellido'] . ", " . $al['nombre']); ?></label>
-                            <input type="hidden" name="alumno_id[]" value="<?= $al['id'] ?>">
-                            <input type="number" name="nota[]" min="1" max="10" step="0.01"
-                                placeholder="Nota" class="border rounded-xl px-3 py-2 w-24">
+
+                <div class="mb-4 flex items-center gap-3">
+                    <label class="font-semibold text-gray-700">Aplicar nota a todos:</label>
+                    <?php if (in_array($periodo, ['1er Bimestre', '3er Bimestre'])): ?>
+                        <select onchange="aplicarNotaNueva(this.value)" class="border rounded-xl px-3 py-2">
+                            <option value="">—</option>
+                            <option value="5">En Proceso</option>
+                            <option value="7">Suficiente</option>
+                            <option value="9">Avanzado</option>
+                        </select>
+                    <?php else: ?>
+                        <select onchange="aplicarNotaNueva(this.value)" class="border rounded-xl px-3 py-2">
+                            <option value="">—</option>
+                            <?php for ($i = 10; $i >= 1; $i--): ?>
+                                <option value="<?= $i ?>"><?= $i ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    <?php endif; ?>
+                </div>
+
+                <div class="max-h-[70vh] overflow-y-auto">
+                    <form method="post" action="profesor_cargar_nota.php" class="flex flex-col gap-3">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                        <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
+                        <input type="hidden" name="materia_id" value="<?= $materia_id ?>">
+                        <input type="hidden" name="periodo" value="<?= htmlspecialchars($periodo) ?>">
+
+                        <?php foreach ($alumnos as $al): ?>
+                            <div class="flex items-center gap-4 bg-gray-50 rounded-xl px-4 py-2 shadow-sm">
+                                <label class="w-60 font-medium text-gray-700">
+                                    <?php echo htmlspecialchars($al['apellido'] . ", " . $al['nombre']); ?>
+                                </label>
+                                <input type="hidden" name="alumno_id[]" value="<?= $al['id'] ?>">
+
+                                <?php if (in_array($periodo, ['1er Bimestre', '3er Bimestre'])): ?>
+                                    <select name="nota[]" class="nota-nueva border rounded-xl px-3 py-2 w-48">
+                                        <option value="5">En Proceso</option>
+                                        <option value="7">Suficiente</option>
+                                        <option value="9">Avanzado</option>
+                                    </select>
+                                <?php else: ?>
+                                    <input type="number" name="nota[]" min="1" max="10" step="0.01"
+                                        placeholder="Nota" class="nota-nueva border rounded-xl px-3 py-2 w-24">
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-xl hover:bg-green-700">
+                                Guardar notas
+                            </button>
                         </div>
-                    <?php endforeach; ?>
-                    <div class="md:col-span-2 flex justify-end">
-                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700">Guardar notas</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
             <div class="overflow-y-auto max-h-[70vh] rounded-xl shadow">
                 <form method="post" action="profesor_editar_nota.php">
@@ -328,9 +365,17 @@ if (!empty($trabajos) && !empty($alumnos)) {
                                 <tr>
                                     <td class="py-2 px-4"><?= $n['apellido'] . " " . $n['nombre'] ?></td>
                                     <td class="py-2 px-4">
-                                        <input type="number" step="0.01" min="1" max="10"
-                                            name="notas[<?= $n['id'] ?>]" value="<?= $n['nota'] ?>"
-                                            class="border rounded px-2 py-1 w-20">
+                                        <?php if (in_array($n['periodo'], ['1er Bimestre', '3er Bimestre'])): ?>
+                                            <select name="notas[<?= $n['id'] ?>]" class="border rounded px-2 py-1 w-40">
+                                                <option value="5" <?= $n['nota'] == 5 ? 'selected' : '' ?>>En Proceso</option>
+                                                <option value="7" <?= $n['nota'] == 7 ? 'selected' : '' ?>>Suficiente</option>
+                                                <option value="9" <?= $n['nota'] == 9 ? 'selected' : '' ?>>Avanzado</option>
+                                            </select>
+                                        <?php else: ?>
+                                            <input type="number" step="0.01" min="1" max="10"
+                                                name="notas[<?= $n['id'] ?>]" value="<?= $n['nota'] ?>"
+                                                class="border rounded px-2 py-1 w-20">
+                                        <?php endif; ?>
                                     </td>
                                     <td class="py-2 px-4"><?= $n['periodo'] ?></td>
                                     <td class="py-2 px-4">
@@ -366,8 +411,8 @@ if (!empty($trabajos) && !empty($alumnos)) {
                         </tbody>
                     </table>
                     <?php if (!empty($notas)): ?>
-                        <div class="mt-4 flex justify-end">
-                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700">
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700">
                                 💾 Guardar Cambios
                             </button>
                         </div>
@@ -520,6 +565,17 @@ if (!empty($trabajos) && !empty($alumnos)) {
                     });
             });
         });
+    </script>
+    <script>
+        function aplicarNotaNueva(valor) {
+            document.querySelectorAll('.nota-nueva').forEach(input => {
+                if (input.tagName === 'SELECT') {
+                    input.value = valor;
+                } else if (input.tagName === 'INPUT') {
+                    input.value = valor;
+                }
+            });
+        }
     </script>
 </body>
 

@@ -265,7 +265,6 @@ if ($curso_id && $materia_id) {
                     <table class="min-w-full text-sm">
                         <thead class="sticky top-0 bg-white shadow z-10">
                             <tr>
-                                <th class="py-2 px-4 text-left">ID</th>
                                 <th class="py-2 px-4 text-left">Fecha</th>
                                 <th class="py-2 px-4 text-left">Contenido</th>
                                 <th class="py-2 px-4 text-left">Observaciones</th>
@@ -275,7 +274,6 @@ if ($curso_id && $materia_id) {
                         <tbody>
                             <?php foreach ($temas as $t): ?>
                                 <tr class="border-t">
-                                    <td class="py-2 px-4"><?php echo $t['id']; ?></td>
                                     <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
                                     <td class="py-2 px-4"><?php echo htmlspecialchars($t['contenido']); ?></td>
                                     <td class="py-2 px-4"><?php echo htmlspecialchars($t['observaciones']); ?></td>
