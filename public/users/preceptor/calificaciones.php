@@ -12,7 +12,7 @@ if (!isset($_SESSION['csrf'])) {
 }
 $csrf = $_SESSION['csrf'];
 
-// Todos los cursos del sistema
+// Cursos
 $cursos = [];
 $sql = "SELECT id, anio, division FROM cursos ORDER BY anio, division";
 $result = $conexion->query($sql);
@@ -21,46 +21,46 @@ while ($row = $result->fetch_assoc()) {
 }
 
 $curso_id = isset($_GET['curso_id']) ? (int)$_GET['curso_id'] : null;
-$periodo = $_GET['periodo'] ?? '';
-
-// Buscar notas (por bimestre/cuatrimestre o todos)
+$vista = $_GET['ver_por'] ?? '';
+$materia_id = isset($_GET['materia_id']) ? (int)$_GET['materia_id'] : null;
+$materias = [];
 $calificaciones = [];
+$alumnos = [];
+
+// Limpiar materia_id si se cambió a vista por alumno
+if ($vista === 'alumno') {
+    $materia_id = null;
+}
+
 if ($curso_id) {
-    $wherePeriodo = '';
-    $paramTipos = "i"; // curso_id
-    $params = [$curso_id];
+    $sql_materias = "SELECT m.id, m.nombre FROM profesor_curso_materia pcm JOIN materias m ON pcm.materia_id = m.id WHERE pcm.curso_id = ? GROUP BY m.id, m.nombre ORDER BY m.nombre";
+    $stmt = $conexion->prepare($sql_materias);
+    $stmt->bind_param("i", $curso_id);
+    $stmt->execute();
+    $materias = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
-    if ($periodo == '1er Cuatrimestre') {
-        $wherePeriodo = " AND (n.periodo = '1er Bimestre' OR n.periodo = '2do Bimestre')";
-    } elseif ($periodo == '2do Cuatrimestre') {
-        $wherePeriodo = " AND (n.periodo = '3er Bimestre' OR n.periodo = '4to Bimestre')";
-    } elseif ($periodo && !in_array($periodo, ['1er Cuatrimestre', '2do Cuatrimestre'])) {
-        $wherePeriodo = " AND n.periodo = ?";
-        $paramTipos .= "s";
-        $params[] = $periodo;
+    if ($vista === 'alumno') {
+        $sql = "SELECT u.id, u.nombre, u.apellido FROM alumno_curso ac JOIN usuarios u ON ac.alumno_id = u.id WHERE ac.curso_id = ? ORDER BY u.apellido, u.nombre";
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("i", $curso_id);
+        $stmt->execute();
+        $alumnos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    } elseif ($vista === 'materia' && $materia_id) {
+        $sql = "SELECT u.apellido, u.nombre, m.nombre AS materia, n.periodo, n.nota, n.fecha_carga
+                FROM alumno_curso ac
+                JOIN usuarios u ON ac.alumno_id = u.id
+                JOIN notas_bimestrales n ON n.alumno_id = u.id
+                JOIN materias m ON n.materia_id = m.id
+                WHERE ac.curso_id = ? AND m.id = ?
+                ORDER BY u.apellido, u.nombre, n.periodo";
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("ii", $curso_id, $materia_id);
+        $stmt->execute();
+        $calificaciones = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
     }
-
-    $sql2 = "SELECT u.id, u.nombre, u.apellido, m.nombre AS materia, n.nota, n.fecha_carga, n.periodo
-            FROM alumno_curso ac
-            JOIN usuarios u ON ac.alumno_id = u.id
-            JOIN notas_bimestrales n ON n.alumno_id = u.id
-            JOIN materias m ON n.materia_id = m.id
-            WHERE ac.curso_id = ? $wherePeriodo
-            ORDER BY u.apellido, u.nombre, m.nombre, n.periodo";
-    $stmt2 = $conexion->prepare($sql2);
-
-    // Bind dinámico
-    if ($periodo && !in_array($periodo, ['1er Cuatrimestre', '2do Cuatrimestre'])) {
-        $stmt2->bind_param($paramTipos, ...$params);
-    } else {
-        $stmt2->bind_param($paramTipos, $curso_id);
-    }
-    $stmt2->execute();
-    $result2 = $stmt2->get_result();
-    while ($row = $result2->fetch_assoc()) {
-        $calificaciones[] = $row;
-    }
-    $stmt2->close();
 }
 ?>
 <!DOCTYPE html>
@@ -168,28 +168,33 @@ if ($curso_id) {
         </div>
 
         <h1 class="text-2xl font-bold mb-6">📝 Calificaciones</h1>
-        <form class="mb-8 flex gap-4" method="get">
+        <form class="mb-8 flex gap-4 flex-wrap items-center" method="get" id="form-vista">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
+            <select name="curso_id" class="px-4 py-2 rounded-xl border" onchange="document.getElementById('form-vista').submit()" required>
                 <option value="">Seleccionar curso</option>
                 <?php foreach ($cursos as $c): ?>
-                    <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
-                        <?php echo $c['anio'] . "°" . $c['division']; ?>
-                    </option>
+                    <option value="<?= $c['id'] ?>" <?= $curso_id == $c['id'] ? 'selected' : '' ?>><?= $c['anio'] . "°" . $c['division'] ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="periodo" class="px-4 py-2 rounded-xl border">
-                <option value="">Todos los bimestres/cuatrimestres</option>
-                <option value="1er Bimestre" <?= $periodo == '1er Bimestre' ? 'selected' : '' ?>>1º Bimestre</option>
-                <option value="2do Bimestre" <?= $periodo == '2do Bimestre' ? 'selected' : '' ?>>2º Bimestre</option>
-                <option value="1er Cuatrimestre" <?= $periodo == '1er Cuatrimestre' ? 'selected' : '' ?>>1º Cuatrimestre</option>
-                <option value="3er Bimestre" <?= $periodo == '3er Bimestre' ? 'selected' : '' ?>>3º Bimestre</option>
-                <option value="4to Bimestre" <?= $periodo == '4to Bimestre' ? 'selected' : '' ?>>4º Bimestre</option>
-                <option value="2do Cuatrimestre" <?= $periodo == '2do Cuatrimestre' ? 'selected' : '' ?>>2º Cuatrimestre</option>
-            </select>
-            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+
+            <?php if ($curso_id): ?>
+                <select name="ver_por" class="px-4 py-2 rounded-xl border" onchange="document.getElementById('form-vista').submit()" required>
+                    <option value="">Seleccionar vista</option>
+                    <option value="alumno" <?= $vista === 'alumno' ? 'selected' : '' ?>>Ver por alumno</option>
+                    <option value="materia" <?= $vista === 'materia' ? 'selected' : '' ?>>Ver por materia</option>
+                </select>
+            <?php endif; ?>
+
+            <?php if ($curso_id && $vista === 'materia'): ?>
+                <select name="materia_id" class="px-4 py-2 rounded-xl border" onchange="document.getElementById('form-vista').submit()">
+                    <option value="">Seleccionar materia</option>
+                    <?php foreach ($materias as $m): ?>
+                        <option value="<?= $m['id'] ?>" <?= $materia_id == $m['id'] ? 'selected' : '' ?>><?= $m['nombre'] ?></option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
         </form>
-        <?php if ($curso_id): ?>
+        <?php if ($curso_id && $materia_id && $vista): ?>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white rounded-xl shadow">
                     <thead>
@@ -199,52 +204,94 @@ if ($curso_id) {
                             <th class="py-2 px-4 text-left">Bimestre</th>
                             <th class="py-2 px-4 text-left">Cuatrimestre</th>
                             <th class="py-2 px-4 text-left">Nota</th>
-                            <th class="py-2 px-4 text-left">Desempeño</th>
-                            <th class="py-2 px-4 text-left">Fecha</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($calificaciones as $cal): ?>
                             <tr>
-                                <td class="py-2 px-4"><?php echo $cal['apellido'] . " " . $cal['nombre']; ?></td>
-                                <td class="py-2 px-4"><?php echo $cal['materia']; ?></td>
-                                <td class="py-2 px-4"><?php echo $cal['periodo']; ?></td>
+                                <td class="py-2 px-4"><?= htmlspecialchars($cal['apellido'] . " " . $cal['nombre']) ?></td>
+                                <td class="py-2 px-4"><?= htmlspecialchars($cal['materia']) ?></td>
+                                <td class="py-2 px-4"><?= htmlspecialchars($cal['periodo']) ?></td>
                                 <td class="py-2 px-4">
                                     <?php
                                     if (in_array($cal['periodo'], ['1er Bimestre', '2do Bimestre'])) echo '1º Cuatrimestre';
                                     elseif (in_array($cal['periodo'], ['3er Bimestre', '4to Bimestre'])) echo '2º Cuatrimestre';
+                                    elseif (in_array($cal['periodo'], ['Diciembre', 'Febrero'])) echo 'Llamado Extraordinario';
                                     else echo '-';
                                     ?>
                                 </td>
-                                <td class="py-2 px-4 font-semibold"><?php echo $cal['nota']; ?></td>
-                                <td class="py-2 px-4">
-                                    <?php
-                                    $nota = (float)$cal['nota'];
-                                    if ($nota >= 1 && $nota < 6) {
-                                        echo '<span class="text-red-600 font-bold">En Proceso</span>';
-                                    } elseif ($nota >= 6 && $nota < 8) {
-                                        echo '<span class="text-yellow-700 font-bold">Suficiente</span>';
-                                    } elseif ($nota >= 8 && $nota <= 10) {
-                                        echo '<span class="text-green-700 font-bold">Avanzado</span>';
-                                    } else {
-                                        echo '-';
-                                    }
-                                    ?>
-                                </td>
-                                <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($cal['fecha_carga'])); ?></td>
+                                <td class="py-2 px-4 font-semibold"><?= $cal['nota'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($calificaciones)): ?>
                             <tr>
-                                <td colspan="7" class="py-4 text-center text-gray-500">No hay calificaciones cargadas.</td>
+                                <td colspan="7" class="py-4 text-center text-gray-500">No hay calificaciones encontradas.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-        <?php else: ?>
-            <div class="text-gray-500">Seleccioná un curso para ver las calificaciones.</div>
         <?php endif; ?>
+        <?php if ($curso_id && $vista === 'alumno'): ?>
+            <table class="min-w-full bg-white rounded-xl shadow">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-4 text-left">Alumno</th>
+                        <th class="py-2 px-4 text-left">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($alumnos as $al): ?>
+                        <tr>
+                            <td class="py-2 px-4"><?= htmlspecialchars($al['apellido'] . ', ' . $al['nombre']) ?></td>
+                            <td class="py-2 px-4">
+                                <button onclick="abrirReporte('<?= $al['id'] ?>')" class="bg-blue-600 text-white px-3 py-1 rounded-xl hover:bg-blue-700">
+                                    🔎 Ver reporte
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+        <!-- Modal oculto (uno por alumno) -->
+        <?php foreach ($alumnos as $alumno): ?>
+            <div id="reporte-<?= $alumno['id'] ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+                    <button onclick="cerrarReporte('<?= $alumno['id'] ?>')" class="absolute top-3 right-4 text-2xl text-gray-400 hover:text-red-500">&times;</button>
+                    <h2 class="text-xl font-bold mb-4">📊 Reporte de <?= htmlspecialchars($alumno['apellido'] . ", " . $alumno['nombre']) ?></h2>
+
+                    <!-- Promedios por materia -->
+                    <h3 class="font-semibold text-indigo-600 mb-2">Promedio por materia</h3>
+                    <ul class="mb-4 space-y-1">
+                        <?php foreach ($reporteMaterias[$alumno['id']] ?? [] as $materia => $prom): ?>
+                            <li><strong><?= $materia ?>:</strong> <?= number_format($prom, 2) ?></li>
+                        <?php endforeach; ?>
+                        <?php if (empty($reporteMaterias[$alumno['id']] ?? [])): ?>
+                            <li class="text-gray-500">Sin calificaciones aún.</li>
+                        <?php endif; ?>
+                    </ul>
+
+                    <!-- Promedio global -->
+                    <div class="mb-4">
+                        <strong class="text-gray-700">Promedio general:</strong>
+                        <span class="text-lg text-green-700 font-bold">
+                            <?= isset($promediosGlobales[$alumno['id']]) ? number_format($promediosGlobales[$alumno['id']], 2) : '-' ?>
+                        </span>
+                    </div>
+
+                    <!-- Asistencias -->
+                    <h3 class="font-semibold text-indigo-600 mb-2">Resumen de asistencias</h3>
+                    <?php $asis = $asistenciasTotales[$alumno['id']] ?? ['P' => 0, 'A' => 0, 'AJ' => 0, 'T' => 0]; ?>
+                    <ul class="space-y-1">
+                        <li><strong>Presentes:</strong> <?= $asis['P'] ?></li>
+                        <li><strong>Ausentes:</strong> <?= $asis['A'] ?></li>
+                        <li><strong>Ausentes Justificados:</strong> <?= $asis['AJ'] ?></li>
+                        <li><strong>Tardes:</strong> <?= $asis['T'] ?></li>
+                    </ul>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </main>
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
@@ -359,6 +406,15 @@ if ($curso_id) {
             cargarNotificaciones(); // Esto chequea notificaciones ni bien se carga la página
             setInterval(cargarNotificaciones, 15000);
         });
+    </script>
+    <script>
+        function abrirReporte(id) {
+            document.getElementById('reporte-' + id).classList.remove('hidden');
+        }
+
+        function cerrarReporte(id) {
+            document.getElementById('reporte-' + id).classList.add('hidden');
+        }
     </script>
 </body>
 

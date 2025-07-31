@@ -120,7 +120,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['asistencias']) && iss
                     $stmt_ins->close();
                 }
                 $stmt_check->close();
-                file_put_contents("debug_asistencia.log", "ID: $alumno_id - Curso: $curso_id - Fecha: $fecha - Estado: $estado - Contraturno: $es_contraturno\n", FILE_APPEND);
             }
         }
     }
@@ -171,6 +170,21 @@ $dt = new DateTime($semana_lunes);
 for ($i = 0; $i < 5; $i++) {
     $dias_semana[] = $dt->format('Y-m-d');
     $dt->modify('+1 day');
+}
+
+// Panel de Resumen de Asistencias del Día Actualizado
+// Obtener la fecha actual (en el formato que usan las claves de asistencia)
+$hoy_str = date('Y-m-d');
+
+// Inicializar contadores
+$conteo = ['P' => 0, 'A' => 0, 'AJ' => 0, 'T' => 0];
+
+// Recorrer alumnos y contar asistencias de hoy (solo turno, no contraturno)
+foreach ($alumnos as $al) {
+    $estado = $asist_semana[$al['id']][$hoy_str]['turno'] ?? 'NC';
+    if (in_array($estado, ['P', 'A', 'AJ', 'T'])) {
+        $conteo[$estado]++;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -324,7 +338,7 @@ for ($i = 0; $i < 5; $i++) {
 
             <?php if ($modo == 'editar'): ?>
                 <!-- EDICIÓN SEMANAL -->
-                <form method="post" class="mt-4">a
+                <form method="post" class="mt-4">
                     <input type="hidden" name="csrf" value="<?= $csrf ?>">
                     <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
                     <input type="hidden" name="semana_lunes" value="<?= $semana_lunes ?>">
@@ -354,11 +368,11 @@ for ($i = 0; $i < 5; $i++) {
                                         <?php foreach (['turno', 'contraturno'] as $tipo): ?>
                                             <th class="py-1 px-2">
                                                 <select onchange="setAll('<?= $dia ?>', '<?= $tipo ?>', this.value)" class="border rounded px-2 py-1 text-sm">
-                                                    <option value="">—</option>
+                                                    <option value="NC">NC</option>
                                                     <option value="P">P</option>
                                                     <option value="A">A</option>
+                                                    <option value="AJ">AJ</option>
                                                     <option value="T">T</option>
-                                                    <option value="NC">NC</option>
                                                 </select>
                                             </th>
                                         <?php endforeach; ?>
@@ -380,11 +394,11 @@ for ($i = 0; $i < 5; $i++) {
                                             <?php foreach (['turno', 'contraturno'] as $tipo): ?>
                                                 <td class="py-2 px-4 text-center">
                                                     <select name="asistencias[<?= $a['id'] ?>][<?= $dia ?>][<?= $tipo ?>]" data-dia="<?= $dia ?>" data-tipo="<?= $tipo ?>" class="border rounded px-2 py-1">
-                                                        <option value="">-</option>
+                                                        <option value="NC" <?= !in_array(($asist_semana[$a['id']][$dia][$tipo] ?? ''), ['P', 'A', 'T', 'AJ']) ? 'selected' : '' ?>>NC</option>
                                                         <option value="P" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'P' ? 'selected' : '' ?>>P</option>
                                                         <option value="A" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'A' ? 'selected' : '' ?>>A</option>
+                                                        <option value="AJ" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'AJ' ? 'selected' : '' ?>>AJ</option>
                                                         <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T' ? 'selected' : '' ?>>T</option>
-                                                        <option value="NC" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T' ? 'selected' : '' ?>>NC</option>
                                                     </select>
                                                 </td>
                                             <?php endforeach; ?>
@@ -442,8 +456,9 @@ for ($i = 0; $i < 5; $i++) {
                                                 $est = $asist_semana[$a['id']][$dia][$tipo] ?? '-';
                                                 if ($est == 'P') echo '<span class="text-green-700 font-bold">P</span>';
                                                 elseif ($est == 'A') echo '<span class="text-red-700 font-bold">A</span>';
+                                                elseif ($est == 'AJ') echo '<span class="text-green-900 font-bold">AJ</span>';
                                                 elseif ($est == 'T') echo '<span class="text-yellow-700 font-bold">T</span>';
-                                                elseif ($est == 'NC') echo '<span class="text-gray-700 font-bold">NC</span>';
+                                                elseif ($est == 'NC' || $est == '') echo '<span class="text-gray-700 font-bold">NC</span>';
                                                 else echo '-';
                                                 ?>
                                             </td>
@@ -460,6 +475,14 @@ for ($i = 0; $i < 5; $i++) {
                     </table>
                 </div>
             <?php endif; ?>
+            <div class="mt-6 bg-white border rounded-xl p-4 shadow text-sm w-fit w-full">
+                <h2 class="font-bold mb-2 text-lg">Resumen de hoy (<?= date('d/m/Y') ?>)</h2>
+                <ul class="space-y-1">
+                    <li><span class="font-medium text-green-700">✅ Presentes:</span> <?= $conteo['P'] ?></li>
+                    <li><span class="font-medium text-red-700">❌ Ausentes:</span> <?= $conteo['A'] ?></li>
+                    <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> <?= $conteo['T'] ?></li>
+                </ul>
+            </div>
         <?php endif; ?>
     </main>
     <script>

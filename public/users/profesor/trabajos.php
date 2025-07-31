@@ -127,7 +127,7 @@ if (!empty($trabajos) && !empty($alumnos)) {
         <a href="calificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
             <span class="text-xl">📝</span><span class="sidebar-label">Calificaciones</span>
         </a>
-        <a href="trabajos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Calificaciones">
+        <a href="trabajos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="TPs y Actividades">
             <span class="text-xl">📎</span><span class="sidebar-label">TPs y Actividades</span>
         </a>
         <a href="notificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Panel de Notificaciones">
