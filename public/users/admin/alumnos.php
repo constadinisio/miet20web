@@ -222,7 +222,8 @@ $stmt->close();
                         <?php endif; ?>
                     </tbody>
                 </table>
-                <?php if ($total_paginas > 1): ?>
+            </div>
+            <?php if ($total_paginas > 1): ?>
                     <div class="mt-6 flex flex-wrap gap-2 justify-center">
                         <?php
                         $rango = 2; // Páginas antes y después de la actual
@@ -251,7 +252,6 @@ $stmt->close();
                         ?>
                     </div>
                 <?php endif; ?>
-            </div>
         </div>
     </main>
 

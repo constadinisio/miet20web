@@ -139,7 +139,7 @@ $mostrar_modal = ($usuario['rol'] != 0 && $usuario['rol'] != 4 && empty($usuario
             Desde el panel de administración podés <b>gestionar usuarios pendientes</b>, <b>cursos</b> y <b>alumnos</b> de todo el sistema.
         </div>
 
-        <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">👥</div>
                 <h2 class="text-xl font-bold mb-2">Usuarios pendientes</h2>
@@ -168,6 +168,24 @@ $mostrar_modal = ($usuario['rol'] != 0 && $usuario['rol'] != 4 && empty($usuario
                 <div class="text-5xl mb-2">⏰</div>
                 <h2 class="text-xl font-bold mb-2">Horarios</h2>
                 <p class="text-gray-500 text-center mb-4">Gestioná los horarios de los profesores.</p>
+                <a href="horarios.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">📈</div>
+                <h2 class="text-xl font-bold mb-2">Progresión</h2>
+                <p class="text-gray-500 text-center mb-4">Gestiona la progresión del alumno.</p>
+                <a href="progresion.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">📋</div>
+                <h2 class="text-xl font-bold mb-2">Historial P/ Curso</h2>
+                <p class="text-gray-500 text-center mb-4">Visualiza el historial del curso.</p>
+                <a href="historial.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">🔔</div>
+                <h2 class="text-xl font-bold mb-2">Panel de Notificaciones</h2>
+                <p class="text-gray-500 text-center mb-4">Crea nuevas notificaciones a partir del panel dedicado.</p>
                 <a href="horarios.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
             </div>
         </div>

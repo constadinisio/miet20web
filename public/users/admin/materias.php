@@ -39,22 +39,6 @@ while ($c = $res->fetch_assoc()) {
     $cursos[] = $c;
 }
 
-// --- BLOQUE BUSCADOR DE PROFESORES ---
-$busqueda = $_GET['busqueda_profesor'] ?? '';
-$profesores = [];
-if ($busqueda !== '') {
-    $sql = "SELECT id, nombre, apellido FROM usuarios 
-            WHERE rol = 3 AND (nombre LIKE ? OR apellido LIKE ?) 
-            ORDER BY apellido, nombre LIMIT 30";
-    $stmt = $conexion->prepare($sql);
-    $like = "%$busqueda%";
-    $stmt->bind_param("ss", $like, $like);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    while ($row = $res->fetch_assoc()) $profesores[] = $row;
-    $stmt->close();
-}
-
 // Asignaciones solo para el profe elegido
 $profesor_id = $_GET['profesor_id'] ?? null;
 $asignaciones = [];
@@ -69,6 +53,11 @@ if ($profesor_id) {
     $asignaciones = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 }
+
+$todosLosProfesores = [];
+$res = $conexion->query("SELECT id, nombre, apellido FROM usuarios WHERE rol = 3 ORDER BY apellido, nombre");
+while ($row = $res->fetch_assoc()) $todosLosProfesores[] = $row;
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -78,6 +67,9 @@ if ($profesor_id) {
     <title>Gestión de Materias</title>
     <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Tom Select CSS y JS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
@@ -292,29 +284,21 @@ if ($profesor_id) {
 
                 <!-- Selección de profesor -->
                 <!-- Buscador de profesores -->
-                <form method="get" class="mb-6 flex flex-col md:flex-row gap-4 items-center">
-                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <input type="text" name="busqueda_profesor" class="border rounded-xl px-4 py-2 flex-1"
-                        placeholder="Buscar profesor por nombre o apellido" value="<?= htmlspecialchars($_GET['busqueda_profesor'] ?? '') ?>">
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700">Buscar</button>
-                </form>
-
-                <!-- Selección de profesor tras búsqueda -->
-                <?php if (!empty($profesores)): ?>
-                    <form method="get" class="mb-6 flex gap-4 items-center">
+                <?php if (!empty($todosLosProfesores)): ?>
+                    <form method="get" id="form-profesor" class="mb-6">
                         <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                        <input type="hidden" name="busqueda_profesor" value="<?= htmlspecialchars($busqueda) ?>">
-                        <select name="profesor_id" class="px-4 py-2 rounded-xl border w-full md:w-1/3" required onchange="this.form.submit()">
-                            <option value="">Seleccioná un profesor</option>
-                            <?php foreach ($profesores as $p): ?>
+
+                        <label class="block font-semibold mb-1">Buscar profesor:</label>
+                        <input type="text" id="filtro-profesores" class="border rounded-xl px-4 py-2 mb-2 w-full" placeholder="Buscar por nombre o apellido...">
+
+                        <select id="select-profesores" name="profesor_id" class="border rounded-xl px-4 py-2 w-full" size="6" required>
+                            <?php foreach ($todosLosProfesores as $p): ?>
                                 <option value="<?= $p['id'] ?>" <?= ($profesor_id == $p['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($p['apellido'] . ', ' . $p['nombre']) ?>
+                                    <?= htmlspecialchars($p['apellido'] . ", " . $p['nombre']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </form>
-                <?php elseif ($busqueda !== ''): ?>
-                    <div class="text-red-600 mb-6">No se encontraron profesores con ese nombre/apellido.</div>
                 <?php endif; ?>
 
                 <?php if ($profesor_id): ?>
@@ -397,6 +381,27 @@ if ($profesor_id) {
                 labels.forEach(label => label.classList.remove('hidden'));
                 expandedElements.forEach(el => el.classList.remove('hidden'));
                 collapsedElements.forEach(el => el.classList.add('hidden'));
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filtro = document.getElementById('filtro-profesores');
+            const select = document.getElementById('select-profesores');
+            const form = document.getElementById('form-profesor');
+
+            if (filtro && select) {
+                filtro.addEventListener('input', function() {
+                    const valor = this.value.toLowerCase();
+                    for (let option of select.options) {
+                        const texto = option.textContent.toLowerCase();
+                        option.style.display = texto.includes(valor) ? '' : 'none';
+                    }
+                });
+
+                select.addEventListener('change', function() {
+                    if (this.value) form.submit();
+                });
             }
         });
     </script>

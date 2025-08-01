@@ -17,7 +17,7 @@ $usuario = $_SESSION['usuario'];
 // Conseguir usuarios, roles y grupos de tu base
 $usuarios = $conexion->query("SELECT id, nombre, apellido FROM usuarios WHERE status='1' ORDER BY apellido, nombre");
 $roles = $conexion->query("SELECT id, nombre FROM roles WHERE id > 0"); // Excluye Pendiente
-$grupos = $conexion->query("SELECT id, nombre FROM grupos_notificacion ORDER BY nombre");
+$grupos = $conexion->query("SELECT id, nombre FROM grupos_notificacion_personalizados ORDER BY nombre");
 $cursos = $conexion->query("SELECT id, anio, division FROM cursos ORDER BY anio, division");
 $cursos_array = [];
 while ($c = $cursos->fetch_assoc()) $cursos_array[] = $c;
@@ -95,6 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['csrf'] === $csrf) {
     <style>
         body {
             font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
         }
 
         .sidebar-item {
@@ -112,6 +113,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['csrf'] === $csrf) {
 
         .w-16 .sidebar-item span.text-xl {
             margin: 0 auto;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        .custom-scroll {
+            -ms-overflow-style: none;
+            /* IE */
+            scrollbar-width: none;
+            /* Firefox */
         }
     </style>
 </head>
@@ -201,70 +214,137 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['csrf'] === $csrf) {
             </div>
         </div>
 
-        <!-- ACÁ EL PANEL DE CREACIÓN DE NOTIFICACIONES -->
-        <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-8 mt-6">
-            <h2 class="text-2xl font-bold mb-4">Crear nueva notificación</h2>
-            <?php if ($mensaje): ?>
-                <div class="bg-green-100 text-green-800 rounded p-2 mb-4 font-semibold"><?= $mensaje ?></div>
-            <?php endif; ?>
-            <form method="POST" class="flex flex-col gap-4">
-                <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                <label class="font-semibold">Título:</label>
-                <input type="text" name="titulo" required class="border rounded p-2" maxlength="100">
+        <div class="grid md:grid-cols-3 gap-4 w-full mt-6">
+            <!-- Crear notificación -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 w-full">
+                <h2 class="text-2xl font-bold mb-4">Crear nueva notificación</h2>
+                <?php if ($mensaje): ?>
+                    <div class="bg-green-100 text-green-800 rounded p-2 mb-4 font-semibold"><?= $mensaje ?></div>
+                <?php endif; ?>
+                <form method="POST" class="flex flex-col gap-4">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                    <label class="font-semibold">Título:</label>
+                    <input type="text" name="titulo" required class="border rounded p-2" maxlength="100">
 
-                <label class="font-semibold">Contenido:</label>
-                <textarea name="contenido" required class="border rounded p-2" maxlength="500"></textarea>
+                    <label class="font-semibold">Contenido:</label>
+                    <textarea name="contenido" required class="border rounded p-2" maxlength="500"></textarea>
 
-                <label class="font-semibold">Tipo de notificación:</label>
-                <select name="tipo" id="tipo" class="border rounded p-2" required>
-                    <option value="">Seleccioná tipo</option>
-                    <option value="INDIVIDUAL">A un usuario</option>
-                    <option value="ROL">A un rol</option>
-                    <option value="GRUPO">A un grupo</option>
-                    <option value="CURSO">A un curso</option>
-                    <option value="GLOBAL">Global (todos)</option>
-                </select>
+                    <label class="font-semibold">Tipo de notificación:</label>
+                    <select name="tipo" id="tipo" class="border rounded p-2" required>
+                        <option value="">Seleccioná tipo</option>
+                        <option value="INDIVIDUAL">A un usuario</option>
+                        <option value="ROL">A un rol</option>
+                        <option value="GRUPO">A un grupo</option>
+                        <option value="CURSO">A un curso</option>
+                        <option value="GLOBAL">Global (todos)</option>
+                    </select>
 
+                    <div id="destino-individual" class="hidden">
+                        <label class="font-semibold mt-2">Usuarios:</label>
+                        <input type="text" id="filtro-usuarios" class="border rounded p-2 mb-2 w-full" placeholder="Buscar usuario...">
+                        <select id="select-usuarios" name="destino[]" class="border rounded p-2 w-full" size="10" multiple>
+                            <?php foreach ($usuarios as $u): ?>
+                                <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['apellido'] . ", " . $u['nombre']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-                <div id="destino-individual" class="hidden">
-                    <label class="font-semibold mt-2">Usuarios:</label>
-                    <input type="text" id="filtro-usuarios" class="border rounded p-2 mb-2 w-full" placeholder="Buscar usuario...">
-                    <select id="select-usuarios" name="destino[]" class="border rounded p-2 w-full" size="10" multiple>
-                        <?php foreach ($usuarios as $u): ?>
-                            <option value="<?= $u['id'] ?>">
+                    <div id="destino-rol" class="hidden">
+                        <label class="font-semibold mt-2">Roles:</label>
+                        <select name="destino[]" class="border rounded p-2 w-full" multiple>
+                            <?php while ($r = $roles->fetch_assoc()): ?>
+                                <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+
+                    <div id="destino-grupo" class="hidden">
+                        <label class="font-semibold mt-2">Grupos:</label>
+                        <select name="destino[]" class="border rounded p-2 w-full" multiple>
+                            <?php while ($g = $grupos->fetch_assoc()): ?>
+                                <option value="<?= $g['id'] ?>"><?= htmlspecialchars($g['nombre']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+
+                    <div id="destino-curso" class="hidden">
+                        <label class="font-semibold mt-2">Cursos:</label>
+                        <select name="destino[]" class="border rounded p-2 w-full" multiple>
+                            <?php foreach ($cursos_array as $c): ?>
+                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['anio'] . "° " . $c['division']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="mt-4 bg-blue-600 text-white rounded-xl px-4 py-2 font-bold hover:bg-blue-700">Enviar notificación</button>
+                </form>
+            </div>
+
+            <!-- Crear grupo -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 w-full">
+                <h2 class="text-2xl font-bold mb-4">👥 Grupos de Notificación</h2>
+                <form method="post" action="crear_grupo.php" class="mb-6">
+                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
+
+                    <label class="font-semibold">Nombre del nuevo grupo:</label>
+                    <input type="text" name="nombre_grupo" required class="border rounded p-2 w-full mb-4" maxlength="100">
+
+                    <label class="font-semibold">Descripción: (OPCIONAL)</label>
+                    <input type="text" name="descripcion_grupo" class="border rounded p-2 w-full mb-4" maxlength="100">
+
+                    <label class="font-semibold">Seleccionar miembros:</label>
+                    <input type="text" id="filtro-miembros" class="border rounded p-2 mb-2 w-full" placeholder="Buscar usuario...">
+
+                    <div id="checkbox-miembros" class="w-full h-[18rem] overflow-y-auto overflow-x-hidden border rounded p-2 custom-scroll bg-white">
+                        <?php
+                        $usuarios_todos = $conexion->query("SELECT id, nombre, apellido FROM usuarios WHERE status='1' ORDER BY apellido, nombre");
+                        while ($u = $usuarios_todos->fetch_assoc()):
+                        ?>
+                            <label class="block text-sm mb-1 break-words">
+                                <input type="checkbox" name="miembros[]" value="<?= $u['id'] ?>" class="mr-2">
                                 <?= htmlspecialchars($u['apellido'] . ", " . $u['nombre']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div id="destino-rol" class="hidden">
-                    <label class="font-semibold mt-2">Roles:</label>
-                    <select name="destino[]" class="border rounded p-2 w-full" multiple>
-                        <?php while ($r = $roles->fetch_assoc()): ?>
-                            <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
+                            </label>
                         <?php endwhile; ?>
-                    </select>
-                </div>
-                <div id="destino-grupo" class="hidden">
-                    <label class="font-semibold mt-2">Grupos:</label>
-                    <select name="destino[]" class="border rounded p-2 w-full" multiple>
-                        <?php while ($g = $grupos->fetch_assoc()): ?>
-                            <option value="<?= $g['id'] ?>"><?= htmlspecialchars($g['nombre']) ?></option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-                <div id="destino-curso" class="hidden">
-                    <label class="font-semibold mt-2">Cursos:</label>
-                    <select name="destino[]" class="border rounded p-2 w-full" multiple>
-                        <?php foreach ($cursos_array as $c): ?>
-                            <option value="<?= $c['id'] ?>">
-                                <?= htmlspecialchars($c['anio'] . "° " . $c['division']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <button type="submit" class="mt-4 bg-blue-600 text-white rounded-xl px-4 py-2 font-bold hover:bg-blue-700">Enviar notificación</button>
-            </form>
+                    </div>
+
+                    <button type="submit" class="mt-4 bg-green-600 text-white rounded-xl px-4 py-2 font-bold hover:bg-green-700">
+                        Crear grupo
+                    </button>
+                </form>
+            </div>
+
+            <!-- Lista de grupos -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 w-full">
+                <h2 class="text-2xl font-bold mb-4">📋 Grupos Existentes</h2>
+                <?php
+                $grupos_lista = $conexion->query("SELECT g.id, g.nombre FROM grupos_notificacion_personalizados g ORDER BY g.nombre");
+                while ($g = $grupos_lista->fetch_assoc()):
+                    $gid = $g['id'];
+                    $miembros = $conexion->query("
+                SELECT u.nombre, u.apellido
+                FROM grupos_notificacion_miembros gm
+                JOIN usuarios u ON u.id = gm.usuario_id
+                WHERE gm.grupo_id = $gid AND gm.activo = 1
+                ORDER BY u.apellido, u.nombre
+            ");
+                ?>
+                    <div class="mb-3 p-3 bg-gray-100 rounded-xl">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold"><?= htmlspecialchars($g['nombre']) ?></span>
+                            <form method="post" action="eliminar_grupo.php" onsubmit="return confirm('¿Eliminar este grupo?')">
+                                <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                                <input type="hidden" name="grupo_id" value="<?= $gid ?>">
+                                <button class="text-sm text-red-600 hover:underline">Eliminar</button>
+                            </form>
+                        </div>
+                        <ul class="text-sm text-gray-700 list-disc ml-5 mt-1">
+                            <?php while ($m = $miembros->fetch_assoc()): ?>
+                                <li><?= htmlspecialchars($m['apellido'] . ", " . $m['nombre']) ?></li>
+                            <?php endwhile; ?>
+                        </ul>
+                    </div>
+                <?php endwhile; ?>
+            </div>
         </div>
     </main>
 
@@ -301,6 +381,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['csrf'] === $csrf) {
                         const texto = option.textContent.toLowerCase();
                         option.style.display = texto.includes(valor) ? '' : 'none';
                     }
+                });
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filtro = document.getElementById('filtro-miembros');
+            const contenedor = document.getElementById('checkbox-miembros');
+
+            if (filtro && contenedor) {
+                filtro.addEventListener('input', function() {
+                    const valor = this.value.toLowerCase();
+                    const etiquetas = contenedor.querySelectorAll('label');
+
+                    etiquetas.forEach(label => {
+                        const texto = label.textContent.toLowerCase();
+                        label.style.display = texto.includes(valor) ? '' : 'none';
+                    });
                 });
             }
         });
