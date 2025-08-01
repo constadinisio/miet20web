@@ -85,6 +85,9 @@ $stmt->close();
         <a href="calificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
             <span class="text-xl">📝</span><span class="sidebar-label">Calificaciones</span>
         </a>
+        <a href="asistencias.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Asistencias P/ Materia">
+            <span class="text-xl">👋</span><span class="sidebar-label">Asistencias P/ Materia</span>
+        </a>
         <a href="trabajos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
             <span class="text-xl">📎</span><span class="sidebar-label">TPs y Actividades</span>
         </a>

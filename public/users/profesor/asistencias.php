@@ -9,6 +9,7 @@ if (
     exit;
 }
 
+
 if (!isset($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
 }
@@ -17,87 +18,22 @@ $csrf = $_SESSION['csrf'];
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
-$profesor_id = $usuario['id'];
-// Buscar cursos y materias asignadas
-$cursos = [];
-$sql = "SELECT pcm.id, c.id AS curso_id, m.id AS materia_id, c.anio, c.division, m.nombre AS materia
-        FROM profesor_curso_materia pcm
-        JOIN cursos c ON pcm.curso_id = c.id
-        JOIN materias m ON pcm.materia_id = m.id
-        WHERE pcm.profesor_id = ?
-        ORDER BY c.anio, c.division, m.nombre";
-$stmt = $conexion->prepare($sql);
-$stmt->bind_param("i", $profesor_id);
+// Cargar cursos y materias del profesor
+$cursosMaterias = [];
+$stmt = $conexion->prepare("
+    SELECT DISTINCT c.id AS curso_id, CONCAT(c.anio, '°', c.division) AS curso_nombre,
+           m.id AS materia_id, m.nombre AS materia_nombre
+    FROM horarios_materia h
+    JOIN cursos c ON c.id = h.curso_id
+    JOIN materias m ON m.id = h.materia_id
+    WHERE h.profesor_id = ?
+    ORDER BY c.anio, c.division, m.nombre
+");
+$stmt->bind_param("i", $usuario['id']);
 $stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $cursos[] = $row;
-}
-$stmt->close();
-
-$curso_id = $_GET['curso_id'] ?? null;
-$materia_id = $_GET['materia_id'] ?? null;
-
-// --- ALTA DE NUEVO TEMA ---
-$mensaje = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_tema'])) {
-    $fecha = $_POST['fecha'] ?? date('Y-m-d');
-    $contenido = trim($_POST['contenido'] ?? '');
-    $observaciones = trim($_POST['observaciones'] ?? '');
-    $curso_id = $_POST['curso_id'];
-    $materia_id = $_POST['materia_id'];
-
-    if ($contenido && $curso_id && $materia_id) {
-        // 1. Buscar o crear el libro de temas para ese curso, materia y profesor
-        $libro_id = null;
-        $sql_libro = "SELECT id FROM libros_temas WHERE curso_id=? AND materia_id=? AND profesor_id=?";
-        $stmt_libro = $conexion->prepare($sql_libro);
-        $stmt_libro->bind_param("iii", $curso_id, $materia_id, $profesor_id);
-        $stmt_libro->execute();
-        $stmt_libro->bind_result($libro_id_res);
-        if ($stmt_libro->fetch()) {
-            $libro_id = $libro_id_res;
-        }
-        $stmt_libro->close();
-        if (!$libro_id) {
-            $sql_new = "INSERT INTO libros_temas (curso_id, materia_id, profesor_id, anio_lectivo, estado) VALUES (?, ?, ?, YEAR(CURDATE()), 'activo')";
-            $stmt_new = $conexion->prepare($sql_new);
-            $stmt_new->bind_param("iii", $curso_id, $materia_id, $profesor_id);
-            $stmt_new->execute();
-            $libro_id = $conexion->insert_id;
-            $stmt_new->close();
-        }
-        // 2. Insertar nuevo contenido
-        $sql_insert = "INSERT INTO contenidos_libro (libro_id, fecha, contenido, observaciones, fecha_creacion) VALUES (?, ?, ?, ?, NOW())";
-        $stmt_insert = $conexion->prepare($sql_insert);
-        $stmt_insert->bind_param("isss", $libro_id, $fecha, $contenido, $observaciones);
-        if ($stmt_insert->execute()) {
-            $mensaje = '<div class="bg-green-100 text-green-700 rounded-xl p-3 mb-4">Tema guardado correctamente.</div>';
-        } else {
-            $mensaje = '<div class="bg-red-100 text-red-700 rounded-xl p-3 mb-4">Error al guardar el tema: ' . $stmt_insert->error . '</div>';
-        }
-        $stmt_insert->close();
-    } else {
-        $mensaje = '<div class="bg-yellow-100 text-yellow-800 rounded-xl p-3 mb-4">Completá el contenido del tema.</div>';
-    }
-}
-
-// Mostrar los temas
-$temas = [];
-if ($curso_id && $materia_id) {
-    $sql2 = "SELECT cl.id, cl.fecha, cl.contenido, cl.observaciones, cl.contenido
-         FROM libros_temas lt
-         JOIN contenidos_libro cl ON lt.id = cl.libro_id
-         WHERE lt.curso_id = ? AND lt.materia_id = ? AND lt.profesor_id = ?
-         ORDER BY cl.fecha DESC";
-    $stmt2 = $conexion->prepare($sql2);
-    $stmt2->bind_param("iii", $curso_id, $materia_id, $profesor_id);
-    $stmt2->execute();
-    $result2 = $stmt2->get_result();
-    while ($row2 = $result2->fetch_assoc()) {
-        $temas[] = $row2;
-    }
-    $stmt2->close();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $cursosMaterias[] = $row;
 }
 ?>
 <!DOCTYPE html>
@@ -105,9 +41,8 @@ if ($curso_id && $materia_id) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Libro de Temas</title>
+    <title>Panel de Profesor</title>
     <link href="/output.css?v=<?= time() ?>" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -148,13 +83,13 @@ if ($curso_id && $materia_id) {
         <a href="profesor.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Inicio">
             <span class="text-xl">🏠</span><span class="sidebar-label">Inicio</span>
         </a>
-        <a href="libro_temas.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Libro de Temas">
+        <a href="libro_temas.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Libro de Temas">
             <span class="text-xl">📚</span><span class="sidebar-label">Libro de Temas</span>
         </a>
         <a href="calificaciones.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
             <span class="text-xl">📝</span><span class="sidebar-label">Calificaciones</span>
         </a>
-        <a href="asistencias.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Asistencias P/ Materia">
+        <a href="asistencias.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-900 font-semibold hover:bg-gray-200 transition" title="Asistencias P/ Materia">
             <span class="text-xl">👋</span><span class="sidebar-label">Asistencias P/ Materia</span>
         </a>
         <a href="trabajos.php" class="sidebar-item flex gap-3 items-center py-2 px-3 rounded-xl text-gray-700 hover:bg-indigo-100 transition" title="Calificaciones">
@@ -212,103 +147,168 @@ if ($curso_id && $materia_id) {
             </div>
         </div>
 
-        <h1 class="text-2xl font-bold mb-6">📚 Libro de Temas</h1>
-        <form class="mb-8 flex gap-4" method="get" id="form-filtros">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <select name="curso_id" class="px-4 py-2 rounded-xl border" required onchange="document.getElementById('form-filtros').submit()">
-                <option value="">Seleccionar curso</option>
-                <?php foreach ($cursos as $c): ?>
-                    <option value="<?php echo $c['curso_id']; ?>" <?php if ($curso_id == $c['curso_id']) echo "selected"; ?>>
-                        <?php echo $c['anio'] . "°" . $c['division']; ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <select name="materia_id" class="px-4 py-2 rounded-xl border" required>
-                <option value="">Seleccionar materia</option>
-                <?php foreach ($cursos as $c): ?>
-                    <?php if ($curso_id == $c['curso_id']): ?>
-                        <option value="<?php echo $c['materia_id']; ?>" <?php if ($materia_id == $c['materia_id']) echo "selected"; ?>>
-                            <?php echo $c['materia']; ?>
+        <!-- Sistema de Asistencia por Materia -->
+        <div class="bg-white p-6 rounded-2xl shadow-xl max-w-7xl mx-auto">
+            <h2 class="text-2xl font-bold mb-4">🗓️ Asistencias por materia</h2>
+
+            <form id="form-asistencias" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 items-center">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                <label class="font-semibold">Curso y Materia:</label>
+                <select id="seleccion" name="seleccion" required class="border rounded p-2 col-span-3">
+                    <option value="">Seleccionar...</option>
+                    <?php foreach ($cursosMaterias as $cm): ?>
+                        <option value="<?= $cm['curso_id'] ?>_<?= $cm['materia_id'] ?>">
+                            <?= $cm['curso_nombre'] ?> - <?= $cm['materia_nombre'] ?>
                         </option>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </select>
-            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
-        </form>
-        <?php echo $mensaje; ?>
+                    <?php endforeach; ?>
+                </select>
 
-        <?php if ($curso_id && $materia_id): ?>
-            <div class="flex flex-col md:flex-row gap-6 mb-10 items-start">
-                <!-- FORMULARIO AÑADIR TEMA -->
-                <form method="post" class="bg-white rounded-xl shadow p-6 flex flex-col gap-3 w-full md:w-1/3">
-                    <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                    <input type="hidden" name="materia_id" value="<?php echo $materia_id; ?>">
-                    <input type="hidden" name="nuevo_tema" value="1">
-
-                    <div>
-                        <label class="font-semibold">Fecha:</label>
-                        <input type="date" name="fecha" value="<?= date('Y-m-d') ?>" class="px-4 py-2 border rounded-xl w-full" required>
-                    </div>
-                    <div>
-                        <label class="font-semibold">Contenido del tema:</label>
-                        <textarea name="contenido" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
-                    </div>
-                    <div>
-                        <label class="font-semibold">Observaciones:</label>
-                        <input name="observaciones" type="text" class="w-full px-4 py-2 border rounded-xl" placeholder="Opcional">
-                    </div>
-                    <button type="submit" class="mt-2 px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-bold">
-                        + Agregar tema
+                <label class="font-semibold">Fecha base:</label>
+                <input type="date" id="fecha" name="fecha" class="border rounded p-2 col-span-3" value="<?= date('Y-m-d') ?>">
+            </form>
+            <div id="contenedor-tabla" class="overflow-x-auto hidden">
+                <table id="tabla-asistencias" class="min-w-full bg-white border border-gray-300 text-sm">
+                    <thead class="bg-indigo-100 text-indigo-900 font-bold text-center"></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="flex gap-4 mt-4">
+                    <button id="btn-guardar" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl">
+                        Guardar asistencias
                     </button>
-                </form>
-
-                <!-- LISTADO DE TEMAS -->
-                <div class="w-full md:w-2/3 max-h-[400px] overflow-y-auto rounded-xl shadow border bg-white">
-                    <table class="min-w-full text-sm">
-                        <thead class="sticky top-0 bg-white shadow z-10">
-                            <tr>
-                                <th class="py-2 px-4 text-left">Fecha</th>
-                                <th class="py-2 px-4 text-left">Contenido</th>
-                                <th class="py-2 px-4 text-left">Observaciones</th>
-                                <th class="py-2 px-4 text-left">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($temas as $t): ?>
-                                <tr class="border-t">
-                                    <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
-                                    <td class="py-2 px-4"><?php echo htmlspecialchars($t['contenido']); ?></td>
-                                    <td class="py-2 px-4"><?php echo htmlspecialchars($t['observaciones']); ?></td>
-                                    <td class="py-2 px-4 flex gap-2">
-                                        <!-- Editar -->
-                                        <form method="post" action="editar_contenido.php" class="inline-block">
-                                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
-                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                                            <button class="text-blue-600 hover:underline text-sm" type="submit">Editar</button>
-                                        </form>
-                                        <!-- Eliminar -->
-                                        <form method="post" action="eliminar_contenido.php" class="inline-block" onsubmit="return confirm('¿Seguro que querés eliminar este contenido?');">
-                                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
-                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                                            <button class="text-red-600 hover:underline text-sm" type="submit">Eliminar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            <?php if (empty($temas)): ?>
-                                <tr>
-                                    <td colspan="5" class="py-4 text-center text-gray-500">No hay temas cargados.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                    <button id="btn-importar" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+                        Importar del preceptor
+                    </button>
                 </div>
             </div>
-        <?php else: ?>
-            <div class="text-gray-500">Seleccioná un curso y una materia para ver el libro de temas.</div>
-        <?php endif; ?>
+
+            <div id="mensaje" class="mt-4 text-center font-medium hidden"></div>
+        </div>
     </main>
+    <script>
+        document.getElementById('seleccion').addEventListener('change', cargarAsistencias);
+        document.getElementById('fecha').addEventListener('change', cargarAsistencias);
+
+        function cargarAsistencias() {
+            const seleccion = document.getElementById('seleccion').value;
+            const fecha = document.getElementById('fecha').value;
+            if (!seleccion || !fecha) return;
+
+            const [curso_id, materia_id] = seleccion.split('_');
+            fetch(`obtener_asistencias_materia.php?curso_id=${curso_id}&materia_id=${materia_id}&fecha=${fecha}`)
+                .then(res => res.json())
+                .then(data => {
+                    const tabla = document.getElementById('tabla-asistencias');
+                    const thead = tabla.querySelector('thead');
+                    const tbody = tabla.querySelector('tbody');
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '';
+
+                    const trHead = document.createElement('tr');
+                    data.columnas.forEach(col => {
+                        const th = document.createElement('th');
+                        th.className = 'border px-2 py-1';
+                        th.textContent = col;
+                        trHead.appendChild(th);
+                    });
+                    thead.appendChild(trHead);
+
+                    data.filas.forEach(fila => {
+                        const tr = document.createElement('tr');
+                        fila.forEach((valor, i) => {
+                            const td = document.createElement('td');
+                            td.className = 'border px-2 py-1 text-center';
+                            if (i >= 2) {
+                                const sel = document.createElement('select');
+                                ['NC', 'P', 'A', 'T', 'AP'].forEach(est => {
+                                    const opt = document.createElement('option');
+                                    opt.value = est;
+                                    opt.textContent = est;
+                                    if (est === valor) opt.selected = true;
+                                    sel.appendChild(opt);
+                                });
+                                td.appendChild(sel);
+                            } else {
+                                td.textContent = valor;
+                            }
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    });
+
+                    document.getElementById('contenedor-tabla').classList.remove('hidden');
+                });
+        }
+
+        document.getElementById('btn-guardar').addEventListener('click', () => {
+            const seleccion = document.getElementById('seleccion').value;
+            const fecha = document.getElementById('fecha').value;
+            const csrf = document.querySelector('input[name="csrf"]').value;
+            const [curso_id, materia_id] = seleccion.split('_');
+
+            const tabla = document.getElementById('tabla-asistencias');
+            const encabezados = Array.from(tabla.querySelectorAll('thead th')).slice(2);
+            const filas = tabla.querySelectorAll('tbody tr');
+
+            const asistencias = Array.from(filas).map(tr => {
+                const nro = tr.children[0].textContent;
+                const datos = Array.from(tr.querySelectorAll('td select')).map(s => s.value);
+                return {
+                    nro,
+                    estados: datos
+                };
+            });
+
+            fetch('guardar_asistencias_materia.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        csrf,
+                        curso_id,
+                        materia_id,
+                        fecha,
+                        encabezados,
+                        asistencias
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const mensaje = document.getElementById('mensaje');
+                    mensaje.textContent = data.mensaje;
+                    mensaje.className = "mt-4 text-center font-medium " + (data.ok ? 'text-green-600' : 'text-red-600');
+                    mensaje.classList.remove('hidden');
+                    setTimeout(() => mensaje.classList.add('hidden'), 5000);
+                });
+        });
+
+        document.getElementById('btn-importar').addEventListener('click', () => {
+            const seleccion = document.getElementById('seleccion').value;
+            const fecha = document.getElementById('fecha').value;
+            const csrf = document.querySelector('input[name="csrf"]').value;
+            if (!seleccion || !fecha) return alert("Seleccioná curso, materia y fecha.");
+
+            const [curso_id, materia_id] = seleccion.split('_');
+
+            fetch('importar_asistencia_general.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        csrf,
+                        curso_id,
+                        materia_id,
+                        fecha
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.mensaje);
+                    if (data.ok) cargarAsistencias(); // refresca la tabla si se importó
+                });
+        });
+    </script>
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
@@ -424,6 +424,25 @@ if ($curso_id && $materia_id) {
             setInterval(cargarNotificaciones, 15000);
         });
     </script>
+    <!-- Modal de ficha censal -->
+    <div id="modalFichaCensal"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 <?= $mostrar_modal ? '' : 'hidden' ?>">
+        <form id="fichaCensalForm"
+            class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-5"
+            method="POST"
+            autocomplete="off"
+            style="min-width:300px">
+            <h2 class="text-2xl font-bold text-center mb-3 text-blue-700">Completar ficha censal</h2>
+            <p class="mb-2 text-gray-700 text-center">Para continuar, ingresá tu número de ficha censal:</p>
+            <input type="text" id="ficha_censal" name="ficha_censal" required
+                class="w-full border rounded-xl p-2" maxlength="30" autofocus>
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition mt-2">
+                Guardar
+            </button>
+            <p id="errorFichaCensal" class="text-red-600 text-center text-sm mt-2 hidden"></p>
+        </form>
+    </div>
 </body>
 
 </html>
