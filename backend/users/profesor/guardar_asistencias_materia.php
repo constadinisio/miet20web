@@ -20,40 +20,81 @@ $materia_id = (int)($data['materia_id'] ?? 0);
 $fecha = $data['fecha'] ?? date('Y-m-d');
 $encabezados = $data['encabezados'] ?? [];
 $asistencias = $data['asistencias'] ?? [];
-$profesor_id = $_SESSION['usuario']['id'];
+$profesor_id = $_SESSION['usuario']['id'] ?? null;
 
+// 1. Convertir encabezados "Lunes 01/08" a fechas reales (Y-m-d)
 $fechas = [];
-for ($i = 2; $i < count($encabezados); $i++) {
-    // Convertir encabezado "Lunes 01/08" a Y-m-d
-    $dia = explode(' ', $encabezados[$i])[1];
+foreach ($encabezados as $i => $col) {
+    if ($i < 2 || !is_string($col)) continue;
+
+    $partes = explode(' ', $col);
+    if (count($partes) < 2) continue;
+
+    $dia = $partes[1]; // 01/08
     $dia_num = explode('/', $dia);
+    if (count($dia_num) < 2) continue;
+
     $anio = date('Y');
-    $fechas[] = "$anio-{$dia_num[1]}-{$dia_num[0]}";
+    $fechaStr = "$anio-{$dia_num[1]}-{$dia_num[0]}";
+    $fechas[$i] = $fechaStr;
 }
 
-// Reasignar fechas si alguna se pasa de diciembre o no existe
-foreach ($fechas as &$f) {
+// Validar formato
+foreach ($fechas as $i => $f) {
     $dt = DateTime::createFromFormat('Y-m-d', $f);
-    if (!$dt) $f = date('Y-m-d');
+    if (!$dt) $fechas[$i] = null;
+}
+
+// 2. Consultar días válidos desde horarios_materia
+$diasPermitidos = [];
+$stmt = $conexion->prepare("SELECT DISTINCT dia_semana FROM horarios_materia WHERE profesor_id = ? AND curso_id = ? AND materia_id = ?");
+$stmt->bind_param("iii", $profesor_id, $curso_id, $materia_id);
+$stmt->execute();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $mapa = [
+        'Lunes' => 1,
+        'Martes' => 2,
+        'Miércoles' => 3,
+        'Jueves' => 4,
+        'Viernes' => 5,
+        'Sábado' => 6,
+        'Domingo' => 7
+    ];
+    $diasPermitidos[] = $mapa[$row['dia_semana']];
+}
+
+// 3. Filtrar fechas no permitidas
+foreach ($fechas as $i => $f) {
+    if (!$f) {
+        unset($fechas[$i]);
+        continue;
+    }
+    $nroDia = (int)date('N', strtotime($f));
+    if (!in_array($nroDia, $diasPermitidos)) {
+        unset($fechas[$i]); // ⚠️ eliminar fecha no editable
+    }
 }
 
 try {
     $conexion->begin_transaction();
 
-    // Eliminar registros anteriores
+    // 4. Eliminar registros anteriores solo en fechas válidas
     foreach ($fechas as $f) {
         $stmt = $conexion->prepare("DELETE FROM asistencia_materia WHERE fecha = ? AND curso_id = ? AND materia_id = ?");
         $stmt->bind_param("sii", $f, $curso_id, $materia_id);
         $stmt->execute();
     }
 
-    // Insertar nuevos registros
+    // 5. Insertar nuevas asistencias
     foreach ($asistencias as $fila) {
         $nro = (int)$fila['nro'];
         $estados = $fila['estados'];
 
-        // Buscar ID real
-        $stmt = $conexion->prepare("SELECT u.id FROM usuarios u JOIN alumno_curso ac ON u.id = ac.alumno_id WHERE ac.curso_id = ? AND ac.estado = 'activo' AND u.rol = 4 ORDER BY u.apellido, u.nombre LIMIT ?,1");
+        $stmt = $conexion->prepare("SELECT u.id FROM usuarios u 
+            JOIN alumno_curso ac ON u.id = ac.alumno_id 
+            WHERE ac.curso_id = ? AND ac.estado = 'activo' AND u.rol = 4 
+            ORDER BY u.apellido, u.nombre LIMIT ?,1");
         $offset = $nro - 1;
         $stmt->bind_param("ii", $curso_id, $offset);
         $stmt->execute();
@@ -64,8 +105,9 @@ try {
 
         foreach ($estados as $i => $estado) {
             if ($estado === 'NC') continue;
-            $f = $fechas[$i] ?? null;
-            if (!$f) continue;
+            if (!isset($fechas[$i + 2])) continue; // i+2 por columnas Nro y Nombre
+            $f = $fechas[$i + 2];
+
             $stmt = $conexion->prepare("INSERT INTO asistencia_materia (alumno_id, curso_id, materia_id, fecha, estado, creado_por) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("iiissi", $alumno_id, $curso_id, $materia_id, $f, $estado, $profesor_id);
             $stmt->execute();
@@ -73,9 +115,9 @@ try {
     }
 
     $conexion->commit();
-    echo json_encode(['ok' => true, 'mensaje' => 'Asistencias guardadas con éxito']);
+    echo json_encode(['ok' => true, 'mensaje' => '✅ Asistencias guardadas con éxito']);
 
 } catch (Exception $e) {
     $conexion->rollback();
-    echo json_encode(['ok' => false, 'mensaje' => 'Error al guardar: ' . $e->getMessage()]);
+    echo json_encode(['ok' => false, 'mensaje' => '❌ Error al guardar: ' . $e->getMessage()]);
 }

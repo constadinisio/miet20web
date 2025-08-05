@@ -217,19 +217,28 @@ while ($row = $res->fetch_assoc()) {
                         fila.forEach((valor, i) => {
                             const td = document.createElement('td');
                             td.className = 'border px-2 py-1 text-center';
+
+                            // Columnas 0 y 1 = Nro y Nombre
                             if (i >= 2) {
-                                const sel = document.createElement('select');
-                                ['NC', 'P', 'A', 'T', 'AP'].forEach(est => {
-                                    const opt = document.createElement('option');
-                                    opt.value = est;
-                                    opt.textContent = est;
-                                    if (est === valor) opt.selected = true;
-                                    sel.appendChild(opt);
-                                });
-                                td.appendChild(sel);
+                                const editable = data.editable[i - 2]; // restamos 2 para alinear con fechas
+                                if (editable) {
+                                    const sel = document.createElement('select');
+                                    ['NC', 'P', 'A', 'T', 'AP'].forEach(est => {
+                                        const opt = document.createElement('option');
+                                        opt.value = est;
+                                        opt.textContent = est;
+                                        if (est === valor) opt.selected = true;
+                                        sel.appendChild(opt);
+                                    });
+                                    td.appendChild(sel);
+                                } else {
+                                    td.textContent = valor;
+                                    td.classList.add('text-gray-400', 'italic');
+                                }
                             } else {
                                 td.textContent = valor;
                             }
+
                             tr.appendChild(td);
                         });
                         tbody.appendChild(tr);

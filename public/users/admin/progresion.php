@@ -14,78 +14,8 @@ require_once __DIR__ . '/../../../backend/includes/db.php';
 
 $usuario = $_SESSION['usuario'];
 
-// 1. Traigo los cursos disponibles (con años y divisiones, sin duplicados)
-$cursos = $conexion->query("
-    SELECT DISTINCT curso_anio, curso_division
-    FROM vista_estado_academico_alumnos
-    ORDER BY curso_anio, curso_division
-")->fetch_all(MYSQLI_ASSOC);
+// Consultas SQL que el sistema de progresión necesite
 
-// Agrupo divisiones por año
-$años = [];
-$divisiones_por_año = [];
-foreach ($cursos as $c) {
-    $año = $c['curso_anio'];
-    $div = $c['curso_division'];
-    if (!in_array($año, $años)) $años[] = $año;
-    $divisiones_por_año[$año][] = $div;
-}
-
-$curso_anio = $_GET['curso_anio'] ?? '';
-$curso_division = $_GET['curso_division'] ?? '';
-
-// 2. Listado masivo de alumnos por curso
-$alumnos = [];
-if ($curso_anio && $curso_division) {
-    $stmt = $conexion->prepare("
-        SELECT * FROM vista_estado_academico_alumnos
-        WHERE curso_anio = ? AND curso_division = ?
-        ORDER BY nombre_completo
-    ");
-    $stmt->bind_param("ii", $curso_anio, $curso_division);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) $alumnos[] = $row;
-    $stmt->close();
-}
-
-if (isset($_GET['export']) && $curso_anio && $curso_division && !empty($alumnos)) {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=progresion_curso_' . $curso_anio . '_' . $curso_division . '.csv');
-    $output = fopen('php://output', 'w');
-    fputcsv($output, ['Alumno', 'DNI', 'Promedio', 'Desaprobadas', 'Faltas', 'Asistencia %', 'Estado']);
-    foreach ($alumnos as $al) {
-        $alumno_id = $al['alumno_id'];
-        $promedio = $conexion->query("SELECT AVG(nota) AS promedio FROM notas WHERE alumno_id = $alumno_id")->fetch_assoc()['promedio'] ?? 0;
-        $desaprobadas = $conexion->query("SELECT COUNT(*) AS desaprobadas FROM notas WHERE alumno_id = $alumno_id AND nota < 6")->fetch_assoc()['desaprobadas'] ?? 0;
-        $faltas = $conexion->query("SELECT COUNT(*) AS faltas FROM asistencia_general WHERE alumno_id = $alumno_id AND estado = 'falta'")->fetch_assoc()['faltas'] ?? 0;
-        $total_dias = $conexion->query("SELECT COUNT(*) AS total_dias FROM asistencia_general WHERE alumno_id = $alumno_id")->fetch_assoc()['total_dias'] ?? 1;
-        $porc_asistencia = ($total_dias > 0) ? (1 - $faltas / $total_dias) : 0;
-        $estado = "Promociona";
-        if ($promedio < 6.0 || $desaprobadas > 2 || $faltas > 30 || $porc_asistencia < 0.75) $estado = "Repite";
-        elseif ($desaprobadas > 0) $estado = "Pasa con previas";
-        fputcsv($output, [
-            $al['nombre_completo'],
-            $al['dni'],
-            number_format($promedio, 2),
-            $desaprobadas,
-            $faltas,
-            round($porc_asistencia * 100),
-            $estado
-        ]);
-    }
-    fclose($output);
-    exit;
-}
-
-// Detalle de alumno si hay click
-$alumno_detalle = null;
-$materias = [];
-if (isset($_GET['alumno_id'])) {
-    $alumno_id = (int)$_GET['alumno_id'];
-    $alumno_detalle = $conexion->query("SELECT * FROM vista_estado_academico_alumnos WHERE alumno_id = $alumno_id")->fetch_assoc();
-    $materias = $conexion->query("SELECT m.nombre, n.nota FROM notas n JOIN materias m ON n.materia_id = m.id WHERE n.alumno_id = $alumno_id")->fetch_all(MYSQLI_ASSOC);
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -97,10 +27,25 @@ if (isset($_GET['alumno_id'])) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
+        html,
         body {
             font-family: 'Poppins', sans-serif;
+            height: 100%;
+            overflow: hidden;
         }
+
+        main {
+            min-height: 0;
+            /* evita que el contenido lo expanda */
+        }
+
+        #tablaAlumnos {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
 
         .sidebar-item {
             min-height: 3.5rem;
@@ -121,7 +66,7 @@ if (isset($_GET['alumno_id'])) {
     </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex relative">
+<body class="bg-gray-100 h-screen flex overflow-hidden relative">
     <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
         ☰
     </button>
@@ -162,7 +107,7 @@ if (isset($_GET['alumno_id'])) {
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>
-    <main class="flex-1 p-10">
+    <main class="flex-1 p-10 overflow-y-auto h-full min-h-0">
         <div class="w-full flex justify-end items-center gap-4 mb-6">
             <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
                 <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
@@ -205,96 +150,116 @@ if (isset($_GET['alumno_id'])) {
             </div>
         </div>
 
-        <div class="max-w-5xl mx-auto p-6 bg-white rounded-xl shadow">
-            <h2 class="text-2xl font-bold mb-4">Progresión de alumnos</h2>
-            <!-- Selector de curso -->
-            <form method="get" class="mb-4 flex gap-2 flex-wrap" id="form-curso">
-                <!-- Selector de año (sin duplicados) -->
-                <select name="curso_anio" id="curso_anio" class="p-2 border rounded" required onchange="actualizarDivisiones();">
-                    <option value="">Año</option>
-                    <?php foreach ($años as $a): ?>
-                        <option value="<?= $a ?>" <?= $curso_anio == $a ? 'selected' : '' ?>><?= $a ?></option>
-                    <?php endforeach; ?>
+        <!-- Sistema de Progresión Anual -->
+        <h1 class="text-2xl font-bold mb-6">Progresión Anual del Alumno</h1>
+        <div class="mb-4">
+            <label class="font-semibold">Curso actual:</label>
+            <select id="cursoSelect" class="border rounded p-2 w-full max-w-md">
+                <option value="">Seleccione un curso...</option>
+            </select>
+        </div>
+        <div id="panelProgresion" class="hidden">
+            <div class="mb-4">
+                <label class="font-semibold">Curso destino:</label>
+                <select id="cursoDestino" class="border rounded p-2 w-full max-w-md">
+                    <option value="">Seleccione destino (promoción, repetición o egreso)</option>
                 </select>
-                <!-- Selector de división -->
-                <select name="curso_division" id="curso_division" class="p-2 border rounded" required <?= $curso_anio ? '' : 'disabled' ?> onchange="document.getElementById('form-curso').submit();">
-                    <option value="">División</option>
-                    <?php if ($curso_anio): foreach ($divisiones_por_año[$curso_anio] as $div): ?>
-                            <option value="<?= $div ?>" <?= $curso_division == $div ? 'selected' : '' ?>><?= $div ?></option>
-                    <?php endforeach;
-                    endif; ?>
-                </select>
-                <?php if (!empty($alumnos)): ?>
-                    <button name="export" value="1" class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800">Exportar CSV</button>
-                <?php endif; ?>
-            </form>
-            <!-- Tabla de alumnos -->
-            <?php if (!empty($alumnos)): ?>
-                <div class="max-h-[400px] overflow-y-auto rounded-xl shadow border mb-6">
-                    <table class="min-w-full table-auto mb-6">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="py-2 px-2 text-left">Alumno</th>
-                                <th class="py-2 px-2 ">DNI</th>
-                                <th class="py-2 px-2">Promedio</th>
-                                <th class="py-2 px-2">Desaprobadas</th>
-                                <th class="py-2 px-2">Faltas</th>
-                                <th class="py-2 px-2">Asistencia %</th>
-                                <th class="py-2 px-2">Estado</th>
-                                <th class="py-2 px-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($alumnos as $al):
-                                $alumno_id = $al['alumno_id'];
-                                $promedio = $conexion->query("SELECT AVG(nota) AS promedio FROM notas WHERE alumno_id = $alumno_id")->fetch_assoc()['promedio'] ?? 0;
-                                $desaprobadas = $conexion->query("SELECT COUNT(*) AS desaprobadas FROM notas WHERE alumno_id = $alumno_id AND nota < 6")->fetch_assoc()['desaprobadas'] ?? 0;
-                                $faltas = $conexion->query("SELECT COUNT(*) AS faltas FROM asistencia_general WHERE alumno_id = $alumno_id AND estado = 'falta'")->fetch_assoc()['faltas'] ?? 0;
-                                $total_dias = $conexion->query("SELECT COUNT(*) AS total_dias FROM asistencia_general WHERE alumno_id = $alumno_id")->fetch_assoc()['total_dias'] ?? 1;
-                                $porc_asistencia = ($total_dias > 0) ? (1 - $faltas / $total_dias) : 0;
-                                $estado = "Promociona";
-                                if ($promedio < 6.0 || $desaprobadas > 2 || $faltas > 30 || $porc_asistencia < 0.75) $estado = "Repite";
-                                elseif ($desaprobadas > 0) $estado = "Pasa con previas";
-                            ?>
-                                <tr>
-                                    <td class="py-1 px-2"><?= $al['nombre_completo'] ?></td>
-                                    <td class="py-1 px-2 text-center"><?= $al['dni'] ?></td>
-                                    <td class="py-1 px-2 text-center"><?= number_format($promedio, 2) ?></td>
-                                    <td class="py-1 px-2 text-center"><?= $desaprobadas ?></td>
-                                    <td class="py-1 px-2 text-center"><?= $faltas ?></td>
-                                    <td class="py-1 px-2 text-center"><?= round($porc_asistencia * 100) ?></td>
-                                    <td class="py-1 px-2 text-center"><?= $estado ?></td>
-                                    <td class="py-1 px-2 text-center">
-                                        <form method="get" style="display:inline">
-                                            <input type="hidden" name="curso_anio" value="<?= $curso_anio ?>">
-                                            <input type="hidden" name="curso_division" value="<?= $curso_division ?>">
-                                            <input type="hidden" name="alumno_id" value="<?= $alumno_id ?>">
-                                            <button class="px-2 py-1 bg-gray-300 rounded hover:bg-gray-400" title="Ver detalle">👁️</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+            </div>
+            <button onclick="ejecutarProgresionMasiva()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Ejecutar progresión</button>
+            <div class="mt-6 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-200 sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2">Apellido, Nombre</th>
+                            <th class="p-2">DNI</th>
+                            <th class="p-2">Promedio</th>
+                            <th class="p-2">Destino</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div class="max-h-[55vh] overflow-y-auto">
+                    <table class="w-full text-sm text-left">
+                        <tbody id="tablaAlumnos" class="divide-y divide-gray-200 bg-white">
+                            <!-- las filas se generan vía JS -->
                         </tbody>
                     </table>
                 </div>
-            <?php elseif ($curso_anio && $curso_division): ?>
-                <div class="text-red-700 mb-4">No se encontraron alumnos para ese curso.</div>
-            <?php endif; ?>
-            <!-- Detalle de alumno -->
-            <?php if ($alumno_detalle): ?>
-                <div class="p-4 bg-gray-50 rounded-xl mb-4">
-                    <h3 class="text-lg font-bold mb-2"><?= $alumno_detalle['nombre_completo'] ?> (<?= $alumno_detalle['curso_completo'] ?>)</h3>
-                    <b>Materias y notas:</b>
-                    <ul class="ml-4 list-disc">
-                        <?php foreach ($materias as $mat): ?>
-                            <li><?= $mat['nombre'] ?>: <?= $mat['nota'] ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
     </main>
+    <script>
+        const cursos = {};
 
+        async function cargarCursos() {
+            const res = await axios.get('listar_cursos.php');
+            const select = document.getElementById('cursoSelect');
+            const destino = document.getElementById('cursoDestino');
+            res.data.forEach(curso => {
+                cursos[curso.id] = curso;
+                const opt1 = document.createElement('option');
+                opt1.value = curso.id;
+                opt1.textContent = curso.nombre;
+                select.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = curso.id;
+                opt2.textContent = curso.nombre;
+                destino.appendChild(opt2);
+            });
+            const optEgreso = document.createElement('option');
+            optEgreso.value = 'EGRESO';
+            optEgreso.textContent = 'Egreso';
+            destino.appendChild(optEgreso);
+        }
+
+        async function cargarAlumnos() {
+            const cursoId = document.getElementById('cursoSelect').value;
+            if (!cursoId) return;
+            const res = await axios.get(`listar_alumnos.php?curso_id=${cursoId}`);
+            const tbody = document.getElementById('tablaAlumnos');
+            tbody.innerHTML = '';
+            res.data.forEach(al => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td class="p-2">${al.apellido}, ${al.nombre}</td>
+                <td class="p-2">${al.dni}</td>
+                <td class="p-2 text-center">${al.promedio ?? '-'}</td>
+                <td class="p-2">
+                    <select class="destino-individual border rounded p-1" data-id="${al.id}">
+                        <option value="">-</option>
+                        ${Object.entries(cursos).map(([id, c]) => `<option value="${id}">${c.nombre}</option>`).join('')}
+                        <option value="EGRESO">Egreso</option>
+                    </select>
+                </td>
+            `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('panelProgresion').classList.remove('hidden');
+        }
+
+        async function ejecutarProgresionMasiva() {
+            const cursoId = document.getElementById('cursoSelect').value;
+            const destino = document.getElementById('cursoDestino').value;
+            if (!cursoId || !destino) return alert('Seleccioná curso actual y destino.');
+            const selectores = document.querySelectorAll('select.destino-individual');
+            const alumnos = Array.from(selectores).map(s => ({
+                id: s.dataset.id,
+                destino: s.value || destino
+            }));
+            const confirmacion = confirm(`¿Seguro que querés aplicar esta progresión? Se actualizarán ${alumnos.length} alumnos.`);
+            if (!confirmacion) return;
+            const res = await axios.post('ejecutar_progresion.php', {
+                curso_origen_id: cursoId,
+                alumnos,
+                csrf: '<?= $csrf ?>'
+            });
+            alert(res.data.mensaje || 'Progresión aplicada.');
+            cargarAlumnos();
+        }
+
+        document.getElementById('cursoSelect').addEventListener('change', cargarAlumnos);
+        cargarCursos();
+    </script>
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
@@ -315,42 +280,6 @@ if (isset($_GET['alumno_id'])) {
                 expandedElements.forEach(el => el.classList.remove('hidden'));
                 collapsedElements.forEach(el => el.classList.add('hidden'));
             }
-        });
-    </script>
-    <script>
-        // Datos de divisiones por año, PHP -> JS
-        const divisionesPorAnio = <?= json_encode($divisiones_por_año) ?>;
-
-        function actualizarDivisiones() {
-            const añoSel = document.getElementById('curso_anio').value;
-            const divisionSel = document.getElementById('curso_division');
-            // Borra las opciones previas
-            divisionSel.innerHTML = '<option value="">División</option>';
-            if (divisionesPorAnio[añoSel]) {
-                divisionesPorAnio[añoSel].forEach(function(div) {
-                    let option = document.createElement('option');
-                    option.value = div;
-                    option.textContent = div;
-                    // Si coincide con el ya seleccionado, lo marca
-                    <?php if ($curso_division): ?>
-                        if (div == "<?= $curso_division ?>") option.selected = true;
-                    <?php endif; ?>
-                    divisionSel.appendChild(option);
-                });
-                divisionSel.disabled = false;
-            } else {
-                divisionSel.disabled = true;
-            }
-        }
-        // Al cargar, si hay año seleccionado, actualizar divisiones
-        window.addEventListener('DOMContentLoaded', function() {
-            if (document.getElementById('curso_anio').value !== "") {
-                actualizarDivisiones();
-            }
-        });
-        // Cuando se elige división, auto-submit
-        document.getElementById('curso_division').addEventListener('change', function() {
-            document.getElementById('form-curso').submit();
         });
     </script>
     <script>

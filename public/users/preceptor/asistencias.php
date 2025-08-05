@@ -297,30 +297,39 @@ foreach ($alumnos as $al) {
             <div class="bg-green-100 text-green-700 rounded-xl p-3 mb-4">Asistencias guardadas correctamente.</div>
         <?php endif; ?>
 
-        <!-- Selector de curso y semana -->
-        <form class="mb-8 flex gap-4" method="get">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <select name="curso_id" class="px-4 py-2 rounded-xl border" required>
-                <option value="">Seleccionar curso</option>
-                <?php foreach ($cursos as $c): ?>
-                    <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
-                        <?php echo $c['anio'] . "°" . $c['division']; ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+        <div class="bg-white p-6 rounded-2xl shadow-xl max-w-7xl mx-auto">
+            <form class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 items-center" method="get">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
 
-            <div class="flex items-center gap-3">
-                <input type="date" id="selector-fecha" class="px-4 py-2 rounded-xl border" required>
-                <input type="hidden" name="semana_lunes" id="input-semana-lunes" value="<?= $semana_lunes ?>">
-                <div id="texto-rango" class="text-gray-600 font-semibold"></div>
-            </div>
+                <label class="font-semibold">Curso:</label>
+                <select name="curso_id" class="border rounded p-2 col-span-3" required>
+                    <option value="">Seleccionar curso</option>
+                    <?php foreach ($cursos as $c): ?>
+                        <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
+                            <?php echo $c['anio'] . "°" . $c['division']; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
 
-            <select name="modo" class="px-4 py-2 rounded-xl border">
-                <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
-                <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
-            </select>
-            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
-        </form>
+                <label class="font-semibold">Fecha base:</label>
+                <div class="flex flex-col col-span-3 gap-2">
+                    <div class="flex items-center gap-3">
+                        <input type="date" id="selector-fecha" class="border rounded p-2" required>
+                        <input type="hidden" name="semana_lunes" id="input-semana-lunes" value="<?= $semana_lunes ?>">
+                        <div id="texto-rango" class="text-gray-600 font-semibold"></div>
+                    </div>
+                </div>
+
+                <label class="font-semibold">Modo:</label>
+                <div class="flex items-center col-span-3 gap-4">
+                    <select name="modo" class="border rounded p-2">
+                        <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
+                        <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
+                    </select>
+                    <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+                </div>
+            </form>
+        </div>
 
         <?php if ($curso_id): ?>
             <?php
