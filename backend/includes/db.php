@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/loadEnv.php';
 cargarEntorno(__DIR__ . '/../../config/.env');
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 
 $host = $_ENV['DB_HOST'];
 $user = $_ENV['DB_USER'];

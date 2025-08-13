@@ -20,7 +20,7 @@ while ($row = $result->fetch_assoc()) {
     $cursos[] = $row;
 }
 
-$curso_id = $_GET['curso_id'] ?? null;
+$curso_id = isset($_GET['curso_id']) ? (int)$_GET['curso_id'] : null;
 $fecha = $_GET['fecha'] ?? date('Y-m-d');
 $modo = $_GET['modo'] ?? 'ver';
 
@@ -172,20 +172,34 @@ for ($i = 0; $i < 5; $i++) {
     $dt->modify('+1 day');
 }
 
-// Panel de Resumen de Asistencias del Día Actualizado
-// Obtener la fecha actual (en el formato que usan las claves de asistencia)
-$hoy_str = date('Y-m-d');
-
-// Inicializar contadores
-$conteo = ['P' => 0, 'A' => 0, 'AJ' => 0, 'T' => 0];
-
-// Recorrer alumnos y contar asistencias de hoy (solo turno, no contraturno)
-foreach ($alumnos as $al) {
-    $estado = $asist_semana[$al['id']][$hoy_str]['turno'] ?? 'NC';
-    if (in_array($estado, ['P', 'A', 'AJ', 'T'])) {
-        $conteo[$estado]++;
+// === MAPEO CONTRATURNO POR DÍA DE LA SEMANA PARA ESTE CURSO ===
+// 1=Lunes ... 5=Viernes en MySQL/PHP date('N')
+$dias_contraturno = [];
+if ($curso_id) {
+    $sqlCT = "
+        SELECT DISTINCT hm.dia_semana
+        FROM horarios_materia hm
+        INNER JOIN materias m ON m.id = hm.materia_id
+        WHERE hm.curso_id = ? AND m.es_contraturno = 1
+    ";
+    $stmtCT = $conexion->prepare($sqlCT);
+    $stmtCT->bind_param('i', $curso_id);
+    $stmtCT->execute();
+    $resCT = $stmtCT->get_result();
+    while ($r = $resCT->fetch_assoc()) {
+        $dias_contraturno[] = (int)$r['dia_semana'];
     }
+    $stmtCT->close();
 }
+// Para esta semana concreta, qué fechas tienen contraturno
+$fecha_tiene_contraturno = []; // ['YYYY-mm-dd' => true/false]
+foreach ($dias_semana as $f) {
+    $dow = (int)date('N', strtotime($f)); // 1..7
+    $fecha_tiene_contraturno[$f] = in_array($dow, $dias_contraturno, true);
+}
+
+// Utilidad para resaltar el día actual
+$hoy_str = date('Y-m-d');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -298,11 +312,11 @@ foreach ($alumnos as $al) {
         <?php endif; ?>
 
         <div class="bg-white p-6 rounded-2xl shadow-xl max-w-7xl mx-auto">
-            <form class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 items-center" method="get">
+            <form class="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-12 mb-2 items-center" method="get">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
 
                 <label class="font-semibold">Curso:</label>
-                <select name="curso_id" class="border rounded p-2 col-span-3" required>
+                <select id="sel-curso-preceptor" name="curso_id" class="border rounded p-2" required>
                     <option value="">Seleccionar curso</option>
                     <?php foreach ($cursos as $c): ?>
                         <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
@@ -344,7 +358,52 @@ foreach ($alumnos as $al) {
                 }
             }
             ?>
+            <?php
+            // Fecha a resumir: hoy si cae en la semana seleccionada, si no el lunes de esa semana
+            $hoy_str = date('Y-m-d');
+            $fechaResumen = in_array($hoy_str, $dias_semana, true) ? $hoy_str : $dias_semana[0];
 
+            // Conteo por turno y contraturno (0/1) en un solo query
+            $sqlResumen = "
+                    SELECT
+                    es_contraturno,
+                    SUM(CASE WHEN estado='P'  THEN 1 ELSE 0 END) AS presentes,
+                    SUM(CASE WHEN estado='A'  THEN 1 ELSE 0 END) AS ausentes,
+                    SUM(CASE WHEN estado='T'  THEN 1 ELSE 0 END) AS tarde,
+                    COUNT(*) AS total
+                    FROM asistencia_general
+                    WHERE curso_id = ?
+                    AND fecha = ?
+                    GROUP BY es_contraturno
+                ";
+
+            $stmtR = $conexion->prepare($sqlResumen);
+            $stmtR->bind_param('is', $curso_id, $fechaResumen);
+            $stmtR->execute();
+            $res = $stmtR->get_result();
+
+            $R = [
+                0 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Turno
+                1 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Contraturno
+            ];
+
+            while ($row = $res->fetch_assoc()) {
+                $k = (int)$row['es_contraturno'];
+                $R[$k]['presentes'] = (int)$row['presentes'];
+                $R[$k]['ausentes']  = (int)$row['ausentes'];
+                $R[$k]['tarde']     = (int)$row['tarde'];
+                $R[$k]['total']     = (int)$row['total'];
+            }
+            $stmtR->close();
+
+            // Totales combinados (turno + contraturno)
+            $Tot = [
+                'presentes' => $R[0]['presentes'] + $R[1]['presentes'],
+                'ausentes'  => $R[0]['ausentes']  + $R[1]['ausentes'],
+                'tarde'     => $R[0]['tarde']     + $R[1]['tarde'],
+                'total'     => $R[0]['total']     + $R[1]['total'],
+            ];
+            ?>
             <?php if ($modo == 'editar'): ?>
                 <!-- EDICIÓN SEMANAL -->
                 <form method="post" class="mt-4">
@@ -401,15 +460,26 @@ foreach ($alumnos as $al) {
                                         <td class="py-2 px-4"><?= $a['apellido'] . " " . $a['nombre']; ?></td>
                                         <?php foreach ($dias_semana as $dia): ?>
                                             <?php foreach (['turno', 'contraturno'] as $tipo): ?>
-                                                <td class="py-2 px-4 text-center">
-                                                    <select name="asistencias[<?= $a['id'] ?>][<?= $dia ?>][<?= $tipo ?>]" data-dia="<?= $dia ?>" data-tipo="<?= $tipo ?>" class="border rounded px-2 py-1">
+                                                <?php
+                                                $esHoy = ($dia === $hoy_str);
+                                                $claseHoyTd = $esHoy ? ' ring-2 ring-amber-300 rounded-md' : '';
+                                                $bloquearContra = ($tipo === 'contraturno' && !$fecha_tiene_contraturno[$dia]);
+                                                ?>
+                                                <td class="py-2 px-4 text-center<?= $claseHoyTd ?>">
+                                                    <select
+                                                        name="asistencias[<?= $a['id'] ?>][<?= $dia ?>][<?= $tipo ?>]"
+                                                        data-dia="<?= $dia ?>"
+                                                        data-tipo="<?= $tipo ?>"
+                                                        class="border rounded px-2 py-1 <?= $bloquearContra ? 'bg-gray-100 opacity-60 cursor-not-allowed' : '' ?>"
+                                                        <?= $bloquearContra ? 'disabled' : '' ?>
+                                                        title="<?= $bloquearContra ? 'Sin contraturno para este curso en este día' : '' ?>">
                                                         <option value="NC" <?= !in_array(($asist_semana[$a['id']][$dia][$tipo] ?? ''), ['P', 'A', 'T', 'AJ']) ? 'selected' : '' ?>>NC</option>
-                                                        <option value="P" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'P' ? 'selected' : '' ?>>P</option>
-                                                        <option value="A" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'A' ? 'selected' : '' ?>>A</option>
+                                                        <option value="P" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'P'  ? 'selected' : '' ?>>P</option>
+                                                        <option value="A" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'A'  ? 'selected' : '' ?>>A</option>
                                                         <option value="AJ" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'AJ' ? 'selected' : '' ?>>AJ</option>
-                                                        <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T' ? 'selected' : '' ?>>T</option>
+                                                        <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T'  ? 'selected' : '' ?>>T</option>
                                                     </select>
-                                                </td>
+                                                </td>  
                                             <?php endforeach; ?>
                                         <?php endforeach; ?>
                                     </tr>
@@ -425,10 +495,14 @@ foreach ($alumnos as $al) {
                     <button type="submit" class="mt-4 px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 font-bold">
                         Guardar asistencias
                     </button>
+                    <button id="btn-importar-prof" type="button"
+                        class="mt-4 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-bold">
+                        Importar desde Profesor
+                    </button>
                 </form>
             <?php else: ?>
                 <!-- MODO VISUALIZACIÓN -->
-                <div class="overflow-y-auto rounded-xl shadow bg-white" style="max-height: 600px;">
+                <div class="overflow-y-auto rounded-xl shadow bg-white mt-4" style="max-height: 600px;">
                     <table class="min-w-full bg-white rounded-xl shadow">
                         <thead>
                             <tr>
@@ -484,16 +558,213 @@ foreach ($alumnos as $al) {
                     </table>
                 </div>
             <?php endif; ?>
-            <div class="mt-6 bg-white border rounded-xl p-4 shadow text-sm w-fit w-full">
-                <h2 class="font-bold mb-2 text-lg">Resumen de hoy (<?= date('d/m/Y') ?>)</h2>
-                <ul class="space-y-1">
-                    <li><span class="font-medium text-green-700">✅ Presentes:</span> <?= $conteo['P'] ?></li>
-                    <li><span class="font-medium text-red-700">❌ Ausentes:</span> <?= $conteo['A'] ?></li>
-                    <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> <?= $conteo['T'] ?></li>
-                </ul>
+            <div class="mt-6 bg-white border rounded-xl p-4 shadow text-sm w-full">
+                <h2 class="font-bold mb-3 text-lg">
+                    Resumen del día (<?= date('d/m/Y', strtotime($fechaResumen)) ?>)
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 ">
+                    <!-- Turno -->
+                    <div class="rounded-lg border p-3">
+                        <h3 class="font-semibold mb-2">Turno</h3>
+                        <ul class="space-y-1">
+                            <li><span class="font-medium text-green-700">✅ Presentes:</span> <?= $R[0]['presentes'] ?></li>
+                            <li><span class="font-medium text-red-700">❌ Ausentes:</span> <?= $R[0]['ausentes'] ?></li>
+                            <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> <?= $R[0]['tarde'] ?></li>
+                            <li class="text-gray-600">Total registros: <?= $R[0]['total'] ?></li>
+                        </ul>
+                    </div>
+                    <!-- Contraturno -->
+                    <div class="rounded-lg border p-3">
+                        <h3 class="font-semibold mb-2">Contraturno</h3>
+                        <ul class="space-y-1">
+                            <li><span class="font-medium text-green-700">✅ Presentes:</span> <?= $R[1]['presentes'] ?></li>
+                            <li><span class="font-medium text-red-700">❌ Ausentes:</span> <?= $R[1]['ausentes'] ?></li>
+                            <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> <?= $R[1]['tarde'] ?></li>
+                            <li class="text-gray-600">Total registros: <?= $R[1]['total'] ?></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
+        <div id="modalImport" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+                <h3 class="text-xl font-bold mb-3">Importar asistencias desde Profesor</h3>
+                <div class="grid gap-3">
+                    <div>
+                        <label class="font-semibold">Curso seleccionado:</label>
+                        <div id="imp-curso" class="text-gray-700"></div>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Fecha:</label>
+                        <input type="date" id="imp-fecha" class="border rounded p-2" value="<?= date('Y-m-d') ?>">
+                    </div>
+                    <div>
+                        <label class="font-semibold">Materias con clase ese día:</label>
+                        <div id="imp-materias" class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1"></div>
+                        <div id="imp-warn" class="text-sm text-amber-700 mt-2"></div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button id="imp-simular" class="px-4 py-2 bg-gray-700 text-white rounded-xl">Simular</button>
+                        <button id="imp-guardar" class="px-4 py-2 bg-green-600 text-white rounded-xl">Importar y Guardar</button>
+                        <button id="imp-cerrar" class="ml-auto px-3 py-2 bg-red-100 text-red-700 rounded-xl">Cerrar</button>
+                    </div>
+                    <div id="imp-resumen" class="text-sm mt-2 hidden"></div>
+                </div>
+            </div>
+        </div>
     </main>
+    <script>
+        /** Fetch robusto con:
+         * - timeout
+         * - chequeo res.ok
+         * - parseo JSON/texto
+         * - mensaje visible y log en consola
+         */
+        async function fetchJSON(url, options = {}) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 20000);
+            try {
+                const res = await fetch(url, {
+                    ...options,
+                    signal: ctrl.signal
+                });
+                const ct = res.headers.get('content-type') || '';
+                let payload;
+                if (ct.includes('application/json')) {
+                    payload = await res.json().catch(() => ({}));
+                } else {
+                    payload = await res.text();
+                }
+                if (!res.ok) {
+                    const msg = (payload && payload.mensaje) ? payload.mensaje : `HTTP ${res.status}`;
+                    throw new Error(msg);
+                }
+                return payload;
+            } catch (err) {
+                console.error('fetchJSON error:', url, err);
+                const msj = document.getElementById('mensaje');
+                if (msj) {
+                    msj.textContent = `⚠️ Error de red/servidor: ${err.message || err}`;
+                    msj.className = "mt-4 text-center font-medium text-red-600";
+                    msj.classList.remove('hidden');
+                } else {
+                    alert(`Error: ${err.message || err}`);
+                }
+                throw err;
+            } finally {
+                clearTimeout(t);
+            }
+        }
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+    </script>
+    <script>
+        const modal = document.getElementById('modalImport');
+        const impCurso = document.getElementById('imp-curso');
+        const impFecha = document.getElementById('imp-fecha');
+        const impMaterias = document.getElementById('imp-materias');
+        const impWarn = document.getElementById('imp-warn');
+        const impResumen = document.getElementById('imp-resumen');
+        const csrf = "<?= $csrf ?>";
+
+        function openImportModal() {
+            // ANTES: const sel = document.querySelector('select[name="curso_id"]');
+            const sel = document.getElementById('sel-curso-preceptor'); // <- usa el id único
+            const curso_id = sel?.value;
+            if (!curso_id) return alert('Seleccioná un curso primero.');
+
+            const cursoTxt = sel.options[sel.selectedIndex].textContent.trim();
+            impCurso.textContent = cursoTxt;
+
+            // resto igual...
+            fetchJSON('preceptor_materias_curso.php?curso_id=' +
+                    encodeURIComponent(curso_id) +
+                    '&fecha=' + encodeURIComponent(impFecha.value))
+                .then(data => {
+                    // data.ok ya garantizado por fetchJSON
+                    impMaterias.innerHTML = '';
+                    (data.materias || []).forEach(m => {
+                        impMaterias.insertAdjacentHTML('beforeend', `
+        <label class="flex items-center gap-2 p-2 border rounded">
+          <input type="checkbox" value="${m.id}">
+          <span>${m.nombre} ${m.es_contraturno?'<span class="text-xs text-indigo-600">(Contraturno)</span>':''}</span>
+        </label>
+      `);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('No pude cargar las materias del día seleccionado.');
+                });
+
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        document.getElementById('btn-importar-prof').addEventListener('click', openImportModal);
+        document.getElementById('imp-cerrar').addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+        impFecha.addEventListener('change', openImportModal); // recarga materias si cambia la fecha
+
+        function collectSelectedMaterias() {
+            return Array.from(impMaterias.querySelectorAll('input[type="checkbox"]:checked')).map(i => parseInt(i.value, 10));
+        }
+
+        function callImport(dryRun) {
+            const sel = document.querySelector('select[name="curso_id"]');
+            const curso_id = parseInt(sel.value, 10);
+            const materia_ids = collectSelectedMaterias();
+            if (!curso_id) return alert('Seleccioná un curso.');
+            if (!impFecha.value) return alert('Seleccioná fecha.');
+            if (materia_ids.length === 0) return alert('Seleccioná al menos una materia con clase ese día.');
+
+            fetchJSON('/users/preceptor/preceptor_importar_prof.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    csrf,
+                    curso_id,
+                    fecha: impFecha.value,
+                    materia_ids,
+                    dry_run: dryRun
+                })
+            }).then(data => {
+                const w = (data.warnings || []).length ? ('⚠️ ' + data.warnings.join(' ')) : '';
+                if (data.simulacion) {
+                    const t = (data.turno || {});
+                    const c = (data.contraturno || {});
+                    impResumen.innerHTML = `
+      <div class="p-2 rounded border">
+        <div class="font-semibold mb-1">Simulación para ${data.fecha}</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div>
+            <div class="font-medium">Turno</div>
+            <div>✅ P: ${t.P||0} / ❌ A: ${t.A||0} / 🕒 T: ${t.T||0} / AJ: ${t.AJ||0} / NC: ${t.NC||0} (Total ${t.total||0})</div>
+          </div>
+          <div>
+            <div class="font-medium">Contraturno</div>
+            <div>✅ P: ${c.P||0} / ❌ A: ${c.A||0} / 🕒 T: ${c.T||0} / AJ: ${c.AJ||0} / NC: ${c.NC||0} (Total ${c.total||0})</div>
+          </div>
+        </div>
+        ${w ? `<div class="text-amber-700 mt-1">${w}</div>` : ''}
+      </div>`;
+                    impResumen.classList.remove('hidden');
+                } else {
+                    alert(data.mensaje || 'Importación realizada');
+                    location.reload();
+                }
+            }).catch(() => alert('Error de red'));
+        }
+
+        document.getElementById('imp-simular').addEventListener('click', () => callImport(true));
+        document.getElementById('imp-guardar').addEventListener('click', () => callImport(false));
+    </script>
     <script>
         document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');

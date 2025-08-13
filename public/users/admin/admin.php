@@ -186,7 +186,7 @@ $mostrar_modal = ($usuario['rol'] != 0 && $usuario['rol'] != 4 && empty($usuario
                 <div class="text-5xl mb-2">🔔</div>
                 <h2 class="text-xl font-bold mb-2">Panel de Notificaciones</h2>
                 <p class="text-gray-500 text-center mb-4">Crea nuevas notificaciones a partir del panel dedicado.</p>
-                <a href="horarios.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
+                <a href="notificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gestionar</a>
             </div>
         </div>
     </main>

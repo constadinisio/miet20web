@@ -9,7 +9,6 @@ if (
     exit;
 }
 
-
 if (!isset($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
 }
@@ -17,6 +16,25 @@ $csrf = $_SESSION['csrf'];
 
 $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
+
+// Evitar notice en modal al pie
+$mostrar_modal = $mostrar_modal ?? false;
+
+// ---- Filtros base ----
+// Permito curso_id por GET para el Resumen del día
+$curso_id   = (isset($_GET['curso_id']) && ctype_digit($_GET['curso_id'])) ? (int)$_GET['curso_id'] : null;
+$fecha_base = $_GET['fecha'] ?? date('Y-m-d');
+
+// Armar semana (lunes a viernes)
+$lunes = new DateTime($fecha_base);
+if ($lunes->format('N') != 1) {
+    $lunes->modify('monday this week');
+}
+$dias_semana = [];
+for ($i = 0; $i < 5; $i++) {
+    $dias_semana[] = $lunes->format('Y-m-d');
+    $lunes->modify('+1 day');
+}
 
 // Cargar cursos y materias del profesor
 $cursosMaterias = [];
@@ -34,6 +52,53 @@ $stmt->execute();
 $res = $stmt->get_result();
 while ($row = $res->fetch_assoc()) {
     $cursosMaterias[] = $row;
+}
+$stmt->close();
+
+// === RESUMEN DEL DÍA PARA PROFESOR (similar al del preceptor) ===
+// Fecha a resumir: hoy si está dentro de la semana seleccionada; si no, el lunes de esa semana
+$hoy_str = date('Y-m-d');
+$fechaResumen = in_array($hoy_str, $dias_semana, true) ? $hoy_str : ($dias_semana[0] ?? $hoy_str);
+
+// Si no hay curso seleccionado, evitamos consultas
+$R = [
+    0 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Turno
+    1 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Contraturno
+];
+$Tot = ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0];
+
+if ($curso_id) {
+    $sqlResumen = "
+        SELECT es_contraturno,
+               SUM(CASE WHEN estado='P'  THEN 1 ELSE 0 END) AS presentes,
+               SUM(CASE WHEN estado='A'  THEN 1 ELSE 0 END) AS ausentes,
+               SUM(CASE WHEN estado='T'  THEN 1 ELSE 0 END) AS tarde,
+               COUNT(*) AS total
+        FROM asistencia_general
+        WHERE curso_id = ?
+          AND fecha = ?
+        GROUP BY es_contraturno
+    ";
+    $stmtR = $conexion->prepare($sqlResumen);
+    $stmtR->bind_param('is', $curso_id, $fechaResumen);
+    $stmtR->execute();
+    $resR = $stmtR->get_result();
+
+    while ($row = $resR->fetch_assoc()) {
+        $k = (int)$row['es_contraturno']; // 0=Turno, 1=Contraturno
+        $R[$k]['presentes'] = (int)$row['presentes'];
+        $R[$k]['ausentes']  = (int)$row['ausentes'];
+        $R[$k]['tarde']     = (int)$row['tarde'];
+        $R[$k]['total']     = (int)$row['total'];
+    }
+    $stmtR->close();
+
+    $Tot = [
+        'presentes' => $R[0]['presentes'] + $R[1]['presentes'],
+        'ausentes'  => $R[0]['ausentes']  + $R[1]['ausentes'],
+        'tarde'     => $R[0]['tarde']     + $R[1]['tarde'],
+        'total'     => $R[0]['total']     + $R[1]['total'],
+    ];
 }
 ?>
 <!DOCTYPE html>
@@ -180,10 +245,107 @@ while ($row = $res->fetch_assoc()) {
                     </button>
                 </div>
             </div>
-
             <div id="mensaje" class="mt-4 text-center font-medium hidden"></div>
         </div>
+        <div id="resumen-dia" class="mt-6"></div>
     </main>
+    <script>
+        // Actualiza la URL sin recargar (para poder compartir/recargar sin perder selección)
+        function pushStateSinRecargar(curso_id, fecha) {
+            const url = new URL(window.location.href);
+            if (curso_id) url.searchParams.set('curso_id', curso_id);
+            else url.searchParams.delete('curso_id');
+            if (fecha) url.searchParams.set('fecha', fecha);
+            else url.searchParams.delete('fecha');
+            history.replaceState({}, '', url.toString());
+        }
+
+        async function cargarResumen() {
+            const seleccion = document.getElementById('seleccion').value;
+            const fecha = document.getElementById('fecha').value;
+            const box = document.getElementById('resumen-dia');
+
+            if (!seleccion || !fecha) {
+                box.innerHTML = '';
+                return;
+            }
+
+            const [curso_id] = seleccion.split('_');
+            try {
+                const res = await fetch(`resumen_profesor.php?curso_id=${encodeURIComponent(curso_id)}&fecha=${encodeURIComponent(fecha)}`);
+                const data = await res.json();
+
+                // Render básico del panel (igual estética que el del preceptor)
+                box.innerHTML = `
+        <div class="bg-white border rounded-xl p-4 shadow text-sm w-full">
+          <h2 class="font-bold mb-3 text-lg">Resumen del día (${data.fecha_formateada})</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-lg border p-3">
+              <h3 class="font-semibold mb-2">Turno</h3>
+              <ul class="space-y-1">
+                <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.turno.presentes}</li>
+                <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.turno.ausentes}</li>
+                <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.turno.tarde}</li>
+                <li class="text-gray-600">Total registros: ${data.turno.total}</li>
+              </ul>
+            </div>
+            <div class="rounded-lg border p-3">
+              <h3 class="font-semibold mb-2">Contraturno</h3>
+              <ul class="space-y-1">
+                <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.contraturno.presentes}</li>
+                <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.contraturno.ausentes}</li>
+                <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.contraturno.tarde}</li>
+                <li class="text-gray-600">Total registros: ${data.contraturno.total}</li>
+              </ul>
+            </div>
+          </div>
+        </div>`;
+            } catch (e) {
+                box.innerHTML = '';
+                console.error('Resumen AJAX error', e);
+            }
+        }
+
+        function onCambioSeleccionOFecha() {
+            const seleccion = document.getElementById('seleccion').value;
+            const fecha = document.getElementById('fecha').value;
+            if (!seleccion || !fecha) return;
+
+            const [curso_id] = seleccion.split('_');
+            // Persistimos en la URL, sin recargar
+            pushStateSinRecargar(curso_id, fecha);
+
+            // Actualizamos tabla y resumen
+            cargarAsistencias();
+            cargarResumen();
+        }
+
+        document.getElementById('seleccion').addEventListener('change', onCambioSeleccionOFecha);
+        document.getElementById('fecha').addEventListener('change', onCambioSeleccionOFecha);
+
+        // Primera carga: si ya hay algo seleccionado y fecha, mostrar tabla + resumen
+        document.addEventListener('DOMContentLoaded', () => {
+            const sel = document.getElementById('seleccion').value;
+            const fecha = document.getElementById('fecha').value;
+            if (sel && fecha) {
+                cargarAsistencias();
+                cargarResumen();
+            } else {
+                // Si venís con ?curso_id en la URL, intentamos marcar un option con ese curso
+                const url = new URL(window.location.href);
+                const cursoFromURL = url.searchParams.get('curso_id');
+                if (cursoFromURL) {
+                    const select = document.getElementById('seleccion');
+                    const opt = Array.from(select.options).find(o => o.value.startsWith(cursoFromURL + '_'));
+                    if (opt) {
+                        select.value = opt.value;
+                        cargarAsistencias();
+                        cargarResumen();
+                    }
+                }
+            }
+        });
+    </script>
     <script>
         document.getElementById('seleccion').addEventListener('change', cargarAsistencias);
         document.getElementById('fecha').addEventListener('change', cargarAsistencias);
@@ -212,8 +374,9 @@ while ($row = $res->fetch_assoc()) {
                     });
                     thead.appendChild(trHead);
 
-                    data.filas.forEach(fila => {
+                    data.filas.forEach((fila, idx) => {
                         const tr = document.createElement('tr');
+                        tr.dataset.alumnoId = (data.alumno_ids && data.alumno_ids[idx]) ? data.alumno_ids[idx] : '';
                         fila.forEach((valor, i) => {
                             const td = document.createElement('td');
                             td.className = 'border px-2 py-1 text-center';
@@ -255,14 +418,19 @@ while ($row = $res->fetch_assoc()) {
             const [curso_id, materia_id] = seleccion.split('_');
 
             const tabla = document.getElementById('tabla-asistencias');
-            const encabezados = Array.from(tabla.querySelectorAll('thead th')).slice(2);
+            const encabezados = Array.from(tabla.querySelectorAll('thead th'))
+                .slice(2)
+                .map(th => th.textContent.trim()); // ej. "12-08-2025"
             const filas = tabla.querySelectorAll('tbody tr');
 
             const asistencias = Array.from(filas).map(tr => {
-                const nro = tr.children[0].textContent;
+                const alumno_id = parseInt(tr.dataset.alumnoId || '0', 10);
                 const datos = Array.from(tr.querySelectorAll('td select')).map(s => s.value);
-                return {
-                    nro,
+                return alumno_id ? {
+                    alumno_id,
+                    estados: datos
+                } : {
+                    nro: parseInt(tr.children[0].textContent, 10),
                     estados: datos
                 };
             });
@@ -295,6 +463,7 @@ while ($row = $res->fetch_assoc()) {
             const seleccion = document.getElementById('seleccion').value;
             const fecha = document.getElementById('fecha').value;
             const csrf = document.querySelector('input[name="csrf"]').value;
+
             if (!seleccion || !fecha) return alert("Seleccioná curso, materia y fecha.");
 
             const [curso_id, materia_id] = seleccion.split('_');
@@ -313,9 +482,60 @@ while ($row = $res->fetch_assoc()) {
                 })
                 .then(res => res.json())
                 .then(data => {
-                    alert(data.mensaje);
-                    if (data.ok) cargarAsistencias(); // refresca la tabla si se importó
-                });
+                    if (!data.ok) {
+                        alert(data.mensaje || 'No se pudo importar.');
+                        return;
+                    }
+
+                    // Ubicar columna de la FECHA en el thead (a partir de la 3° col: 0=Nro, 1=Nombre, 2+=fechas)
+                    const tabla = document.getElementById('tabla-asistencias');
+                    const ths = Array.from(tabla.querySelectorAll('thead th'));
+                    // El encabezado suele contener solo la fecha; si en tu obtener_asistencias_materia le agregás texto extra,
+                    // podés usar startsWith(fecha) o un parse más específico.
+                    let colFechaIndex = -1;
+                    for (let i = 2; i < ths.length; i++) {
+                        const txt = ths[i].textContent.trim();
+                        if (txt === fecha || txt.startsWith(fecha)) { // flex por si agregás día de la semana
+                            colFechaIndex = i;
+                            break;
+                        }
+                    }
+                    if (colFechaIndex === -1) {
+                        alert(`No encontré la columna para la fecha ${fecha}.`);
+                        return;
+                    }
+
+                    const map = data.map || {};
+                    const filas = Array.from(tabla.querySelectorAll('tbody tr'));
+                    let aplicados = 0;
+
+                    filas.forEach(tr => {
+                        const nroLista = tr.children[0]?.textContent?.trim();
+                        if (!nroLista) return;
+
+                        const estado = map[nroLista];
+                        if (!estado) return;
+
+                        // En esa columna debe haber un <select> (porque es editable)
+                        const td = tr.children[colFechaIndex];
+                        if (!td) return;
+                        const sel = td.querySelector('select');
+                        if (!sel) return;
+
+                        // Seteamos el estado importado
+                        sel.value = estado;
+                        aplicados++;
+                    });
+
+                    const msj = document.getElementById('mensaje');
+                    msj.textContent = (data.importados > 0) ?
+                        `Importado del preceptor (${data.turno}). Coincidencias aplicadas: ${aplicados}/${filas.length}.` :
+                        (data.mensaje || 'No había asistencias del preceptor para esa fecha/turno.');
+                    msj.className = "mt-4 text-center font-medium " + (aplicados > 0 ? 'text-green-600' : 'text-orange-600');
+                    msj.classList.remove('hidden');
+                    setTimeout(() => msj.classList.add('hidden'), 6000);
+                })
+                .catch(() => alert('Error importando asistencias'));
         });
     </script>
     <script>
