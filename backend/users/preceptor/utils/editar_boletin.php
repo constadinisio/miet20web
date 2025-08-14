@@ -27,7 +27,7 @@ $stmt->close();
 if ($nuevo && $curso_id && $alumno_id) {
     $anio_lectivo = date('Y');
     $periodo = '1er Bimestre'; // o lo que corresponda según tu lógica
-    $creado_por = $_SESSION['usuario_id']; // asegúrate de tenerlo en sesión
+    $creado_por = $_SESSION['usuario']; // asegúrate de tenerlo en sesión
 
     $sql = "INSERT INTO boletin (alumno_id, curso_id, anio_lectivo, periodo, estado, creado_por)
             VALUES (?, ?, ?, ?, 'borrador', ?)";
