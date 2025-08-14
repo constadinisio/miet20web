@@ -16,11 +16,12 @@ if (!isset($_SESSION['csrf']) || !hash_equals($_SESSION['csrf'], $csrf)) {
     exit;
 }
 
-$curso_id    = (int)($in['curso_id'] ?? 0);
-$materia_id  = (int)($in['materia_id'] ?? 0);
-$encabezados = $in['encabezados'] ?? [];      // Texto de headers (DD-MM-YYYY preferido)
-$asistencias = $in['asistencias'] ?? [];      // [{ alumno_id? , nro?, estados:[...] }]
-$profesor_id = (int)($_SESSION['usuario']['id'] ?? 0);
+$curso_id     = (int)($in['curso_id'] ?? 0);
+$materia_id   = (int)($in['materia_id'] ?? 0);
+$encabezados  = $in['encabezados'] ?? [];   // Texto de headers (DD-MM-YYYY / YYYY-MM-DD / DD/MM)
+$asistencias  = $in['asistencias'] ?? [];   // [{ alumno_id? , nro?, estados:[...] }]
+$profesor_id  = (int)($_SESSION['usuario']['id'] ?? 0);
+$fecha_baseIn = $in['fecha'] ?? null;
 
 if ($curso_id <= 0 || $materia_id <= 0 || empty($encabezados) || empty($asistencias)) {
     echo json_encode(['ok'=>false,'mensaje'=>'Parámetros incompletos']); exit;
@@ -48,24 +49,18 @@ function parse_fecha_col($txt) {
     if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $t, $m)) {
         return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
     }
-    // también tolerar DD/MM (completa con año actual)
+    // DD/MM (completa con año actual)
     if (preg_match('#^(\d{2})/(\d{2})$#', $t, $m)) {
         $anio = date('Y');
         return sprintf('%04d-%02d-%02d', $anio, $m[2], $m[1]);
     }
-    // fallback: ya viene ISO YYYY-MM-DD
+    // ISO YYYY-MM-DD
     if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $t)) return $t;
 
     return null;
 }
 
-/* A) Parsear todas las fechas recibidas (headers ya vienen sin Nro/Nombre) */
-$fechasTodas = [];
-foreach ($encabezados as $i => $col) {
-    $fechasTodas[$i] = parse_fecha_col($col); // puede quedar null
-}
-
-/* 3) Días válidos (1..7) de la materia según horarios */
+/* 3) Días válidos (1..7) de la materia según horarios (OBLIGATORIO tener al menos 1) */
 $diasPermitidos = [];
 $stmt = $conexion->prepare("
   SELECT DISTINCT dia_semana
@@ -81,21 +76,44 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-/* B) Filtrar SOLO las fechas guardables (válidas + día de clase) y RE-INDEXAR (0..k-1) */
+if (empty($diasPermitidos)) {
+    echo json_encode(['ok'=>false,'mensaje'=>'No hay horarios cargados para este curso/materia.']); exit;
+}
+
+/* 4) Validar fecha base vs. horario (si vino en el payload) */
+if ($fecha_baseIn) {
+    $fecha_base_parsed = parse_fecha_col($fecha_baseIn);
+    if ($fecha_base_parsed) {
+        $dowBase = (int)date('N', strtotime($fecha_base_parsed)); // 1..7
+        if (!isset($diasPermitidos[$dowBase])) {
+            echo json_encode(['ok'=>false,'mensaje'=>'La fecha seleccionada no coincide con tus días de clase para este curso/materia.']); exit;
+        }
+    }
+}
+
+/* 5) Parsear todas las fechas recibidas en encabezados -> YYYY-MM-DD (solo columnas de fechas) */
+$fechasTodas = [];
+foreach ($encabezados as $i => $col) {
+    $fechasTodas[$i] = parse_fecha_col($col); // puede quedar null si no es una fecha válida
+}
+
+/* 6) Filtrar SOLO las fechas guardables (válidas + día de clase) y RE-INDEXAR (0..k-1) */
 $fechas_guardables = [];
+$mapIdx = []; // mapea índice original de encabezado -> índice nuevo 0..k-1
 foreach ($fechasTodas as $i => $f) {
     if (!$f) continue;
     $dow = (int)date('N', strtotime($f)); // 1..7
-    if (empty($diasPermitidos) || isset($diasPermitidos[$dow])) {
-        $fechas_guardables[] = $f;  // re-indexado 0..k-1 para calzar con selects
+    if (isset($diasPermitidos[$dow])) {
+        $mapIdx[$i] = count($fechas_guardables);
+        $fechas_guardables[] = $f;  // re-indexado 0..k-1 para alinear con selects de columnas editables
     }
 }
 if (count($fechas_guardables) === 0) {
-    echo json_encode(['ok'=>false,'mensaje'=>'No hay columnas editables/guardables para la materia en esas fechas.']);
+    echo json_encode(['ok'=>false,'mensaje'=>'No hay columnas editables/guardables para la materia en esas fechas (fuera de tu horario).']);
     exit;
 }
 
-/* 4) (Compat) map nro de lista -> alumno_id en el mismo orden de la grilla */
+/* 7) (Compat) map nro de lista -> alumno_id en el mismo orden de la grilla */
 $alumnosOrden = [];
 $q = $conexion->prepare("
   SELECT u.id
@@ -120,7 +138,7 @@ function norm_est($e){
 try {
   $conexion->begin_transaction();
 
-  // UNIQUE KEY sugerida: (alumno_id,curso_id,materia_id,fecha)
+  // UNIQUE KEY sugerida: (alumno_id, curso_id, materia_id, fecha)
   $sql = "
     INSERT INTO asistencia_materia (alumno_id, curso_id, materia_id, fecha, estado, creado_por)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -141,17 +159,21 @@ try {
     }
 
     $estados = $fila['estados'] ?? [];
-    foreach ($estados as $idx => $estadoSel) {
-      // $idx calza con $fechas_guardables[0..k-1] (solo columnas con <select>)
-      if (!isset($fechas_guardables[$idx])) continue;
 
-      $f = $fechas_guardables[$idx];         // YYYY-MM-DD
+    // Recorremos estados por índice de columna original
+    foreach ($estados as $idxOrig => $estadoSel) {
+      // Debe existir mapeo a índice guardable
+      if (!array_key_exists($idxOrig, $mapIdx)) continue;
+
+      $idxGuard = $mapIdx[$idxOrig];       // 0..k-1
+      $f = $fechas_guardables[$idxGuard];  // YYYY-MM-DD
       $estado = norm_est($estadoSel);
-      if ($estado === 'NC') continue;        // no guardamos NC
+      if ($estado === 'NC') continue;      // no guardamos NC
 
       $ins->bind_param('iiissi', $alumno_id, $curso_id, $materia_id, $f, $estado, $profesor_id);
       $ins->execute();
-      $aplicados += ($ins->affected_rows >= 0 ? 1 : 0);
+      // affected_rows puede ser 0 si el valor es idéntico; consideramos como aplicado igualmente
+      $aplicados += 1;
     }
   }
 

@@ -147,18 +147,36 @@ $stmt->close();
         <div class="mt-4 text-lg text-gray-700">
             Desde tu panel podés cargar <b>temas vistos</b>, <b>calificaciones</b> y más.
         </div>
-        <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">📚</div>
                 <h2 class="text-xl font-bold mb-2">Libro de Temas</h2>
                 <p class="text-gray-500 text-center mb-4">Registrá o consultá los temas dados en cada clase.</p>
-                <a href="profesor_libro_temas.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir al Libro</a>
+                <a href="libro_temas.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir al Libro</a>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
                 <div class="text-5xl mb-2">📝</div>
                 <h2 class="text-xl font-bold mb-2">Calificaciones</h2>
                 <p class="text-gray-500 text-center mb-4">Subí las notas de tus alumnos.</p>
-                <a href="profesor_calificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Calificaciones</a>
+                <a href="calificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Calificaciones</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">👋</div>
+                <h2 class="text-xl font-bold mb-2">Asistencias por Materia</h2>
+                <p class="text-gray-500 text-center mb-4">Gestiona las asistencia de los alumnos de tu materia.</p>
+                <a href="asistencias.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Asistencias por Materia</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">📎</div>
+                <h2 class="text-xl font-bold mb-2">TPs y Actividades</h2>
+                <p class="text-gray-500 text-center mb-4">Añadí trabajos con notas a tus alumnos.</p>
+                <a href="trabajos.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a TPs y Actividades</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+                <div class="text-5xl mb-2">🔔</div>
+                <h2 class="text-xl font-bold mb-2">Panel de Notificaciones</h2>
+                <p class="text-gray-500 text-center mb-4">Publicale notificaciones a tus alumnos para que ellos lo vean.</p>
+                <a href="notificaciones.php" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Ir a Panel de Notificaciones</a>
             </div>
         </div>
         <div class="mt-10">

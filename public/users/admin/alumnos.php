@@ -18,7 +18,8 @@ $pagina = isset($_GET['pagina']) && is_numeric($_GET['pagina']) ? (int)$_GET['pa
 $resultados_por_pagina = 10;
 $offset = ($pagina - 1) * $resultados_por_pagina;
 
-$sql_base = "FROM usuarios WHERE rol = 4";
+$sql_base = "FROM usuarios WHERE rol = 4 AND status = 1";
+
 $params = [];
 $tipos = "";
 
