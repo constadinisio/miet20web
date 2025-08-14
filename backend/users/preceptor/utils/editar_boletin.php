@@ -25,16 +25,20 @@ $stmt->close();
 
 // CREAR NUEVO BOLETÍN
 if ($nuevo && $curso_id && $alumno_id) {
-    // Año y periodo por defecto
     $anio_lectivo = date('Y');
-    $periodo = 1;
-    // Crear boletín
-    $sql = "INSERT INTO boletin (alumno_id, curso_id, anio_lectivo, periodo, estado) VALUES (?, ?, ?, ?, 'borrador')";
+    $periodo = '1er Bimestre'; // o lo que corresponda según tu lógica
+    $creado_por = $_SESSION['usuario_id']; // asegúrate de tenerlo en sesión
+
+    $sql = "INSERT INTO boletin (alumno_id, curso_id, anio_lectivo, periodo, estado, creado_por)
+            VALUES (?, ?, ?, ?, 'borrador', ?)";
     $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("iiii", $alumno_id, $curso_id, $anio_lectivo, $periodo);
+    // i,i,i,s,i => periodo es string
+    $stmt->bind_param("iiisi", $alumno_id, $curso_id, $anio_lectivo, $periodo, $creado_por);
     $stmt->execute();
+
     $boletin_id = $conexion->insert_id;
     $stmt->close();
+
 
     // Traer datos del alumno y curso (usa JOIN, más seguro y legible)
     $sql = "SELECT u.nombre, u.apellido, u.dni, c.anio, c.division
