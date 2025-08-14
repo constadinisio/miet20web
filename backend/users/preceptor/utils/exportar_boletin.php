@@ -5,8 +5,7 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] < 1) {
     exit;
 }
 require_once __DIR__ . '/../../../includes/db.php';
-
-require '/../../../../vendor/autoload.php';
+require_once __DIR__ . '/../../../../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -70,8 +69,9 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// --- Generar archivo Excel con plantilla ---
-$templatePath = "/../backend/utils/plantillas/PlantillaBoletines.xlsx";
+$backendDir   = dirname(__DIR__, 3); // sube desde .../backend/users/preceptor/utils -> .../backend
+$templatePath = $backendDir . '/utils/plantillas/PlantillaBoletines.xlsx';
+
 $spreadsheet = IOFactory::load($templatePath);
 $sheet = $spreadsheet->getActiveSheet();
 
