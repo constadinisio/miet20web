@@ -16,26 +16,65 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $autor = $_POST["autor"];
     $descripcion = $_POST["descripcion"];
 
-    $archivo = $_FILES["imagen"];
+    $archivo = $_FILES["imagen"] ?? null;
 
-    if ($archivo["error"] === UPLOAD_ERR_OK) {
+    if ($archivo && $archivo["error"] === UPLOAD_ERR_OK) {
+        $maxSize = 2 * 1024 * 1024; // 2MB
+        $allowed = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp'
+        ];
+
         $nombre_tmp = $archivo["tmp_name"];
-        $nombre_final = uniqid() . "_" . basename($archivo["name"]);
-        $ruta_categoria = "imagenes/" . $categoria;
+        $ext = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($nombre_tmp);
 
-        if (!is_dir($ruta_categoria)) {
-            mkdir($ruta_categoria, 0777, true);
-        }
-
-        $ruta_destino = $ruta_categoria . "/" . $nombre_final;
-
-        if (move_uploaded_file($nombre_tmp, $ruta_destino)) {
-            $stmt = $conexion->prepare("INSERT INTO imagenes (categoria, archivo, autor, descripcion) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $categoria, $nombre_final, $autor, $descripcion);
-            $stmt->execute();
-            $mensaje = "✅ Imagen subida correctamente.";
+        if ($archivo['size'] > $maxSize) {
+            $mensaje = "❌ El archivo excede el tamaño permitido.";
+        } elseif (!isset($allowed[$ext]) || $allowed[$ext] !== $mime) {
+            $mensaje = "❌ Tipo de archivo no permitido.";
         } else {
-            $mensaje = "❌ Error al mover la imagen.";
+            $nombre_final = bin2hex(random_bytes(16)) . '.' . $ext;
+            $ruta_categoria = "imagenes/" . $categoria;
+
+            if (!is_dir($ruta_categoria)) {
+                $oldUmask = umask(0);
+                mkdir($ruta_categoria, 0755, true);
+                umask($oldUmask);
+            }
+
+            $ruta_destino = $ruta_categoria . '/' . $nombre_final;
+            $data = file_get_contents($nombre_tmp);
+            $image = @imagecreatefromstring($data);
+
+            if ($image === false) {
+                $mensaje = "❌ Imagen no válida.";
+            } else {
+                switch ($mime) {
+                    case 'image/jpeg':
+                        imagejpeg($image, $ruta_destino, 90);
+                        break;
+                    case 'image/png':
+                        imagepng($image, $ruta_destino);
+                        break;
+                    case 'image/webp':
+                        imagewebp($image, $ruta_destino);
+                        break;
+                }
+                imagedestroy($image);
+
+                if (file_exists($ruta_destino)) {
+                    $stmt = $conexion->prepare("INSERT INTO imagenes (categoria, archivo, autor, descripcion) VALUES (?, ?, ?, ?)");
+                    $stmt->bind_param("ssss", $categoria, $nombre_final, $autor, $descripcion);
+                    $stmt->execute();
+                    $mensaje = "✅ Imagen subida correctamente.";
+                } else {
+                    $mensaje = "❌ Error al procesar la imagen.";
+                }
+            }
         }
     } else {
         $mensaje = "❌ Error al subir la imagen.";

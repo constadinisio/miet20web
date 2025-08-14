@@ -16,17 +16,53 @@ $imagenNombre = "";
 
 // Procesar imagen si se subió
 if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-    $nombreOriginal = $_FILES['imagen']['name'];
-    $rutaTemporal = $_FILES['imagen']['tmp_name'];
-    $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
-    $imagenNombre = uniqid('img_') . '.' . $extension;
+    $archivo = $_FILES['imagen'];
+    $maxSize = 2 * 1024 * 1024; // 2MB
+    $allowed = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp'
+    ];
 
-    $carpetaImagenes = '../images/';
-    if (!file_exists($carpetaImagenes)) {
-        mkdir($carpetaImagenes, 0777, true);
+    $nombre_tmp = $archivo['tmp_name'];
+    $ext = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($nombre_tmp);
+
+    if ($archivo['size'] > $maxSize || !isset($allowed[$ext]) || $allowed[$ext] !== $mime) {
+        http_response_code(400);
+        exit('Archivo de imagen no permitido');
     }
 
-    move_uploaded_file($rutaTemporal, $carpetaImagenes . $imagenNombre);
+    $imagenNombre = bin2hex(random_bytes(16)) . '.' . $ext;
+    $carpetaImagenes = '../images/';
+    if (!file_exists($carpetaImagenes)) {
+        $oldUmask = umask(0);
+        mkdir($carpetaImagenes, 0755, true);
+        umask($oldUmask);
+    }
+
+    $ruta_destino = $carpetaImagenes . $imagenNombre;
+    $data = file_get_contents($nombre_tmp);
+    $image = @imagecreatefromstring($data);
+    if ($image === false) {
+        http_response_code(400);
+        exit('Imagen no válida');
+    }
+
+    switch ($mime) {
+        case 'image/jpeg':
+            imagejpeg($image, $ruta_destino, 90);
+            break;
+        case 'image/png':
+            imagepng($image, $ruta_destino);
+            break;
+        case 'image/webp':
+            imagewebp($image, $ruta_destino);
+            break;
+    }
+    imagedestroy($image);
 }
 
 // Cargar, agregar y guardar nueva noticia
