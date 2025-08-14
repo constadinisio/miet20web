@@ -4,7 +4,7 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 2) {
     header("Location: /login.php?error=rol");
     exit;
 }
-require_once __DIR__ . '/../../../backend/includes/db.php';
+require_once __DIR__ . '/../../../includes/db.php';
 
 $boletin_id = $_GET['id'] ?? null;
 if ($boletin_id) {

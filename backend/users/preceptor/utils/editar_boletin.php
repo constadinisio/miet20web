@@ -5,7 +5,7 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] !== 2) {
     exit;
 }
 $usuario = $_SESSION['usuario'];
-require_once __DIR__ . '/../../../backend/includes/db.php';
+require_once __DIR__ . '/../../../includes/db.php';
 
 $curso_id = $_GET['curso_id'] ?? null;
 $alumno_id = $_GET['alumno_id'] ?? null;
