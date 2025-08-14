@@ -8,6 +8,10 @@ if (!isset($_SESSION['usuario'])) {
 
 $usuario = $_SESSION['usuario'];
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 require_once __DIR__ . '/../../backend/includes/db.php';
 include "./includes/jsonLoader.php";
 
@@ -72,7 +76,11 @@ $noticias = array_reverse($noticias);
                         <div class="contenido-noticia"><?= $noticia['contenido'] ?></div>
                         <div class="mt-2 flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
                             <a href="./actions/editarNoticia.php?id=<?= $noticia['id'] ?>" class="text-blue-600 hover:underline">Editar</a>
-                            <a href="./actions/eliminarNoticia.php?id=<?= $noticia['id'] ?>" class="text-red-600 hover:underline" onclick="return confirm('¿Seguro que deseas eliminar esta noticia?');">Eliminar</a>
+                            <form action="./actions/eliminarNoticia.php" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar esta noticia?');">
+                                <input type="hidden" name="id" value="<?= $noticia['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
+                            </form>
                         </div>
                     </li>
                 <?php endforeach; ?>
