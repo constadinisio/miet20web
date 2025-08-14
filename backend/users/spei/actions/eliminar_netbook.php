@@ -11,13 +11,24 @@ if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] != 5) {
 // Incluye el archivo a la conexión a la base de datos.
 require_once __DIR__ . '/../../../../backend/includes/db.php';
 
-// Captura los datos del formulario
-$id = trim($_GET['id'] ?? '');
+// Captura y valida el ID de la netbook
+$id = $_GET['id'] ?? '';
+if (!ctype_digit($id)) {
+    http_response_code(400);
+    exit('ID inválido');
+}
 
-// Crea una variable con una consulta SQL para ingresar los datos capturados en el formulario. 
-$sql = "DELETE FROM netbooks WHERE id = $id";
-// Ejecuta una consulta SQL con la variable $sql utilizando el objeto de conexión a la base de datos $conexion.
-$conexion->query($sql);
+// Prepara y ejecuta la eliminación utilizando sentencias preparadas
+$stmt = $conexion->prepare('DELETE FROM netbooks WHERE id = ?');
+$idInt = (int) $id;
+$stmt->bind_param('i', $idInt);
+$stmt->execute();
 
-// Redirige a la página stock.php
-header("Location: /users/spei/stock.php");
+// Verifica si se eliminó algún registro y redirige
+if ($stmt->affected_rows > 0) {
+    header('Location: /users/spei/stock.php');
+    exit;
+}
+
+http_response_code(404);
+exit('Netbook no encontrada');

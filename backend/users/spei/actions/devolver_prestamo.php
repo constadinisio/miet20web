@@ -12,16 +12,26 @@ if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] != 5) {
 require_once __DIR__ . '/../../../../backend/includes/db.php';
 
 
-// Captura los datos del formulario
-$id = trim($_GET['id'] ?? '');
-$fecha = date("d/m/Y");
-$hora = date("H:i");
+// Captura y valida el ID del préstamo
+$id = $_GET['id'] ?? '';
+if (!ctype_digit($id)) {
+    http_response_code(400);
+    exit('ID inválido');
+}
+$fecha = date('d/m/Y');
+$hora = date('H:i');
 
-// Crea una variable con una consulta SQL para ingresar los datos capturados en el formulario. 
-$sql = "UPDATE prestamos SET Fecha_Devolucion = '$fecha', Hora_Devolucion = '$hora' WHERE Prestamo_ID = $id";
-// Ejecuta una consulta SQL con la variable $sql utilizando el objeto de conexión a la base de datos $conexion.
-$conexion->query($sql);
+// Prepara y ejecuta la actualización utilizando sentencias preparadas
+$stmt = $conexion->prepare('UPDATE prestamos SET Fecha_Devolucion = ?, Hora_Devolucion = ? WHERE Prestamo_ID = ?');
+$idInt = (int) $id;
+$stmt->bind_param('ssi', $fecha, $hora, $idInt);
+$stmt->execute();
 
-// Redirige a la página prestamos.php 
-header("Location: /users/spei/prestamos.php");
-exit;
+// Verifica si se actualizó algún registro y redirige
+if ($stmt->affected_rows > 0) {
+    header('Location: /users/spei/prestamos.php');
+    exit;
+}
+
+http_response_code(404);
+exit('Préstamo no encontrado');
