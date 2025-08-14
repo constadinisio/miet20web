@@ -6,7 +6,7 @@ if (!isset($_SESSION['usuario']) || (int)$_SESSION['usuario']['rol'] < 1) {
 }
 require_once __DIR__ . '/../../../includes/db.php';
 
-require '/../vendor/autoload.php';
+require '/../../../../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
