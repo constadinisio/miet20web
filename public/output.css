@@ -2778,3 +2778,9 @@ video {
     padding-right: 2rem;
   }
 }
+
+#sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
