@@ -75,10 +75,10 @@ $spreadsheet = IOFactory::load($templatePath);
 $sheet = $spreadsheet->getActiveSheet();
 
 // Rellenar encabezado
-$sheet->setCellValue('C6', $curso['anio'] . '°' . $curso['division']);
-$sheet->setCellValue('D6', $alumno['apellido'] . ', ' . $alumno['nombre']);
-$sheet->setCellValue('J6', $alumno['dni']);
-$sheet->setCellValue('L6', $alumno['codigo']);
+$sheet->setCellValue('C7', $curso['anio'] . '°' . $curso['division']);
+$sheet->setCellValue('D7', $alumno['apellido'] . ', ' . $alumno['nombre']);
+$sheet->setCellValueExplicit('J7', $alumno['dni'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+$sheet->setCellValue('L7', $alumno['codigo']);
 
 // Rellenar materias (fila 10 en adelante)
 $fila = 10;

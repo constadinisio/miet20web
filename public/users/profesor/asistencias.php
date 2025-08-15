@@ -54,49 +54,89 @@ if (isset($_GET['accion']) && $_GET['accion'] === 'dias_habilitados') {
         $st->bind_param("iii", $profesor_id, $cursoQ, $materiaQ);
         $st->execute();
         $rs = $st->get_result();
+
+        // Mapa de texto -> número
+        $mapDias = [
+            'Lunes'     => 1,
+            'Martes'    => 2,
+            'Miércoles' => 3,
+            'Miercoles' => 3,
+            'Jueves'    => 4,
+            'Viernes'   => 5,
+            'Sábado'    => 6,
+            'Sabado'    => 6,
+            'Domingo'   => 7
+        ];
+
         while ($r = $rs->fetch_assoc()) {
-            $d = (int)$r['dia_semana']; // 1=Lun..7=Dom
-            if ($d>=1 && $d<=7) $allowed[] = $d;
+            $valor = trim($r['dia_semana']);
+            if (is_numeric($valor)) {
+                $d = (int)$valor;
+            } elseif (isset($mapDias[$valor])) {
+                $d = $mapDias[$valor];
+            } else {
+                $d = 0;
+            }
+
+            if ($d >= 1 && $d <= 7) {
+                $allowed[] = $d;
+            }
         }
         $st->close();
     }
     sort($allowed);
 
-    // Semana (lunes a viernes) a partir de fechaQ
-    $lun = new DateTime($fechaQ);
-    if ($lun->format('N') != 1) $lun->modify('monday this week');
+    // 🔹 Semana basada en fechas_tabla si vienen desde JS
     $week = [];
-    for ($i=0; $i<5; $i++) {
-        $f = clone $lun;
-        $f->modify("+$i day");
-        $dow = (int)$f->format('N'); // 1..7
-        $week[] = [
-            'fecha' => $f->format('Y-m-d'),
-            'dow'   => $dow,
-            'habilitado' => in_array($dow, $allowed, true)
-        ];
+    if (!empty($_GET['fechas_tabla'])) {
+        $fechas_tabla = explode(',', $_GET['fechas_tabla']);
+        foreach ($fechas_tabla as $fecha_col) {
+            $fecha_col = trim($fecha_col);
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_col)) continue;
+
+            $dow = (int)date('N', strtotime($fecha_col));
+            $week[] = [
+                'fecha' => $fecha_col,
+                'dow'   => $dow,
+                'habilitado' => in_array($dow, $allowed, true)
+            ];
+        }
+    } else {
+        $lun = new DateTime($fechaQ);
+        if ($lun->format('N') != 1) $lun->modify('monday this week');
+        for ($i = 0; $i < 5; $i++) {
+            $f = clone $lun;
+            $f->modify("+$i day");
+            $dow = (int)$f->format('N');
+            $week[] = [
+                'fecha' => $f->format('Y-m-d'),
+                'dow'   => $dow,
+                'habilitado' => in_array($dow, $allowed, true)
+            ];
+        }
     }
 
-    // ¿La fechaQ es válida?
     $dowSel = (int)date('N', strtotime($fechaQ));
     $allowedToday = in_array($dowSel, $allowed, true);
 
-    // Próximo día válido (hasta 14 días hacia adelante)
     $prox = null;
     if (!$allowedToday && !empty($allowed)) {
         $ts = strtotime($fechaQ);
-        for ($i=0; $i<14; $i++) {
+        for ($i = 0; $i < 14; $i++) {
             $t = strtotime("+$i day", $ts);
             $d = (int)date('N', $t);
-            if (in_array($d, $allowed, true)) { $prox = date('Y-m-d', $t); break; }
+            if (in_array($d, $allowed, true)) {
+                $prox = date('Y-m-d', $t);
+                break;
+            }
         }
     }
 
     echo json_encode([
-        'allowed_dows'   => $allowed,       // ej [2,4]
-        'allowed_today'  => $allowedToday,  // bool
-        'next_valid'     => $prox,          // "YYYY-mm-dd" o null
-        'week'           => $week           // [{fecha,dow,habilitado}...]
+        'allowed_dows'   => $allowed,
+        'allowed_today'  => $allowedToday,
+        'next_valid'     => $prox,
+        'week'           => $week
     ]);
     exit;
 }
@@ -394,7 +434,7 @@ if ($curso_id) {
         document.getElementById('fecha').addEventListener('change', cargarAsistencias);
 
         // ---- Helpers UX bloqueo ----
-        function deshabilitarBotones(estado, msg='') {
+        function deshabilitarBotones(estado, msg = '') {
             const btnG = document.getElementById('btn-guardar');
             const btnI = document.getElementById('btn-importar');
             const m = document.getElementById('mensaje');
@@ -404,9 +444,10 @@ if ($curso_id) {
                 m.textContent = msg;
                 m.className = "mt-4 text-center font-medium " + (estado ? 'text-orange-600' : 'text-green-600');
                 m.classList.remove('hidden');
-                setTimeout(()=>m.classList.add('hidden'), 6000);
+                setTimeout(() => m.classList.add('hidden'), 6000);
             }
         }
+
         function bloquearColumna(tabla, colIndex) {
             const filas = tabla.querySelectorAll('tbody tr');
             filas.forEach(tr => {
@@ -421,7 +462,7 @@ if ($curso_id) {
                     span.className = 'text-gray-400 italic';
                     td.appendChild(span);
                 } else {
-                    td.classList.add('text-gray-400','italic');
+                    td.classList.add('text-gray-400', 'italic');
                 }
             });
         }
@@ -434,24 +475,33 @@ if ($curso_id) {
 
             const [curso_id, materia_id] = seleccion.split('_');
 
-            // 1) Validar fecha vs horario
+            // 1) Obtener fechas de las columnas de la tabla (si ya existen)
+            let fechasTabla = [];
+            const tablaEnc = document.querySelector('#tabla-asistencias thead');
+            if (tablaEnc) {
+                const ths = Array.from(tablaEnc.querySelectorAll('th')).slice(2); // Saltar Nº y Nombre
+                ths.forEach(th => {
+                    const txt = th.textContent.trim();
+                    let normalizada = null;
+                    const m = txt.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+                    if (m) normalizada = `${m[3]}-${m[2]}-${m[1]}`;
+                    else if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) normalizada = txt;
+                    if (normalizada) fechasTabla.push(normalizada);
+                });
+            }
+
             let resp;
             try {
-                const r = await fetch(`?accion=dias_habilitados&curso_id=${curso_id}&materia_id=${materia_id}&fecha=${encodeURIComponent(fecha)}`);
+                const r = await fetch(`?accion=dias_habilitados&curso_id=${curso_id}&materia_id=${materia_id}&fecha=${encodeURIComponent(fecha)}&fechas_tabla=${encodeURIComponent(fechasTabla.join(','))}`);
                 resp = await r.json();
             } catch (e) {
                 console.error('Error dias_habilitados', e);
                 deshabilitarBotones(false);
             }
 
-            if (resp && !resp.allowed_today) {
-                if (resp.next_valid) {
-                    alert('La fecha seleccionada no está habilitada según tu horario. Se ajustará al próximo día permitido.');
-                    fechaInput.value = resp.next_valid;
-                }
-            }
+            // Ya no forzamos el cambio de fecha ni bloqueamos todo por allowed_today
 
-            // 2) Cargar la tabla (con la fecha — que puede haber sido ajustada)
+            // 2) Cargar la tabla
             const fechaFinal = fechaInput.value;
             const res = await fetch(`obtener_asistencias_materia.php?curso_id=${curso_id}&materia_id=${materia_id}&fecha=${fechaFinal}`);
             const data = await res.json();
@@ -478,9 +528,8 @@ if ($curso_id) {
                     const td = document.createElement('td');
                     td.className = 'border px-2 py-1 text-center';
 
-                    // Columnas 0 y 1 = Nro y Nombre
                     if (i >= 2) {
-                        const editable = data.editable[i - 2]; // restamos 2 para alinear con fechas
+                        const editable = data.editable[i - 2];
                         if (editable) {
                             const sel = document.createElement('select');
                             ['NC', 'P', 'A', 'T', 'AP'].forEach(est => {
@@ -498,7 +547,6 @@ if ($curso_id) {
                     } else {
                         td.textContent = valor;
                     }
-
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
@@ -510,8 +558,7 @@ if ($curso_id) {
             if (resp && Array.isArray(resp.week)) {
                 const ths = Array.from(thead.querySelectorAll('th'));
                 for (let i = 2; i < ths.length; i++) {
-                    const txt = ths[i].textContent.trim(); // ej "12-08-2025" o "2025-08-12"
-                    // Normalizamos a YYYY-mm-dd si viene dd-mm-YYYY
+                    const txt = ths[i].textContent.trim();
                     let yyyy_mm_dd = null;
                     const m = txt.match(/^(\d{2})-(\d{2})-(\d{4})$/);
                     if (m) yyyy_mm_dd = `${m[3]}-${m[2]}-${m[1]}`;
@@ -525,11 +572,9 @@ if ($curso_id) {
                     }
                 }
 
-                // 4) Habilitar/Deshabilitar botones según el día seleccionado
-                const selDow = (new Date(fechaFinal)).getDay(); // 0..6
-                const phpDow = selDow === 0 ? 7 : selDow; // 1..7
-                const allowedToday = (resp.allowed_dows || []).includes(phpDow);
-                deshabilitarBotones(!allowedToday, allowedToday ? '' : 'El día elegido no está en tu horario: edición deshabilitada.');
+                // 4) Habilitar/deshabilitar botones según si hay al menos una columna editable
+                const hayColumnaEditable = resp.week.some(w => w.habilitado);
+                deshabilitarBotones(!hayColumnaEditable, hayColumnaEditable ? '' : 'No hay días habilitados esta semana.');
             } else {
                 deshabilitarBotones(false);
             }
