@@ -581,29 +581,44 @@ if ($curso_id) {
         }
 
         document.getElementById('btn-guardar').addEventListener('click', () => {
-            const seleccion = document.getElementById('seleccion').value;
-            const fecha = document.getElementById('fecha').value;
-            const csrf = document.querySelector('input[name="csrf"]').value;
-            const [curso_id, materia_id] = seleccion.split('_');
+            const csrf = document.querySelector('input[name="csrf"]').value; // ← cambiado
+            const curso_id = parseInt(document.getElementById('seleccion').value.split('_')[0], 10);
+            const materia_id = parseInt(document.getElementById('seleccion').value.split('_')[1], 10);
 
-            const tabla = document.getElementById('tabla-asistencias');
-            const encabezados = Array.from(tabla.querySelectorAll('thead th'))
-                .slice(2)
-                .map(th => th.textContent.trim()); // ej. "12-08-2025" o "2025-08-12"
-            const filas = tabla.querySelectorAll('tbody tr');
-
-            const asistencias = Array.from(filas).map(tr => {
-                const alumno_id = parseInt(tr.dataset.alumnoId || '0', 10);
-                const datos = Array.from(tr.querySelectorAll('td select')).map(s => s.value);
-                return alumno_id ? {
-                    alumno_id,
-                    estados: datos
-                } : {
-                    nro: parseInt(tr.children[0].textContent, 10),
-                    estados: datos
-                };
+            // 1) Encabezados (para mapear índices a fechas en el PHP)
+            const encabezados = [];
+            document.querySelectorAll('#tabla-asistencias thead th').forEach(th => {
+                encabezados.push(th.textContent.trim());
             });
 
+            // 2) Filas de alumnos y estados (usando índice real de columna)
+            const asistencias = [];
+            document.querySelectorAll('#tabla-asistencias tbody tr').forEach(tr => {
+                const alumno_id = parseInt(tr.dataset.alumnoId || '0', 10);
+                const estados = {};
+
+                tr.querySelectorAll('td').forEach((td, colIdx) => {
+                    if (colIdx >= 2) { // desde la col de la primera fecha
+                        const sel = td.querySelector('select');
+                        estados[colIdx] = sel ? sel.value : 'NC';
+                    }
+                });
+
+                if (alumno_id > 0) {
+                    asistencias.push({
+                        alumno_id,
+                        estados
+                    });
+                } else {
+                    const nro = parseInt(tr.children[0].textContent, 10);
+                    asistencias.push({
+                        nro,
+                        estados
+                    });
+                }
+            });
+
+            // 3) Envío al backend
             fetch('guardar_asistencias_materia.php', {
                     method: 'POST',
                     headers: {
@@ -613,18 +628,17 @@ if ($curso_id) {
                         csrf,
                         curso_id,
                         materia_id,
-                        fecha,
                         encabezados,
                         asistencias
                     })
                 })
                 .then(res => res.json())
-                .then(data => {
-                    const mensaje = document.getElementById('mensaje');
-                    mensaje.textContent = data.mensaje;
-                    mensaje.className = "mt-4 text-center font-medium " + (data.ok ? 'text-green-600' : 'text-red-600');
-                    mensaje.classList.remove('hidden');
-                    setTimeout(() => mensaje.classList.add('hidden'), 5000);
+                .then(resp => {
+                    alert(resp.mensaje || 'Sin respuesta');
+                })
+                .catch(err => {
+                    console.error('Error al guardar:', err);
+                    alert('❌ Error al guardar asistencias.');
                 });
         });
 

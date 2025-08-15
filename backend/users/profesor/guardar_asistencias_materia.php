@@ -23,7 +23,8 @@ $asistencias  = $in['asistencias'] ?? [];
 $profesor_id  = (int)($_SESSION['usuario']['id'] ?? 0);
 
 if ($curso_id <= 0 || $materia_id <= 0 || empty($encabezados) || empty($asistencias)) {
-    echo json_encode(['ok'=>false,'mensaje'=>'Parámetros incompletos']); exit;
+    echo json_encode(['ok'=>false,'mensaje'=>'Parámetros incompletos']); 
+    exit;
 }
 
 /* Validar asignación */
@@ -35,7 +36,8 @@ $stmt = $conexion->prepare("
 $stmt->bind_param('iii', $profesor_id, $curso_id, $materia_id);
 $stmt->execute(); $stmt->store_result();
 if ($stmt->num_rows === 0) {
-  echo json_encode(['ok'=>false,'mensaje'=>'No tenés asignada esa materia en ese curso.']); exit;
+  echo json_encode(['ok'=>false,'mensaje'=>'No tenés asignada esa materia en ese curso.']); 
+  exit;
 }
 $stmt->close();
 
@@ -75,19 +77,23 @@ while ($row = $res->fetch_assoc()) {
 $stmt->close();
 
 if (empty($diasPermitidos)) {
-    echo json_encode(['ok'=>false,'mensaje'=>'No hay horarios cargados para este curso/materia.']); exit;
+    echo json_encode(['ok'=>false,'mensaje'=>'No hay horarios cargados para este curso/materia.']); 
+    exit;
 }
 
-/* Fechas guardables */
+/* Construir mapeo índice columna -> fecha guardable */
+$mapIdx = [];
 $fechas_guardables = [];
 foreach ($encabezados as $i => $col) {
     $f = parse_fecha_col($col);
     if ($f && isset($diasPermitidos[(int)date('N', strtotime($f))])) {
+        $mapIdx[$i] = count($fechas_guardables);
         $fechas_guardables[] = $f;
     }
 }
 if (empty($fechas_guardables)) {
-    echo json_encode(['ok'=>false,'mensaje'=>'No hay columnas guardables para estas fechas.']); exit;
+    echo json_encode(['ok'=>false,'mensaje'=>'No hay columnas guardables para estas fechas.']); 
+    exit;
 }
 
 /* Alumnos ordenados */
@@ -123,6 +129,7 @@ try {
   if (!$ins) throw new Exception("Prepare failed: ".$conexion->error);
 
   $aplicados = 0; $ignorados = 0;
+  
   foreach ($asistencias as $fila) {
     $alumno_id = (int)($fila['alumno_id'] ?? 0);
     if ($alumno_id <= 0) {
@@ -130,17 +137,22 @@ try {
       if ($nro < 1 || $nro > count($alumnosOrden)) { $ignorados++; continue; }
       $alumno_id = $alumnosOrden[$nro - 1];
     }
-    $estados = $fila['estados'] ?? [];
-    if (!empty($estados)) {
-        // Tomar el primer estado y asignarlo a la primera fecha guardable
-        $estado = norm_est(reset($estados));
+    
+    foreach ($fila['estados'] ?? [] as $idxOrig => $estadoSel) {
+        if (!array_key_exists($idxOrig, $mapIdx)) continue; // no es columna editable
+        
+        $idxGuard = $mapIdx[$idxOrig];
+        $fechaGuardar = $fechas_guardables[$idxGuard];
+        $estado = norm_est($estadoSel);
+        
         if ($estado !== 'NC') {
-            $ins->bind_param('iiissi', $alumno_id, $curso_id, $materia_id, $fechas_guardables[0], $estado, $profesor_id);
+            $ins->bind_param('iiissi', $alumno_id, $curso_id, $materia_id, $fechaGuardar, $estado, $profesor_id);
             $ins->execute();
             $aplicados++;
         }
     }
   }
+
   $ins->close();
   $conexion->commit();
 
