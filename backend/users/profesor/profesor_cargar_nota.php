@@ -36,8 +36,9 @@ if ($stmt->num_rows === 0) {
 }
 $stmt->close();
 
-// Insertar notas una a una
-$stmt = $conexion->prepare("INSERT INTO notas_bimestrales (alumno_id, materia_id, periodo, nota, fecha_carga) VALUES (?, ?, ?, ?, NOW())");
+// Insertar notas una a una con promedio_actividades = 0
+$stmt = $conexion->prepare("
+    INSERT INTO notas_bimestrales (alumno_id, materia_id, periodo, nota, promedio_actividades, fecha_carga) VALUES (?, ?, ?, ?, 0, NOW())");
 
 for ($i = 0; $i < count($alumnos); $i++) {
     $alumno_id = (int)$alumnos[$i];
@@ -47,6 +48,7 @@ for ($i = 0; $i < count($alumnos); $i++) {
     $stmt->execute();
 }
 $stmt->close();
+
 
 header("Location: /users/profesor/calificaciones.php?curso_id=$curso_id&materia_id=$materia_id&periodo=" . urlencode($periodo) . "&ok=notas_cargadas");
 exit;

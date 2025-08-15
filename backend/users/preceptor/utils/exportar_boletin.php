@@ -71,7 +71,6 @@ $stmt->close();
 
 $backendDir   = dirname(__DIR__, 3); // sube desde .../backend/users/preceptor/utils -> .../backend
 $templatePath = $backendDir . '/utils/plantillas/PlantillaBoletines.xlsx';
-
 $spreadsheet = IOFactory::load($templatePath);
 $sheet = $spreadsheet->getActiveSheet();
 
@@ -173,5 +172,4 @@ exit;
         <?php echo nl2br(htmlspecialchars($boletin['observaciones'] ?? '')); ?>
     </div>
 </body>
-
 </html>
