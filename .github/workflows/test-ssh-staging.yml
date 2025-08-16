@@ -22,4 +22,4 @@ jobs:
             ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }} "echo '✅ Conexión SSH exitosa en STAGING: $(hostname)'; exit"
 
       - name: Confirmación final
-        run: echo "✅ Test SSH completado con éxito
+        run: echo "✅ Test SSH completado con éxito"
