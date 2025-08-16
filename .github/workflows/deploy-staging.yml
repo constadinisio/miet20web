@@ -1,0 +1,56 @@
+name: Deploy to Staging (with Backup)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch a desplegar (solo staging por ahora)'
+        required: true
+        type: choice
+        options:
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mostrar selección
+        run: |
+          echo "🚀 Desplegando branch: ${{ github.event.inputs.branch }} a STAGING"
+
+      - name: Checkout del branch seleccionado
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Configurar clave SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          echo "🔍 Agregando ${{ secrets.SERVER2_HOST }} al known_hosts (puerto $PORT)..."
+          ssh-keyscan -p $PORT -H ${{ secrets.SERVER2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Crear backup en servidor
+        run: |
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          BACKUP_DIR="${{ secrets.SERVER2_PATH }}/../backup_${TIMESTAMP}"
+          echo "📦 Creando backup en $BACKUP_DIR ..."
+          ssh -p $PORT ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }} \
+            "mkdir -p $BACKUP_DIR && cp -r ${{ secrets.SERVER2_PATH }}/* $BACKUP_DIR/"
+          echo "✅ Backup creado en $BACKUP_DIR"
+
+      - name: Deploy con rsync
+        run: |
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          echo "🔄 Sincronizando archivos hacia ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }}:${{ secrets.SERVER2_PATH }} (puerto $PORT)..."
+          rsync -avz -e "ssh -p $PORT" --delete ./ "${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }}:${{ secrets.SERVER2_PATH }}"
+
+      - name: Confirmación final
+        run: echo "✅ Deploy completado en STAGING"
