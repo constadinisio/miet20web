@@ -153,7 +153,7 @@
                         <i class="fa-solid fa-user-tie text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">Secretaria y Sector Administrativo</h3>
                         <a href="" class="text-blue-600 hover:text-blue-800">
-                            det_20_de20@bue.edu.ar
+                            secretaria.det20de20@bue.edu.ar
                         </a>
                     </div>
                 </div>
@@ -164,7 +164,7 @@
                         <i class="fa-solid fa-folder-open text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">Oficina de Alumnos</h3>
                         <a href="" class="text-blue-600 hover:text-blue-800">
-                            oficinadealumnos.et20@gmail.com
+                            oficinadealumnos.det20de20@bue.edu.ar
                         </a>
                     </div>
                 </div>
@@ -175,7 +175,7 @@
                         <i class="fas fa-running text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">Preceptoría</h3>
                         <a href="" class="text-blue-600 hover:text-blue-800">
-                            preceptoria.et20de20@gmail.com
+                            preceptoria.det20@bue.edu.ar
                         </a>
                     </div>
                 </div>
@@ -186,7 +186,18 @@
                         <i class="fas fa-book text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">Departamento de Orientación Escolar</h3>
                         <a href="" class="text-blue-600 hover:text-blue-800">
-                            doeet20@gmail.com
+                            doe.det20de20@bue.edu.ar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Regencia -->
+                <div class="department-card bg-white rounded-lg shadow-md p-6 hover:shadow-xl">
+                    <div class="text-center">
+                        <i class="fa-solid fa-user-tie text-4xl text-blue-800 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Regencia</h3>
+                        <a href="" class="text-blue-600 hover:text-blue-800">
+                            regencia.det20de20@bue.edu.ar
                         </a>
                     </div>
                 </div>
@@ -241,7 +252,7 @@
                         <i class="fa-solid fa-screwdriver-wrench text-4xl text-blue-800 mb-4"></i>
                         <h3 class="text-xl font-semibold mb-2">Taller</h3>
                         <a href="" class="text-blue-600 hover:text-blue-800">
-                            et20taller1erciclo@gmail.com
+                            taller.det20de20@bue.edu.ar
                         </a>
                     </div>
                 </div>

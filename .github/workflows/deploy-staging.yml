@@ -1,0 +1,110 @@
+name: Deploy to Staging (with Backup + Deps)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch a desplegar (solo staging por ahora)'
+        required: true
+        type: choice
+        options:
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mostrar selección
+        run: |
+          echo "🚀 Desplegando branch: ${{ github.event.inputs.branch }} a STAGING"
+
+      - name: Checkout del branch seleccionado
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Configurar clave SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          echo "🔍 Agregando ${{ secrets.SERVER2_HOST }} al known_hosts (puerto $PORT)..."
+          ssh-keyscan -p $PORT -H ${{ secrets.SERVER2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Crear backup en servidor
+        run: |
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          BACKUP_DIR="/var/backups/deploys/backup_${TIMESTAMP}"
+          echo "📦 Creando backup en $BACKUP_DIR ..."
+          ssh -p $PORT ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }} \
+            "mkdir -p $BACKUP_DIR && cp -r ${{ secrets.SERVER2_PATH }}/* $BACKUP_DIR/"
+          echo "✅ Backup creado en $BACKUP_DIR"
+
+      - name: Deploy con rsync
+        run: |
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          echo "🔄 Sincronizando archivos hacia ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }}:${{ secrets.SERVER2_PATH }} (puerto $PORT)..."
+          rsync -avz --no-perms --no-times --delete \
+            --exclude 'node_modules/' \
+            --exclude 'vendor/' \
+            -e "ssh -p $PORT" ./ \
+            "${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }}:${{ secrets.SERVER2_PATH }}"
+
+      - name: Instalar dependencias y mover carpetas en servidor
+        run: |
+          PORT="${{ secrets.SERVER2_PORT }}"
+          if [ -z "$PORT" ]; then PORT=22; fi
+          ssh -p $PORT ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }} << 'EOF'
+            set -e
+            echo "📦 Instalando dependencias del proyecto..."
+
+            cd /var/www/miet20web/config || exit 1
+
+            # --- Node.js ---
+            if [ -f "package.json" ]; then
+              echo "📦 Instalando dependencias Node.js..."
+              npm install --production
+            fi
+
+            # --- PHP Composer ---
+            if [ -f "composer.json" ]; then
+              echo "🎼 Instalando dependencias PHP (Composer)..."
+              if ! command -v composer >/dev/null 2>&1; then
+                echo "⚠️ Composer no está instalado, instalándolo..."
+                EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
+                php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+                ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+                if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+                  >&2 echo 'ERROR: El instalador de Composer no es válido'
+                  rm composer-setup.php
+                  exit 1
+                fi
+                php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+                rm composer-setup.php
+              fi
+              composer install --no-dev --optimize-autoloader
+            fi
+
+            echo "📦 Moviendo carpetas de las dependencias a la ruta raíz..."
+
+            if [ -d "/var/www/miet20web/config/vendor" ]; then
+              mv /var/www/miet20web/config/vendor /var/www/miet20web/ || exit 1
+              echo "✅ Carpeta vendor movida"
+            fi
+
+            if [ -d "/var/www/miet20web/config/node_modules" ]; then
+              mv /var/www/miet20web/config/node_modules /var/www/miet20web/ || exit 1
+              echo "✅ Carpeta node_modules movida"
+            fi
+
+            echo "✅ Dependencias instaladas y carpetas movidas correctamente"
+          EOF
+
+      - name: Confirmación final
+        run: echo "✅ Deploy completado en STAGING con backup y dependencias"
