@@ -52,6 +52,7 @@ jobs:
           echo "🔄 Sincronizando archivos hacia ${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }}:${{ secrets.SERVER2_PATH }} (puerto $PORT)..."
           rsync -avz --no-perms --no-times --delete \
             --exclude 'node_modules/' \
+            --exclude 'config/' \
             --exclude 'vendor/' \
             -e "ssh -p $PORT" ./ \
             "${{ secrets.SERVER2_USER }}@${{ secrets.SERVER2_HOST }}:${{ secrets.SERVER2_PATH }}"
