@@ -312,35 +312,44 @@ $hoy_str = date('Y-m-d');
         <?php endif; ?>
 
         <div class="bg-white p-6 rounded-2xl shadow-xl max-w-7xl mx-auto">
-            <form class="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-12 mb-2 items-center" method="get">
+            <form
+                class="grid grid-cols-1 md:grid-cols-3 gap-x-16 gap-y-2 mb-4 items-center"
+                method="get">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
 
-                <label class="font-semibold">Curso:</label>
-                <select id="sel-curso-preceptor" name="curso_id" class="border rounded p-2" required>
-                    <option value="">Seleccionar curso</option>
-                    <?php foreach ($cursos as $c): ?>
-                        <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
-                            <?php echo $c['anio'] . "°" . $c['division']; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <!-- Curso -->
+                <div class="flex flex-col">
+                    <label class="font-semibold">Curso:</label>
+                    <select id="sel-curso-preceptor" name="curso_id" class="border rounded p-2" required>
+                        <option value="">Seleccionar curso</option>
+                        <?php foreach ($cursos as $c): ?>
+                            <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
+                                <?php echo $c['anio'] . "°" . $c['division']; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-                <label class="font-semibold">Fecha base:</label>
-                <div class="flex flex-col col-span-3 gap-2">
-                    <div class="flex items-center gap-3">
+                <!-- Fecha -->
+                <div class="flex flex-col">
+                    <label class="font-semibold">Fecha base:</label>
+                    <div class="flex items-center gap-2">
                         <input type="date" id="selector-fecha" class="border rounded p-2" required>
                         <input type="hidden" name="semana_lunes" id="input-semana-lunes" value="<?= $semana_lunes ?>">
                         <div id="texto-rango" class="text-gray-600 font-semibold"></div>
                     </div>
                 </div>
 
-                <label class="font-semibold">Modo:</label>
-                <div class="flex items-center col-span-3 gap-4">
-                    <select name="modo" class="border rounded p-2">
-                        <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
-                        <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
-                    </select>
-                    <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+                <!-- Modo -->
+                <div class="flex flex-col">
+                    <label class="font-semibold">Modo:</label>
+                    <div class="flex items-center gap-2">
+                        <select name="modo" class="border rounded p-2">
+                            <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
+                            <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
+                        </select>
+                        <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -479,7 +488,7 @@ $hoy_str = date('Y-m-d');
                                                         <option value="AJ" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'AJ' ? 'selected' : '' ?>>AJ</option>
                                                         <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T'  ? 'selected' : '' ?>>T</option>
                                                     </select>
-                                                </td>  
+                                                </td>
                                             <?php endforeach; ?>
                                         <?php endforeach; ?>
                                     </tr>

@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+    /*
+        Esta regla se define para mantener bloqueado el sidebar en su lugar sin importar tamaño de scroll de la página.
+    */
+  #sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+}

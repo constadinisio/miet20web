@@ -1614,13 +1614,13 @@ video {
   gap: 2rem;
 }
 
-.gap-x-2 {
-  -moz-column-gap: 0.5rem;
-       column-gap: 0.5rem;
+.gap-x-16 {
+  -moz-column-gap: 4rem;
+       column-gap: 4rem;
 }
 
-.gap-y-12 {
-  row-gap: 3rem;
+.gap-y-2 {
+  row-gap: 0.5rem;
 }
 
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
@@ -2527,6 +2527,16 @@ video {
   transition-duration: 300ms;
 }
 
+/*
+        Esta regla se define para mantener bloqueado el sidebar en su lugar sin importar tamaño de scroll de la página.
+    */
+
+#sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
 .hover\:bg-blue-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(37 99 235 / var(--tw-bg-opacity));
@@ -2809,10 +2819,6 @@ video {
 
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .md\:grid-cols-\[auto_1fr_auto_auto\] {
-    grid-template-columns: auto 1fr auto auto;
   }
 
   .md\:flex-row {
