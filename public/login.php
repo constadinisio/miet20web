@@ -10,7 +10,7 @@ $csrf = $_SESSION['csrf'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi ET20 - Sistema Login</title>
+    <title>Mi ET20 - Sistema de Login</title>
     <link rel="icon" type="image/x-icon" href="./images/et20png.png">
     <link rel="stylesheet" href="./output.css" />
     <!-- Google Fonts -->
