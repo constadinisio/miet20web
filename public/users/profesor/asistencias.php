@@ -160,50 +160,35 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// === RESUMEN DEL DÍA PARA PROFESOR (similar al del preceptor) ===
-// Fecha a resumir: hoy si está dentro de la semana seleccionada; si no, el lunes de esa semana
+// === RESUMEN DEL DÍA PARA PROFESOR ===
 $hoy_str = date('Y-m-d');
 $fechaResumen = in_array($hoy_str, $dias_semana, true) ? $hoy_str : ($dias_semana[0] ?? $hoy_str);
 
-// Si no hay curso seleccionado, evitamos consultas
-$R = [
-    0 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Turno
-    1 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Contraturno
-];
-$Tot = ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0];
+$R = ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0];
 
 if ($curso_id) {
     $sqlResumen = "
-        SELECT es_contraturno,
-               SUM(CASE WHEN estado='P'  THEN 1 ELSE 0 END) AS presentes,
-               SUM(CASE WHEN estado='A'  THEN 1 ELSE 0 END) AS ausentes,
-               SUM(CASE WHEN estado='T'  THEN 1 ELSE 0 END) AS tarde,
-               COUNT(*) AS total
+        SELECT 
+           SUM(CASE WHEN estado='P'  THEN 1 ELSE 0 END) AS presentes,
+           SUM(CASE WHEN estado='A'  THEN 1 ELSE 0 END) AS ausentes,
+           SUM(CASE WHEN estado='T'  THEN 1 ELSE 0 END) AS tarde,
+           COUNT(*) AS total
         FROM asistencia_general
         WHERE curso_id = ?
           AND fecha = ?
-        GROUP BY es_contraturno
+          AND (es_contraturno = 0 OR es_contraturno IS NULL)
     ";
     $stmtR = $conexion->prepare($sqlResumen);
     $stmtR->bind_param('is', $curso_id, $fechaResumen);
     $stmtR->execute();
     $resR = $stmtR->get_result();
-
-    while ($row = $resR->fetch_assoc()) {
-        $k = (int)$row['es_contraturno']; // 0=Turno, 1=Contraturno
-        $R[$k]['presentes'] = (int)$row['presentes'];
-        $R[$k]['ausentes']  = (int)$row['ausentes'];
-        $R[$k]['tarde']     = (int)$row['tarde'];
-        $R[$k]['total']     = (int)$row['total'];
+    if ($row = $resR->fetch_assoc()) {
+        $R['presentes'] = (int)$row['presentes'];
+        $R['ausentes']  = (int)$row['ausentes'];
+        $R['tarde']     = (int)$row['tarde'];
+        $R['total']     = (int)$row['total'];
     }
     $stmtR->close();
-
-    $Tot = [
-        'presentes' => $R[0]['presentes'] + $R[1]['presentes'],
-        'ausentes'  => $R[0]['ausentes']  + $R[1]['ausentes'],
-        'tarde'     => $R[0]['tarde']     + $R[1]['tarde'],
-        'total'     => $R[0]['total']     + $R[1]['total'],
-    ];
 }
 ?>
 <!DOCTYPE html>
@@ -380,31 +365,19 @@ if ($curso_id) {
                 const res = await fetch(`resumen_profesor.php?curso_id=${encodeURIComponent(curso_id)}&fecha=${encodeURIComponent(fecha)}`);
                 const data = await res.json();
 
-                // Render básico del panel (igual estética que el del preceptor)
                 box.innerHTML = `
-        <div class="bg-white border rounded-xl p-4 shadow text-sm w-full">
-          <h2 class="font-bold mb-3 text-lg">Resumen del día (${data.fecha_formateada})</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="rounded-lg border p-3">
-              <h3 class="font-semibold mb-2">Turno</h3>
-              <ul class="space-y-1">
-                <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.turno.presentes}</li>
-                <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.turno.ausentes}</li>
-                <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.turno.tarde}</li>
-                <li class="text-gray-600">Total registros: ${data.turno.total}</li>
-              </ul>
-            </div>
-            <div class="rounded-lg border p-3">
-              <h3 class="font-semibold mb-2">Contraturno</h3>
-              <ul class="space-y-1">
-                <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.contraturno.presentes}</li>
-                <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.contraturno.ausentes}</li>
-                <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.contraturno.tarde}</li>
-                <li class="text-gray-600">Total registros: ${data.contraturno.total}</li>
-              </ul>
-            </div>
-          </div>
-        </div>`;
+                    <div class="bg-white border rounded-xl p-4 shadow text-sm max-w-md mx-auto">
+                    <h2 class="font-bold mb-3 text-lg">Resumen del día (${data.fecha_formateada})</h2>
+                    <div class="rounded-lg border p-3">
+                        <h3 class="font-semibold mb-2">Turno</h3>
+                        <ul class="space-y-1">
+                        <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.turno.presentes}</li>
+                        <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.turno.ausentes}</li>
+                        <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.turno.tarde}</li>
+                        <li class="text-gray-600">Total registros: ${data.turno.total}</li>
+                        </ul>
+                    </div>
+                    </div>`;
             } catch (e) {
                 box.innerHTML = '';
                 console.error('Resumen AJAX error', e);
