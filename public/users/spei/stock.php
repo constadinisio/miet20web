@@ -122,49 +122,65 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
       <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
     </button>
   </nav>
-  <!-- Contenido -->
-  <main id="mainContent" class="w-full p-4 md:p-8 transition-all duration-300">
-    <div class="w-full flex justify-end items-center gap-4 mb-6">
-      <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
-        <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
-        <div class="flex flex-col pr-2 text-right">
-          <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
-          <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-          <div class="mt-1 text-xs text-gray-500">Administrador/a</div>
-        </div>
-        <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-          <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
-              <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
-                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
-                  Cambiar a: <?php echo ucfirst($r['nombre']); ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </form>
-        <?php endif; ?>
-        <button id="btn-notificaciones" class="relative focus:outline-none group">
-          <!-- Campanita Font Awesome -->
-          <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
-          <!-- Badge cantidad (oculto si no hay notificaciones) -->
-          <span id="badge-notificaciones"
-            class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
-            style="min-width:1.2em; text-align:center;"></span>
-        </button>
-      </div>
-    </div>
+  <!-- Contenido principal -->
+    <main class="flex-1 p-10">
+        <!-- BLOQUE DE USUARIO, ROL, CONFIGURACIÓN Y NOTIFICACIONES -->
+        <div class="w-full flex justify-end mb-6">
+            <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
 
-    <!-- POPUP DE NOTIFICACIONES -->
-    <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
-      <div class="flex items-center justify-between px-4 py-3 border-b">
-        <span class="font-bold text-gray-800 text-lg">Notificaciones</span>
-        <button onclick="cerrarPopup()" class="text-gray-400 hover:text-red-400 text-xl">&times;</button>
-      </div>
-      <div id="lista-notificaciones" class="overflow-y-auto p-2">
-        <!-- Notificaciones aquí -->
-      </div>
-    </div>
+                <!-- Avatar -->
+                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>"
+                    class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Nombre y rol -->
+                <div class="flex flex-col pr-2 text-right">
+                    <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
+                    <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
+                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
+                </div>
+
+                <!-- Selector de rol (si corresponde) -->
+                <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
+                    <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                        <select name="rol" onchange="this.form.submit()"
+                            class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
+                            <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
+                                <option value="<?php echo $r['id']; ?>"
+                                    <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                                    Cambiar a: <?php echo ucfirst($r['nombre']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+
+                <!-- Botón de Configuración -->
+                <a href="configuracion.php"
+                    class="relative focus:outline-none group ml-2">
+                    <i class="fa-solid fa-gear text-2xl text-gray-500 group-hover:text-gray-700 transition-colors"></i>
+                </a>
+
+                <!-- Notificaciones -->
+                <button id="btn-notificaciones" class="relative focus:outline-none group ml-2">
+                    <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
+                    <span id="badge-notificaciones"
+                        class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
+                        style="min-width:1.2em; text-align:center;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- POPUP DE NOTIFICACIONES -->
+        <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 border-b">
+                <span class="font-bold text-gray-800 text-lg">Notificaciones</span>
+                <button onclick="cerrarPopup()" class="text-gray-400 hover:text-red-400 text-xl">&times;</button>
+            </div>
+            <div id="lista-notificaciones" class="overflow-y-auto p-2">
+                <!-- Notificaciones aquí -->
+            </div>
+        </div>
 
     <h1 class="text-3xl font-bold mb-6">Gestión de Netbooks</h1>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">

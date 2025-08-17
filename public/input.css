@@ -12,3 +12,15 @@
     height: 100vh;
   }
 }
+
+@layer components {
+  .tab-btn {
+    @apply flex items-center gap-2 px-4 py-2 rounded-full font-medium transition;
+  }
+  .tab-btn.active {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md;
+  }
+  .tab-btn.inactive {
+    @apply text-gray-600 border border-gray-300 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50;
+  }
+}

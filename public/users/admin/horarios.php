@@ -182,37 +182,56 @@ if (!$asignacion_id && $curso_id && $materia_id && $profesor_id) {
             <span class="text-xl">🚪</span><span class="sidebar-label">Salir</span>
         </button>
     </nav>
+    
+    <!-- Contenido principal -->
     <main class="flex-1 p-10">
-        <div class="w-full flex justify-end items-center gap-4 mb-6">
+        <!-- BLOQUE DE USUARIO, ROL, CONFIGURACIÓN Y NOTIFICACIONES -->
+        <div class="w-full flex justify-end mb-6">
             <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
-                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Avatar -->
+                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>"
+                    class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Nombre y rol -->
                 <div class="flex flex-col pr-2 text-right">
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-                    <div class="mt-1 text-xs text-gray-500">Administrador/a</div>
+                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
                 </div>
+
+                <!-- Selector de rol (si corresponde) -->
                 <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
                     <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
                         <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                        <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
+                        <select name="rol" onchange="this.form.submit()"
+                            class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
                             <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
-                                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                                <option value="<?php echo $r['id']; ?>"
+                                    <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
                                     Cambiar a: <?php echo ucfirst($r['nombre']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </form>
                 <?php endif; ?>
-                <button id="btn-notificaciones" class="relative focus:outline-none group">
-                    <!-- Campanita Font Awesome -->
+
+                <!-- Botón de Configuración -->
+                <a href="configuracion.php"
+                    class="relative focus:outline-none group ml-2">
+                    <i class="fa-solid fa-gear text-2xl text-gray-500 group-hover:text-gray-700 transition-colors"></i>
+                </a>
+
+                <!-- Notificaciones -->
+                <button id="btn-notificaciones" class="relative focus:outline-none group ml-2">
                     <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
-                    <!-- Badge cantidad (oculto si no hay notificaciones) -->
                     <span id="badge-notificaciones"
                         class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
                         style="min-width:1.2em; text-align:center;"></span>
                 </button>
             </div>
         </div>
+
         <!-- POPUP DE NOTIFICACIONES -->
         <div id="popup-notificaciones" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white shadow-2xl rounded-2xl border border-gray-200 z-50 flex flex-col">
             <div class="flex items-center justify-between px-4 py-3 border-b">
@@ -223,6 +242,7 @@ if (!$asignacion_id && $curso_id && $materia_id && $profesor_id) {
                 <!-- Notificaciones aquí -->
             </div>
         </div>
+
         <h1 class="text-2xl font-bold mb-6">⏰ Asignación de Horarios</h1>
         <?php if (isset($_GET['ok'])): ?>
             <div class="mb-6 px-4 py-3 rounded-xl bg-green-100 border border-green-400 text-green-800">
