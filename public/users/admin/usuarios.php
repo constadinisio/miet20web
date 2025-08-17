@@ -66,11 +66,11 @@ while ($row = $result->fetch_assoc()) {
 </head>
 
 <body class="bg-gray-100 min-h-screen flex">
-    <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
-        ☰
-    </button>
     <!-- Sidebar -->
     <nav id="sidebar" class="w-60 transition-all duration-300 bg-white shadow-lg px-4 py-4 flex flex-col gap-2">
+        <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
+            ☰
+        </button>
         <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400 h-28">
             <img src="/images/et20ico.ico" class="sidebar-expanded block h-full w-auto object-contain">
             <img src="/images/et20ico.ico" class="sidebar-collapsed hidden h-10 w-auto object-contain">
