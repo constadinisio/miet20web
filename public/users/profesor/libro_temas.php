@@ -18,6 +18,7 @@ $usuario = $_SESSION['usuario'];
 require_once __DIR__ . '/../../../backend/includes/db.php';
 
 $profesor_id = $usuario['id'];
+
 // Buscar cursos y materias asignadas
 $cursos = [];
 $sql = "SELECT pcm.id, c.id AS curso_id, m.id AS materia_id, c.anio, c.division, m.nombre AS materia
@@ -42,15 +43,17 @@ $materia_id = $_GET['materia_id'] ?? null;
 $mensaje = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_tema'])) {
     $fecha = $_POST['fecha'] ?? date('Y-m-d');
-    $contenido = trim($_POST['contenido'] ?? '');
+    $caracter = $_POST['caracter_clase'] ?? 'Explicativa';
+    $tema = trim($_POST['tema'] ?? '');
+    $actividades = trim($_POST['actividades'] ?? '');
     $observaciones = trim($_POST['observaciones'] ?? '');
-    $curso_id = $_POST['curso_id'];
-    $materia_id = $_POST['materia_id'];
+    $curso_id = (int)$_POST['curso_id'];
+    $materia_id = (int)$_POST['materia_id'];
 
-    if ($contenido && $curso_id && $materia_id) {
-        // 1. Buscar o crear el libro de temas para ese curso, materia y profesor
+    if ($tema && $actividades && $curso_id && $materia_id) {
+        // 1. Buscar o crear libro de temas
         $libro_id = null;
-        $sql_libro = "SELECT id FROM libros_temas WHERE curso_id=? AND materia_id=? AND profesor_id=?";
+        $sql_libro = "SELECT id FROM libros_temas WHERE curso_id=? AND materia_id=? AND profesor_id=? AND anio_lectivo=YEAR(CURDATE())";
         $stmt_libro = $conexion->prepare($sql_libro);
         $stmt_libro->bind_param("iii", $curso_id, $materia_id, $profesor_id);
         $stmt_libro->execute();
@@ -59,37 +62,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nuevo_tema'])) {
             $libro_id = $libro_id_res;
         }
         $stmt_libro->close();
+
         if (!$libro_id) {
-            $sql_new = "INSERT INTO libros_temas (curso_id, materia_id, profesor_id, anio_lectivo, estado) VALUES (?, ?, ?, YEAR(CURDATE()), 'activo')";
+            $sql_new = "INSERT INTO libros_temas (curso_id, materia_id, profesor_id, anio_lectivo, estado) 
+                        VALUES (?, ?, ?, YEAR(CURDATE()), 'activo')";
             $stmt_new = $conexion->prepare($sql_new);
             $stmt_new->bind_param("iii", $curso_id, $materia_id, $profesor_id);
             $stmt_new->execute();
             $libro_id = $conexion->insert_id;
             $stmt_new->close();
         }
-        // 2. Insertar nuevo contenido
-        $sql_insert = "INSERT INTO contenidos_libro (libro_id, fecha, contenido, observaciones, fecha_creacion) VALUES (?, ?, ?, ?, NOW())";
+
+        // 2. Insertar nuevo tema diario
+        $sql_insert = "INSERT INTO temas_diarios 
+            (libro_id, profesor_id, curso_id, materia_id, fecha_clase, caracter_clase, tema, actividades_desarrolladas, observaciones, fecha_carga) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
         $stmt_insert = $conexion->prepare($sql_insert);
-        $stmt_insert->bind_param("isss", $libro_id, $fecha, $contenido, $observaciones);
+        $stmt_insert->bind_param(
+            "iiiisssss",
+            $libro_id,
+            $profesor_id,
+            $curso_id,
+            $materia_id,
+            $fecha,
+            $caracter,
+            $tema,
+            $actividades,
+            $observaciones
+        );
+
         if ($stmt_insert->execute()) {
             $mensaje = '<div class="bg-green-100 text-green-700 rounded-xl p-3 mb-4">Tema guardado correctamente.</div>';
         } else {
-            $mensaje = '<div class="bg-red-100 text-red-700 rounded-xl p-3 mb-4">Error al guardar el tema: ' . $stmt_insert->error . '</div>';
+            $mensaje = '<div class="bg-red-100 text-red-700 rounded-xl p-3 mb-4">Error al guardar: ' . $stmt_insert->error . '</div>';
         }
         $stmt_insert->close();
     } else {
-        $mensaje = '<div class="bg-yellow-100 text-yellow-800 rounded-xl p-3 mb-4">Completá el contenido del tema.</div>';
+        $mensaje = '<div class="bg-yellow-100 text-yellow-800 rounded-xl p-3 mb-4">Completá tema y actividades.</div>';
     }
 }
 
 // Mostrar los temas
 $temas = [];
 if ($curso_id && $materia_id) {
-    $sql2 = "SELECT cl.id, cl.fecha, cl.contenido, cl.observaciones, cl.contenido
-         FROM libros_temas lt
-         JOIN contenidos_libro cl ON lt.id = cl.libro_id
-         WHERE lt.curso_id = ? AND lt.materia_id = ? AND lt.profesor_id = ?
-         ORDER BY cl.fecha DESC";
+    $sql2 = "SELECT td.id, td.fecha_clase, td.caracter_clase, td.tema, td.actividades_desarrolladas, td.observaciones
+             FROM libros_temas lt
+             JOIN temas_diarios td ON lt.id = td.libro_id
+             WHERE lt.curso_id = ? AND lt.materia_id = ? AND lt.profesor_id = ?
+             ORDER BY td.fecha_clase DESC";
     $stmt2 = $conexion->prepare($sql2);
     $stmt2->bind_param("iii", $curso_id, $materia_id, $profesor_id);
     $stmt2->execute();
@@ -168,32 +188,48 @@ if ($curso_id && $materia_id) {
         </button>
     </nav>
 
+    <!-- Contenido principal -->
     <main class="flex-1 p-10">
-        <!-- BLOQUE DE USUARIO, ROL Y SALIR A LA DERECHA -->
+        <!-- BLOQUE DE USUARIO, ROL, CONFIGURACIÓN Y NOTIFICACIONES -->
         <div class="w-full flex justify-end mb-6">
             <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
-                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Avatar -->
+                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>"
+                    class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Nombre y rol -->
                 <div class="flex flex-col pr-2 text-right">
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-                    <div class="mt-1 text-xs text-gray-500">Profesor/a</div>
+                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
                 </div>
+
+                <!-- Selector de rol (si corresponde) -->
                 <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-                    <form method="post" action="../../includes/cambiar_rol.php" class="ml-4">
+                    <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
                         <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                        <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
+                        <select name="rol" onchange="this.form.submit()"
+                            class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
                             <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
-                                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                                <option value="<?php echo $r['id']; ?>"
+                                    <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
                                     Cambiar a: <?php echo ucfirst($r['nombre']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </form>
                 <?php endif; ?>
-                <button id="btn-notificaciones" class="relative focus:outline-none group">
-                    <!-- Campanita Font Awesome -->
+
+                <!-- Botón de Configuración -->
+                <a href="configuracion.php"
+                    class="relative focus:outline-none group ml-2">
+                    <i class="fa-solid fa-gear text-2xl text-gray-500 group-hover:text-gray-700 transition-colors"></i>
+                </a>
+
+                <!-- Notificaciones -->
+                <button id="btn-notificaciones" class="relative focus:outline-none group ml-2">
                     <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
-                    <!-- Badge cantidad (oculto si no hay notificaciones) -->
                     <span id="badge-notificaciones"
                         class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
                         style="min-width:1.2em; text-align:center;"></span>
@@ -213,13 +249,14 @@ if ($curso_id && $materia_id) {
         </div>
 
         <h1 class="text-2xl font-bold mb-6">📚 Libro de Temas</h1>
+
         <form class="mb-8 flex gap-4" method="get" id="form-filtros">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <select name="curso_id" class="px-4 py-2 rounded-xl border" required onchange="document.getElementById('form-filtros').submit()">
                 <option value="">Seleccionar curso</option>
                 <?php foreach ($cursos as $c): ?>
-                    <option value="<?php echo $c['curso_id']; ?>" <?php if ($curso_id == $c['curso_id']) echo "selected"; ?>>
-                        <?php echo $c['anio'] . "°" . $c['division']; ?>
+                    <option value="<?= $c['curso_id'] ?>" <?php if ($curso_id == $c['curso_id']) echo "selected"; ?>>
+                        <?= $c['anio'] . "°" . $c['division']; ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -227,23 +264,24 @@ if ($curso_id && $materia_id) {
                 <option value="">Seleccionar materia</option>
                 <?php foreach ($cursos as $c): ?>
                     <?php if ($curso_id == $c['curso_id']): ?>
-                        <option value="<?php echo $c['materia_id']; ?>" <?php if ($materia_id == $c['materia_id']) echo "selected"; ?>>
-                            <?php echo $c['materia']; ?>
+                        <option value="<?= $c['materia_id'] ?>" <?php if ($materia_id == $c['materia_id']) echo "selected"; ?>>
+                            <?= $c['materia']; ?>
                         </option>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </select>
             <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
         </form>
-        <?php echo $mensaje; ?>
+
+        <?= $mensaje ?>
 
         <?php if ($curso_id && $materia_id): ?>
             <div class="flex flex-col md:flex-row gap-6 mb-10 items-start">
-                <!-- FORMULARIO AÑADIR TEMA -->
+                <!-- FORMULARIO NUEVO TEMA -->
                 <form method="post" class="bg-white rounded-xl shadow p-6 flex flex-col gap-3 w-full md:w-1/3">
                     <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                    <input type="hidden" name="curso_id" value="<?php echo $curso_id; ?>">
-                    <input type="hidden" name="materia_id" value="<?php echo $materia_id; ?>">
+                    <input type="hidden" name="curso_id" value="<?= $curso_id ?>">
+                    <input type="hidden" name="materia_id" value="<?= $materia_id ?>">
                     <input type="hidden" name="nuevo_tema" value="1">
 
                     <div>
@@ -251,8 +289,32 @@ if ($curso_id && $materia_id) {
                         <input type="date" name="fecha" value="<?= date('Y-m-d') ?>" class="px-4 py-2 border rounded-xl w-full" required>
                     </div>
                     <div>
-                        <label class="font-semibold">Contenido del tema:</label>
-                        <textarea name="contenido" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
+                        <label class="font-semibold">Carácter de clase:</label>
+                        <select name="caracter_clase" class="px-4 py-2 border rounded-xl w-full" required>
+                            <option value="Explicativa">Explicativa</option>
+                            <option value="Introductoria">Introductoria</option>
+                            <option value="Motivadora">Motivadora</option>
+                            <option value="Reflexiva">Reflexiva</option>
+                            <option value="Analítica">Analítica</option>
+                            <option value="Evaluativa">Evaluativa</option>
+                            <option value="Investigativa">Investigativa</option>
+                            <option value="Elaborativa">Elaborativa</option>
+                            <option value="Participativa">Participativa</option>
+                            <option value="Práctica">Práctica</option>
+                            <option value="Consultiva">Consultiva</option>
+                            <option value="Interpretativa">Interpretativa</option>
+                            <option value="Dialógica">Dialógica</option>
+                            <option value="Teórica">Teórica</option>
+                            <option value="Otra...">Otra...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Tema:</label>
+                        <textarea name="tema" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Actividades desarrolladas:</label>
+                        <textarea name="actividades" rows="2" class="w-full px-4 py-2 border rounded-xl" required></textarea>
                     </div>
                     <div>
                         <label class="font-semibold">Observaciones:</label>
@@ -263,37 +325,26 @@ if ($curso_id && $materia_id) {
                     </button>
                 </form>
 
-                <!-- LISTADO DE TEMAS -->
+                <!-- LISTADO -->
                 <div class="w-full md:w-2/3 max-h-[400px] overflow-y-auto rounded-xl shadow border bg-white">
                     <table class="min-w-full text-sm">
                         <thead class="sticky top-0 bg-white shadow z-10">
                             <tr>
                                 <th class="py-2 px-4 text-left">Fecha</th>
-                                <th class="py-2 px-4 text-left">Contenido</th>
+                                <th class="py-2 px-4 text-left">Carácter</th>
+                                <th class="py-2 px-4 text-left">Tema</th>
+                                <th class="py-2 px-4 text-left">Actividades</th>
                                 <th class="py-2 px-4 text-left">Observaciones</th>
-                                <th class="py-2 px-4 text-left">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($temas as $t): ?>
                                 <tr class="border-t">
-                                    <td class="py-2 px-4"><?php echo date("d/m/Y", strtotime($t['fecha'])); ?></td>
-                                    <td class="py-2 px-4"><?php echo htmlspecialchars($t['contenido']); ?></td>
-                                    <td class="py-2 px-4"><?php echo htmlspecialchars($t['observaciones']); ?></td>
-                                    <td class="py-2 px-4 flex gap-2">
-                                        <!-- Editar -->
-                                        <form method="post" action="editar_contenido.php" class="inline-block">
-                                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
-                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                                            <button class="text-blue-600 hover:underline text-sm" type="submit">Editar</button>
-                                        </form>
-                                        <!-- Eliminar -->
-                                        <form method="post" action="eliminar_contenido.php" class="inline-block" onsubmit="return confirm('¿Seguro que querés eliminar este contenido?');">
-                                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
-                                            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                                            <button class="text-red-600 hover:underline text-sm" type="submit">Eliminar</button>
-                                        </form>
-                                    </td>
+                                    <td class="py-2 px-4"><?= date("d/m/Y", strtotime($t['fecha_clase'])) ?></td>
+                                    <td class="py-2 px-4"><?= htmlspecialchars($t['caracter_clase']) ?></td>
+                                    <td class="py-2 px-4"><?= nl2br(htmlspecialchars($t['tema'])) ?></td>
+                                    <td class="py-2 px-4"><?= nl2br(htmlspecialchars($t['actividades_desarrolladas'])) ?></td>
+                                    <td class="py-2 px-4"><?= nl2br(htmlspecialchars($t['observaciones'])) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php if (empty($temas)): ?>

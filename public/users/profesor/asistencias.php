@@ -160,50 +160,35 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// === RESUMEN DEL DÍA PARA PROFESOR (similar al del preceptor) ===
-// Fecha a resumir: hoy si está dentro de la semana seleccionada; si no, el lunes de esa semana
+// === RESUMEN DEL DÍA PARA PROFESOR ===
 $hoy_str = date('Y-m-d');
 $fechaResumen = in_array($hoy_str, $dias_semana, true) ? $hoy_str : ($dias_semana[0] ?? $hoy_str);
 
-// Si no hay curso seleccionado, evitamos consultas
-$R = [
-    0 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Turno
-    1 => ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0], // Contraturno
-];
-$Tot = ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0];
+$R = ['presentes' => 0, 'ausentes' => 0, 'tarde' => 0, 'total' => 0];
 
 if ($curso_id) {
     $sqlResumen = "
-        SELECT es_contraturno,
-               SUM(CASE WHEN estado='P'  THEN 1 ELSE 0 END) AS presentes,
-               SUM(CASE WHEN estado='A'  THEN 1 ELSE 0 END) AS ausentes,
-               SUM(CASE WHEN estado='T'  THEN 1 ELSE 0 END) AS tarde,
-               COUNT(*) AS total
+        SELECT 
+           SUM(CASE WHEN estado='P'  THEN 1 ELSE 0 END) AS presentes,
+           SUM(CASE WHEN estado='A'  THEN 1 ELSE 0 END) AS ausentes,
+           SUM(CASE WHEN estado='T'  THEN 1 ELSE 0 END) AS tarde,
+           COUNT(*) AS total
         FROM asistencia_general
         WHERE curso_id = ?
           AND fecha = ?
-        GROUP BY es_contraturno
+          AND (es_contraturno = 0 OR es_contraturno IS NULL)
     ";
     $stmtR = $conexion->prepare($sqlResumen);
     $stmtR->bind_param('is', $curso_id, $fechaResumen);
     $stmtR->execute();
     $resR = $stmtR->get_result();
-
-    while ($row = $resR->fetch_assoc()) {
-        $k = (int)$row['es_contraturno']; // 0=Turno, 1=Contraturno
-        $R[$k]['presentes'] = (int)$row['presentes'];
-        $R[$k]['ausentes']  = (int)$row['ausentes'];
-        $R[$k]['tarde']     = (int)$row['tarde'];
-        $R[$k]['total']     = (int)$row['total'];
+    if ($row = $resR->fetch_assoc()) {
+        $R['presentes'] = (int)$row['presentes'];
+        $R['ausentes']  = (int)$row['ausentes'];
+        $R['tarde']     = (int)$row['tarde'];
+        $R['total']     = (int)$row['total'];
     }
     $stmtR->close();
-
-    $Tot = [
-        'presentes' => $R[0]['presentes'] + $R[1]['presentes'],
-        'ausentes'  => $R[0]['ausentes']  + $R[1]['ausentes'],
-        'tarde'     => $R[0]['tarde']     + $R[1]['tarde'],
-        'total'     => $R[0]['total']     + $R[1]['total'],
-    ];
 }
 ?>
 <!DOCTYPE html>
@@ -241,10 +226,10 @@ if ($curso_id) {
 </head>
 
 <body class="bg-gray-100 min-h-screen flex">
-    <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
-        ☰
-    </button>
     <nav id="sidebar" class="w-60 transition-all duration-300 bg-white shadow-lg px-4 py-4 flex flex-col gap-2">
+        <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
+            ☰
+        </button>
         <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400 h-28">
             <img src="../../images/et20ico.ico" class="sidebar-expanded block h-full w-auto object-contain">
             <img src="../../images/et20ico.ico" class="sidebar-collapsed hidden h-10 w-auto object-contain">
@@ -273,32 +258,48 @@ if ($curso_id) {
         </button>
     </nav>
 
+    <!-- Contenido principal -->
     <main class="flex-1 p-10">
-        <!-- BLOQUE DE USUARIO, ROL Y SALIR A LA DERECHA -->
+        <!-- BLOQUE DE USUARIO, ROL, CONFIGURACIÓN Y NOTIFICACIONES -->
         <div class="w-full flex justify-end mb-6">
             <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
-                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Avatar -->
+                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>"
+                    class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Nombre y rol -->
                 <div class="flex flex-col pr-2 text-right">
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-                    <div class="mt-1 text-xs text-gray-500">Profesor/a</div>
+                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
                 </div>
+
+                <!-- Selector de rol (si corresponde) -->
                 <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
-                    <form method="post" action="../../includes/cambiar_rol.php" class="ml-4">
+                    <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
                         <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                        <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
+                        <select name="rol" onchange="this.form.submit()"
+                            class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
                             <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
-                                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                                <option value="<?php echo $r['id']; ?>"
+                                    <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
                                     Cambiar a: <?php echo ucfirst($r['nombre']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </form>
                 <?php endif; ?>
-                <button id="btn-notificaciones" class="relative focus:outline-none group">
-                    <!-- Campanita Font Awesome -->
+
+                <!-- Botón de Configuración -->
+                <a href="configuracion.php"
+                    class="relative focus:outline-none group ml-2">
+                    <i class="fa-solid fa-gear text-2xl text-gray-500 group-hover:text-gray-700 transition-colors"></i>
+                </a>
+
+                <!-- Notificaciones -->
+                <button id="btn-notificaciones" class="relative focus:outline-none group ml-2">
                     <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
-                    <!-- Badge cantidad (oculto si no hay notificaciones) -->
                     <span id="badge-notificaciones"
                         class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
                         style="min-width:1.2em; text-align:center;"></span>
@@ -380,31 +381,19 @@ if ($curso_id) {
                 const res = await fetch(`resumen_profesor.php?curso_id=${encodeURIComponent(curso_id)}&fecha=${encodeURIComponent(fecha)}`);
                 const data = await res.json();
 
-                // Render básico del panel (igual estética que el del preceptor)
                 box.innerHTML = `
-        <div class="bg-white border rounded-xl p-4 shadow text-sm w-full">
-          <h2 class="font-bold mb-3 text-lg">Resumen del día (${data.fecha_formateada})</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="rounded-lg border p-3">
-              <h3 class="font-semibold mb-2">Turno</h3>
-              <ul class="space-y-1">
-                <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.turno.presentes}</li>
-                <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.turno.ausentes}</li>
-                <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.turno.tarde}</li>
-                <li class="text-gray-600">Total registros: ${data.turno.total}</li>
-              </ul>
-            </div>
-            <div class="rounded-lg border p-3">
-              <h3 class="font-semibold mb-2">Contraturno</h3>
-              <ul class="space-y-1">
-                <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.contraturno.presentes}</li>
-                <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.contraturno.ausentes}</li>
-                <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.contraturno.tarde}</li>
-                <li class="text-gray-600">Total registros: ${data.contraturno.total}</li>
-              </ul>
-            </div>
-          </div>
-        </div>`;
+                    <div class="bg-white border rounded-xl p-4 shadow text-sm max-w-md mx-auto">
+                    <h2 class="font-bold mb-3 text-lg">Resumen del día (${data.fecha_formateada})</h2>
+                    <div class="rounded-lg border p-3">
+                        <h3 class="font-semibold mb-2">Turno</h3>
+                        <ul class="space-y-1">
+                        <li><span class="font-medium text-green-700">✅ Presentes:</span> ${data.turno.presentes}</li>
+                        <li><span class="font-medium text-red-700">❌ Ausentes:</span> ${data.turno.ausentes}</li>
+                        <li><span class="font-medium text-yellow-700">🕒 Tarde:</span> ${data.turno.tarde}</li>
+                        <li class="text-gray-600">Total registros: ${data.turno.total}</li>
+                        </ul>
+                    </div>
+                    </div>`;
             } catch (e) {
                 box.innerHTML = '';
                 console.error('Resumen AJAX error', e);
@@ -532,13 +521,14 @@ if ($curso_id) {
                         const editable = data.editable[i - 2];
                         if (editable) {
                             const sel = document.createElement('select');
-                            ['NC', 'P', 'A', 'T', 'AP'].forEach(est => {
+                            ['NC', 'P', 'A', 'T', 'AJ'].forEach(est => {
                                 const opt = document.createElement('option');
                                 opt.value = est;
                                 opt.textContent = est;
                                 if (est === valor) opt.selected = true;
                                 sel.appendChild(opt);
                             });
+                            aplicarColorSelect(sel);
                             td.appendChild(sel);
                         } else {
                             td.textContent = valor;
@@ -717,6 +707,26 @@ if ($curso_id) {
                     setTimeout(() => msj.classList.add('hidden'), 6000);
                 })
                 .catch(() => alert('Error importando asistencias'));
+        });
+    </script>
+    <script>
+        function aplicarColorSelect(select) {
+            // Limpiar cualquier clase vieja
+            select.classList.remove('bg-estadoA', 'bg-estadoP', 'bg-estadoT', 'bg-estadoNC', 'bg-estadoAJ');
+
+            // Asignar según el valor
+            if (select.value === 'A') select.classList.add('bg-estadoA', 'text-white');
+            else if (select.value === 'P') select.classList.add('bg-estadoP', 'text-white');
+            else if (select.value === 'T') select.classList.add('bg-estadoT', 'text-white');
+            else if (select.value === 'NC' || select.value === 'N/C') select.classList.add('bg-estadoNC', 'text-white');
+            else if (select.value === 'AJ') select.classList.add('bg-estadoAJ', 'text-white');
+        }
+
+        // Escuchar cambios en cualquier select
+        document.addEventListener('change', e => {
+            if (e.target.tagName === 'SELECT') {
+                aplicarColorSelect(e.target);
+            }
         });
     </script>
     <script>

@@ -237,10 +237,10 @@ $hoy_str = date('Y-m-d');
 </head>
 
 <body class="bg-gray-100 min-h-screen flex">
-    <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
-        ☰
-    </button>
     <nav id="sidebar" class="w-60 transition-all duration-300 bg-white shadow-lg px-4 py-4 flex flex-col gap-2">
+        <button id="toggleSidebar" class="absolute top-4 left-4 z-50 text-2xl hover:text-indigo-600 transition">
+            ☰
+        </button>
         <div class="flex justify-center items-center p-2 mb-4 border-b border-gray-400 h-28">
             <img src="/images/et20ico.ico" class="sidebar-expanded block h-full w-auto object-contain">
             <img src="/images/et20ico.ico" class="sidebar-collapsed hidden h-10 w-auto object-contain">
@@ -262,32 +262,48 @@ $hoy_str = date('Y-m-d');
         </button>
     </nav>
 
+    <!-- Contenido principal -->
     <main class="flex-1 p-10">
-        <!-- BLOQUE DE USUARIO, ROL Y SALIR A LA DERECHA -->
+        <!-- BLOQUE DE USUARIO, ROL, CONFIGURACIÓN Y NOTIFICACIONES -->
         <div class="w-full flex justify-end mb-6">
             <div class="flex items-center gap-3 bg-white rounded-xl px-5 py-2 shadow border">
-                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>" class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Avatar -->
+                <img src="<?php echo $usuario['foto_url'] ?? 'https://ui-avatars.com/api/?name=' . $usuario['nombre']; ?>"
+                    class="rounded-full w-12 h-12 object-cover">
+
+                <!-- Nombre y rol -->
                 <div class="flex flex-col pr-2 text-right">
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-                    <div class="mt-1 text-xs text-gray-500">Preceptor/a</div>
+                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
                 </div>
+
+                <!-- Selector de rol (si corresponde) -->
                 <?php if (isset($_SESSION['roles_disponibles']) && count($_SESSION['roles_disponibles']) > 1): ?>
                     <form method="post" action="/includes/cambiar_rol.php" class="ml-4">
                         <input type="hidden" name="csrf" value="<?= $csrf ?>">
-                        <select name="rol" onchange="this.form.submit()" class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
+                        <select name="rol" onchange="this.form.submit()"
+                            class="px-2 py-1 border text-sm rounded-xl text-gray-700 bg-white">
                             <?php foreach ($_SESSION['roles_disponibles'] as $r): ?>
-                                <option value="<?php echo $r['id']; ?>" <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
+                                <option value="<?php echo $r['id']; ?>"
+                                    <?php if ($_SESSION['usuario']['rol'] == $r['id']) echo 'selected'; ?>>
                                     Cambiar a: <?php echo ucfirst($r['nombre']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </form>
                 <?php endif; ?>
-                <button id="btn-notificaciones" class="relative focus:outline-none group">
-                    <!-- Campanita Font Awesome -->
+
+                <!-- Botón de Configuración -->
+                <a href="configuracion.php"
+                    class="relative focus:outline-none group ml-2">
+                    <i class="fa-solid fa-gear text-2xl text-gray-500 group-hover:text-gray-700 transition-colors"></i>
+                </a>
+
+                <!-- Notificaciones -->
+                <button id="btn-notificaciones" class="relative focus:outline-none group ml-2">
                     <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
-                    <!-- Badge cantidad (oculto si no hay notificaciones) -->
                     <span id="badge-notificaciones"
                         class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1 hidden border border-white font-bold"
                         style="min-width:1.2em; text-align:center;"></span>
@@ -312,35 +328,44 @@ $hoy_str = date('Y-m-d');
         <?php endif; ?>
 
         <div class="bg-white p-6 rounded-2xl shadow-xl max-w-7xl mx-auto">
-            <form class="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-12 mb-2 items-center" method="get">
+            <form
+                class="grid grid-cols-1 md:grid-cols-3 gap-x-16 gap-y-2 mb-4 items-center"
+                method="get">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
 
-                <label class="font-semibold">Curso:</label>
-                <select id="sel-curso-preceptor" name="curso_id" class="border rounded p-2" required>
-                    <option value="">Seleccionar curso</option>
-                    <?php foreach ($cursos as $c): ?>
-                        <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
-                            <?php echo $c['anio'] . "°" . $c['division']; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <!-- Curso -->
+                <div class="flex flex-col">
+                    <label class="font-semibold">Curso:</label>
+                    <select id="sel-curso-preceptor" name="curso_id" class="border rounded p-2" required>
+                        <option value="">Seleccionar curso</option>
+                        <?php foreach ($cursos as $c): ?>
+                            <option value="<?php echo $c['id']; ?>" <?php if ($curso_id == $c['id']) echo "selected"; ?>>
+                                <?php echo $c['anio'] . "°" . $c['division']; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-                <label class="font-semibold">Fecha base:</label>
-                <div class="flex flex-col col-span-3 gap-2">
-                    <div class="flex items-center gap-3">
+                <!-- Fecha -->
+                <div class="flex flex-col">
+                    <label class="font-semibold">Fecha base:</label>
+                    <div class="flex items-center gap-2">
                         <input type="date" id="selector-fecha" class="border rounded p-2" required>
                         <input type="hidden" name="semana_lunes" id="input-semana-lunes" value="<?= $semana_lunes ?>">
                         <div id="texto-rango" class="text-gray-600 font-semibold"></div>
                     </div>
                 </div>
 
-                <label class="font-semibold">Modo:</label>
-                <div class="flex items-center col-span-3 gap-4">
-                    <select name="modo" class="border rounded p-2">
-                        <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
-                        <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
-                    </select>
-                    <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+                <!-- Modo -->
+                <div class="flex flex-col">
+                    <label class="font-semibold">Modo:</label>
+                    <div class="flex items-center gap-2">
+                        <select name="modo" class="border rounded p-2">
+                            <option value="ver" <?php if ($modo == 'ver') echo 'selected'; ?>>Ver</option>
+                            <option value="editar" <?php if ($modo == 'editar') echo 'selected'; ?>>Editar</option>
+                        </select>
+                        <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Ver</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -479,7 +504,7 @@ $hoy_str = date('Y-m-d');
                                                         <option value="AJ" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'AJ' ? 'selected' : '' ?>>AJ</option>
                                                         <option value="T" <?= ($asist_semana[$a['id']][$dia][$tipo] ?? '') == 'T'  ? 'selected' : '' ?>>T</option>
                                                     </select>
-                                                </td>  
+                                                </td>
                                             <?php endforeach; ?>
                                         <?php endforeach; ?>
                                     </tr>
@@ -657,6 +682,31 @@ $hoy_str = date('Y-m-d');
         }
         window.addEventListener('unhandledrejection', (e) => {
             console.error('Unhandled promise rejection:', e.reason);
+        });
+    </script>
+    <script>
+        function aplicarColorSelect(select) {
+            // Limpiar clases viejas
+            select.classList.remove('bg-estadoA', 'bg-estadoP', 'bg-estadoT', 'bg-estadoNC', 'bg-estadoAJ');
+
+            // Asignar color según valor
+            if (select.value === 'A') select.classList.add('bg-estadoA', 'text-white');
+            else if (select.value === 'P') select.classList.add('bg-estadoP', 'text-white');
+            else if (select.value === 'T') select.classList.add('bg-estadoT', 'text-white');
+            else if (select.value === 'NC' || select.value === 'N/C') select.classList.add('bg-estadoNC', 'text-white');
+            else if (select.value === 'AJ') select.classList.add('bg-estadoAJ', 'text-white');
+        }
+
+        // Aplica cada vez que cambia un select
+        document.addEventListener('change', e => {
+            if (e.target.tagName === 'SELECT') {
+                aplicarColorSelect(e.target);
+            }
+        });
+
+        // Aplica a todos al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('select').forEach(sel => aplicarColorSelect(sel));
         });
     </script>
     <script>
@@ -883,7 +933,10 @@ $hoy_str = date('Y-m-d');
     <script>
         function setAll(dia, tipo, valor) {
             const selects = document.querySelectorAll(`select[data-dia='${dia}'][data-tipo='${tipo}']`);
-            selects.forEach(s => s.value = valor);
+            selects.forEach(s => {
+                s.value = valor;
+                aplicarColorSelect(s); // 🔹 repinta el color según el valor nuevo
+            });
         }
     </script>
     <script>
