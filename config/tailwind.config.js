@@ -23,6 +23,11 @@ module.exports = {
         amarilloEnergia: '#f4c822',
         rojo: '#ff0000',
         rosaMagico: '#e11d48',
+        estadoA: '#e74c3c',   // Rojo
+        estadoP: '#2ecc71',   // Verde
+        estadoT: '#06d4ae',   // Celeste
+        estadoNC: '#95a5a6',  // Gris
+        estadoAJ: '#145a32',  // Verde oscuro
       }
     },
   },

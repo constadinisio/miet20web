@@ -669,6 +669,31 @@ $hoy_str = date('Y-m-d');
         });
     </script>
     <script>
+        function aplicarColorSelect(select) {
+            // Limpiar clases viejas
+            select.classList.remove('bg-estadoA', 'bg-estadoP', 'bg-estadoT', 'bg-estadoNC', 'bg-estadoAJ');
+
+            // Asignar color según valor
+            if (select.value === 'A') select.classList.add('bg-estadoA', 'text-white');
+            else if (select.value === 'P') select.classList.add('bg-estadoP', 'text-white');
+            else if (select.value === 'T') select.classList.add('bg-estadoT', 'text-white');
+            else if (select.value === 'NC' || select.value === 'N/C') select.classList.add('bg-estadoNC', 'text-white');
+            else if (select.value === 'AJ') select.classList.add('bg-estadoAJ', 'text-white');
+        }
+
+        // Aplica cada vez que cambia un select
+        document.addEventListener('change', e => {
+            if (e.target.tagName === 'SELECT') {
+                aplicarColorSelect(e.target);
+            }
+        });
+
+        // Aplica a todos al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('select').forEach(sel => aplicarColorSelect(sel));
+        });
+    </script>
+    <script>
         const modal = document.getElementById('modalImport');
         const impCurso = document.getElementById('imp-curso');
         const impFecha = document.getElementById('imp-fecha');
@@ -892,7 +917,10 @@ $hoy_str = date('Y-m-d');
     <script>
         function setAll(dia, tipo, valor) {
             const selects = document.querySelectorAll(`select[data-dia='${dia}'][data-tipo='${tipo}']`);
-            selects.forEach(s => s.value = valor);
+            selects.forEach(s => {
+                s.value = valor;
+                aplicarColorSelect(s); // 🔹 repinta el color según el valor nuevo
+            });
         }
     </script>
     <script>

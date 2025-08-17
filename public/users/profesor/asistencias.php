@@ -505,13 +505,14 @@ if ($curso_id) {
                         const editable = data.editable[i - 2];
                         if (editable) {
                             const sel = document.createElement('select');
-                            ['NC', 'P', 'A', 'T', 'AP'].forEach(est => {
+                            ['NC', 'P', 'A', 'T', 'AJ'].forEach(est => {
                                 const opt = document.createElement('option');
                                 opt.value = est;
                                 opt.textContent = est;
                                 if (est === valor) opt.selected = true;
                                 sel.appendChild(opt);
                             });
+                            aplicarColorSelect(sel);
                             td.appendChild(sel);
                         } else {
                             td.textContent = valor;
@@ -690,6 +691,26 @@ if ($curso_id) {
                     setTimeout(() => msj.classList.add('hidden'), 6000);
                 })
                 .catch(() => alert('Error importando asistencias'));
+        });
+    </script>
+    <script>
+        function aplicarColorSelect(select) {
+            // Limpiar cualquier clase vieja
+            select.classList.remove('bg-estadoA', 'bg-estadoP', 'bg-estadoT', 'bg-estadoNC', 'bg-estadoAJ');
+
+            // Asignar según el valor
+            if (select.value === 'A') select.classList.add('bg-estadoA', 'text-white');
+            else if (select.value === 'P') select.classList.add('bg-estadoP', 'text-white');
+            else if (select.value === 'T') select.classList.add('bg-estadoT', 'text-white');
+            else if (select.value === 'NC' || select.value === 'N/C') select.classList.add('bg-estadoNC', 'text-white');
+            else if (select.value === 'AJ') select.classList.add('bg-estadoAJ', 'text-white');
+        }
+
+        // Escuchar cambios en cualquier select
+        document.addEventListener('change', e => {
+            if (e.target.tagName === 'SELECT') {
+                aplicarColorSelect(e.target);
+            }
         });
     </script>
     <script>
