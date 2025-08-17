@@ -98,6 +98,13 @@ $usuario = $_SESSION['usuario'];
                         </select>
                     </form>
                 <?php endif; ?>
+
+                <!-- Botón de Configuración -->
+                <a href="configuracion.php"
+                    class="relative focus:outline-none group ml-2">
+                    <i class="fa-solid fa-gear text-2xl text-gray-500 group-hover:text-gray-700 transition-colors"></i>
+                </a>
+
                 <button id="btn-notificaciones" class="relative focus:outline-none group">
                     <!-- Campanita Font Awesome -->
                     <i id="icono-campana" class="fa-regular fa-bell text-2xl text-gray-400 group-hover:text-gray-700 transition-colors"></i>
