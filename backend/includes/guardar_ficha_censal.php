@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . './db.php';
+require_once 'db.php'; // Cambiá si tu path es distinto
 
 $usuario_id = $_SESSION['usuario']['id'];
 $ficha_censal = trim($_POST['ficha_censal'] ?? '');

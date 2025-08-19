@@ -1,7 +1,7 @@
 <?php
 session_start();
 header('Content-Type: application/json; charset=UTF-8');
-require_once __DIR__ . './db.php';
+require_once 'db.php'; // Cambiá si tu path es distinto
 
 if (!isset($_SESSION['usuario'])) {
     echo json_encode(['ok' => false, 'mensaje' => 'Sesión expirada']);

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/db.php';
+require_once 'db.php'; // Cambiá si tu path es distinto
 
 $mail = trim($_POST['mail'] ?? '');
 $nombre = trim($_POST['nombre'] ?? '');
