@@ -173,13 +173,25 @@ for ($i = 0; $i < 5; $i++) {
 }
 
 // === MAPEO CONTRATURNO POR DÍA DE LA SEMANA PARA ESTE CURSO ===
-// 1=Lunes ... 5=Viernes en MySQL/PHP date('N')
+// --- Mapeo inglés -> español (para comparar con tu DB) ---
+$mapDias = [
+    'Monday'    => 'Lunes',
+    'Tuesday'   => 'Martes',
+    'Wednesday' => 'Miércoles',
+    'Thursday'  => 'Jueves',
+    'Friday'    => 'Viernes',
+    'Saturday'  => 'Sábado',
+    'Sunday'    => 'Domingo',
+];
+
+// --- Buscar qué días tienen contraturno para este curso ---
+// ⚡ Ahora depende de materias.es_contraturno
 $dias_contraturno = [];
 if ($curso_id) {
     $sqlCT = "
         SELECT DISTINCT hm.dia_semana
         FROM horarios_materia hm
-        INNER JOIN materias m ON m.id = hm.materia_id
+        JOIN materias m ON m.id = hm.materia_id
         WHERE hm.curso_id = ? AND m.es_contraturno = 1
     ";
     $stmtCT = $conexion->prepare($sqlCT);
@@ -187,15 +199,20 @@ if ($curso_id) {
     $stmtCT->execute();
     $resCT = $stmtCT->get_result();
     while ($r = $resCT->fetch_assoc()) {
-        $dias_contraturno[] = (int)$r['dia_semana'];
+        $dias_contraturno[] = trim($r['dia_semana']); // ej: 'Martes', 'Jueves'
     }
     $stmtCT->close();
 }
-// Para esta semana concreta, qué fechas tienen contraturno
+
+// --- Armar array para esta semana ---
 $fecha_tiene_contraturno = []; // ['YYYY-mm-dd' => true/false]
 foreach ($dias_semana as $f) {
-    $dow = (int)date('N', strtotime($f)); // 1..7
-    $fecha_tiene_contraturno[$f] = in_array($dow, $dias_contraturno, true);
+    $dow = date('l', strtotime($f));     // Monday, Tuesday...
+    $dowEsp = $mapDias[$dow];            // Lunes, Martes...
+    $fecha_tiene_contraturno[$f] = in_array($dowEsp, $dias_contraturno, true);
+
+    // 🔹 Debug opcional
+    // echo "<!-- DEBUG fecha=$f | dow=$dowEsp | contra=" . ($fecha_tiene_contraturno[$f] ? 'true' : 'false') . " -->\n";
 }
 
 // Utilidad para resaltar el día actual
@@ -934,8 +951,13 @@ $hoy_str = date('Y-m-d');
         function setAll(dia, tipo, valor) {
             const selects = document.querySelectorAll(`select[data-dia='${dia}'][data-tipo='${tipo}']`);
             selects.forEach(s => {
-                s.value = valor;
-                aplicarColorSelect(s); // 🔹 repinta el color según el valor nuevo
+                // Solo aplica a los que no están deshabilitados
+                if (!s.hasAttribute('disabled')) {
+                    s.value = valor;
+
+                    // 🔹 Disparar el evento change por si hay lógica de colores
+                    s.dispatchEvent(new Event('change'));
+                }
             });
         }
     </script>
