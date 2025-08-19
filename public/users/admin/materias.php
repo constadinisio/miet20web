@@ -152,7 +152,7 @@ while ($row = $res->fetch_assoc()) $todosLosProfesores[] = $row;
                 <div class="flex flex-col pr-2 text-right">
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
+                    <div class="mt-1 text-xs text-gray-500">Administrador</div>
                 </div>
 
                 <!-- Selector de rol (si corresponde) -->

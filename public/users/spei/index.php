@@ -139,7 +139,7 @@ $prestamos_curso = $res_prestamos->fetch_assoc()['cantidad'] ?? 0;
                 <div class="flex flex-col pr-2 text-right">
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['nombre']; ?></div>
                     <div class="font-bold text-base leading-tight"><?php echo $usuario['apellido']; ?></div>
-                    <div class="mt-1 text-xs text-gray-500">Alumno/a</div>
+                    <div class="mt-1 text-xs text-gray-500">SPEI</div>
                 </div>
 
                 <!-- Selector de rol (si corresponde) -->
