@@ -15,6 +15,8 @@ if (!isset($_SESSION['csrf'])) {
 $csrf = $_SESSION['csrf'];
 
 $usuario = $_SESSION['usuario'];
+
+require_once __DIR__ . '/../../../backend/includes/middleware_datos.php';
 ?>
 
 <!DOCTYPE html>
@@ -266,6 +268,8 @@ $usuario = $_SESSION['usuario'];
             setInterval(cargarNotificaciones, 15000);
         });
     </script>
+
+    <?php require_once __DIR__ . '/../../../backend/includes/popup_datos.php'; ?>
 </body>
 
 </html>
